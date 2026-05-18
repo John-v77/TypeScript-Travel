@@ -10,7 +10,7 @@
     "forceConsistentCasingInFileNames": true,
     "outDir": "./dist",
     "rootDir": ".",
-    "typeRoots": ["./node_modules/@types"]
+    "typeRoots": ["./node_modules/@types"],
   },
   "include": ["./**/*"],
   "exclude": ["node_modules", "dist"]
