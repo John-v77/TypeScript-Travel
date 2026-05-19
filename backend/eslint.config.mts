@@ -28,6 +28,7 @@ export default [
       "prettier/prettier": [
         "error",
         {
+          printWidth: 80,
           endOfLine: "auto",
         },
       ],
