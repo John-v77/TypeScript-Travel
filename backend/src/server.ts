@@ -1,15 +1,18 @@
 import express, { Request, Response, NextFunction } from "express";
 import morgan from "morgan";
 import cors from "cors";
+import tourRouter from "./routes/tourRoutes";
 
 export const createServer = () => {
   const app = express();
   app
     .disable("x-powered-by")
-    .use(cors({ origin: "http://localhost:3000" }))
-    .use(express.json())
     .use(morgan("dev"))
-    .use(express.urlencoded({ extended: true }));
+    .use(express.urlencoded({ extended: true }))
+    .use(express.json())
+    .use(cors({ origin: "http://localhost:3000" }));
+
+  app.use("/api/vi/tours", tourRouter);
 
   app.get("/health", (req, res) => {
     res.json({ ok: true });
