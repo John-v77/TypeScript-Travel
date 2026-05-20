@@ -12,7 +12,7 @@ export const createServer = () => {
     .use(express.json())
     .use(cors({ origin: "http://localhost:3000" }));
 
-  app.use("/api/vi/tours", tourRouter);
+  app.use("/api/v1/tours", tourRouter);
 
   app.get("/health", (req, res) => {
     res.json({ ok: true });
