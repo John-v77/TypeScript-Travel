@@ -10,7 +10,7 @@ router
 
 router
   .route("/:id")
-  .get(tourController.updateTourPackage)
+  .get(tourController.getTourById)
   .delete(tourController.deleteTourPackage);
 
 export default router;

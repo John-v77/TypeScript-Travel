@@ -83,4 +83,64 @@ describe("Tour Routes", () => {
       });
     });
   });
+
+  describe("GET /api/v1/tours/:id", () => {
+    it("should get a tour by ID", async () => {
+      const tourId = "123";
+      const mockTour = { _id: tourId, name: "Test Tour", price: 299 };
+
+      mockTourModel.findById.mockResolvedValue(mockTour as any);
+
+      const response = await request(app)
+        .get(`/api/v1/tours/${tourId}`)
+        .expect(200);
+
+      expect(response.body).toEqual({
+        status: "success",
+        data: {
+          tour: mockTour,
+        },
+      });
+    });
+
+    it("should return 404 for non-existent tour", async () => {
+      const tourId = "123";
+      mockTourModel.findById.mockResolvedValue(null);
+
+      const response = await request(app)
+        .get(`/api/v1/tours/${tourId}`)
+        .expect(404);
+
+      expect(response.body).toEqual({
+        status: "error",
+        message: "Tour not found",
+      });
+    });
+  });
+
+  describe("DELETE /api/v1/tours/:id", () => {
+    it("should delete a tour package", async () => {
+      const tourId = "123";
+      const mockTour = { _i: tourId, name: "Test Tour" };
+
+      mockTourModel.findByIdAndDelete.mockResolvedValue(mockTour as any);
+
+      await request(app).delete(`/api/v1/tours/${tourId}`).expect(204);
+    });
+
+    it("should return 404 for non-existent tour", async () => {
+      const tourId = "123";
+
+      mockTourModel.findByIdAndDelete.mockResolvedValue(null);
+
+      const response = await request(app)
+        .delete(`/api/v1/tours/${tourId}`)
+        .expect(404);
+
+      expect(response.body).toEqual({
+        status: "error",
+        message: "Tour not found",
+      });
+    });
+  });
 });
