@@ -116,6 +116,21 @@ describe("Tour Routes", () => {
         message: "Tour not found",
       });
     });
+
+    it("should handle database error", async () => {
+      const tourId = "123";
+
+      mockTourModel.findById.mockRejectedValue(new Error("Database error"));
+
+      const response = await request(app)
+        .get(`/api/v1/tours/${tourId}`)
+        .expect(500);
+
+      expect(response.body).toEqual({
+        status: "error",
+        message: "Failed to fetch tour",
+      });
+    });
   });
 
   describe("DELETE /api/v1/tours/:id", () => {
@@ -140,6 +155,23 @@ describe("Tour Routes", () => {
       expect(response.body).toEqual({
         status: "error",
         message: "Tour not found",
+      });
+    });
+
+    it("should handle database error", async () => {
+      const tourId = "123";
+
+      mockTourModel.findByIdAndDelete.mockRejectedValue(
+        new Error("Database error"),
+      );
+
+      const response = await request(app)
+        .delete(`/api/v1/tours/${tourId}`)
+        .expect(500);
+
+      expect(response.body).toEqual({
+        status: "error",
+        message: "Failed to delete tour",
       });
     });
   });
