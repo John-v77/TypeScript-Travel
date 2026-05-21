@@ -133,6 +133,45 @@ describe("Tour Routes", () => {
     });
   });
 
+  describe("PATCH /api/v1/tours/:id", () => {
+    it("should update a tour package", async () => {
+      const tourId = "123";
+      const updateData = {
+        name: "Updated Tour Name",
+        price: 399,
+      };
+
+      const mockUpdatedTour = { _id: tourId, ...updateData };
+      mockTourModel.findByIdAndUpdate.mockResolvedValue(mockUpdatedTour as any);
+
+      const response = await request(app)
+        .patch(`/api/v1/tours/${tourId}`)
+        .send(updateData)
+        .expect(200);
+
+      expect(response.body).toEqual({
+        status: "success",
+        data: {
+          tour: mockUpdatedTour,
+        },
+      });
+    });
+    it("should return 404 for non-existent tour", async () => {
+      const tourId = "123";
+      mockTourModel.findByIdAndUpdate.mockResolvedValue(null);
+
+      const response = await request(app)
+        .patch(`/api/v1/tours/${tourId}`)
+        .send({ name: "Updated" })
+        .expect(404);
+
+      expect(response.body).toEqual({
+        status: "error",
+        message: "Tour not found",
+      });
+    });
+  });
+
   describe("DELETE /api/v1/tours/:id", () => {
     it("should delete a tour package", async () => {
       const tourId = "123";

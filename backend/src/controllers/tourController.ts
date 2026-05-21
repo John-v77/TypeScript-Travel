@@ -69,11 +69,37 @@ export const getTourById = async (
   }
 };
 
-export const updateTourPackage = (req: Request, res: Response) => {
-  res.status(200).json({
-    status: "success",
-    message: "Get all tours -dummy implementation",
-  });
+export const updateTourPackage = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const tour = await TourModel.findByIdAndUpdate(id, req.body, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!tour) {
+      res.status(404).json({
+        status: "error",
+        message: "Tour not found",
+      });
+      return;
+    }
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        tour,
+      },
+    });
+  } catch (err) {
+    res.status(400).json({
+      status: "error",
+      message: "Failed to update tour",
+    });
+  }
 };
 
 export const deleteTourPackage = async (
