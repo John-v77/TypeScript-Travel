@@ -4,7 +4,9 @@
     "dev": "nodemon index.ts",
     "dev-local": "nodemon index.ts -- --local",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "seed:import": "npx ts-node src/dev-data/seeder.ts --local --import",
+    "seed:delete": "npx ts-node src/dev-data/seeder.ts --local --del"
   },
   "devDependencies": {
     "@eslint/js": "^9.38.0",
