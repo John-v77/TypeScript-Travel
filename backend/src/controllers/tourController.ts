@@ -1,13 +1,31 @@
 import { Request, Response } from "express";
 import { Tour, TourModel } from "../models/tourModel";
-import { start } from "repl";
+import { Query } from "mongoose";
 
 export const getAllTours = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
   try {
-    const tours = await TourModel.find();
+    // const tours = await TourModel.find();
+
+    const queryObj: Record<string, any> = { ...req.query };
+    const excludedFields: string[] = ["page", "sort", "limit", "fields"];
+    excludedFields.forEach((el: string) => delete queryObj[el]);
+
+    let queryStr: string = JSON.stringify(queryObj);
+    queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
+    let query: Query<Tour[], Tour> = TourModel.find(JSON.parse(queryStr));
+
+    //Sorting
+    if (req.query.sort) {
+      const sortBy: string = (req.query.sort as string).split(",").join(" ");
+      query = query.sort(sortBy);
+    } else {
+      query = query.sort("-createdAt");
+    }
+
+    const tours: Tour[] = await query;
 
     res.status(200).json({
       status: "success",
@@ -27,7 +45,7 @@ export const createTour = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const newTour = await TourModel.create(req.body);
+    const newTour: Tour = await TourModel.create(req.body);
     res.status(201).json({
       status: "success",
       data: {
@@ -48,7 +66,7 @@ export const getTourById = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    const tour = await TourModel.findById(id);
+    const tour: Tour | null = await TourModel.findById(id as string);
 
     if (!tour) {
       res.status(404).json({
@@ -75,10 +93,14 @@ export const updateTourPackage = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    const tour = await TourModel.findByIdAndUpdate(id, req.body, {
-      new: true,
-      runValidators: true,
-    });
+    const tour: Tour | null = await TourModel.findByIdAndUpdate(
+      id as string,
+      req.body,
+      {
+        new: true,
+        runValidators: true,
+      },
+    );
 
     if (!tour) {
       res.status(404).json({
@@ -108,7 +130,7 @@ export const deleteTourPackage = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    const tour = await TourModel.findByIdAndDelete(id);
+    const tour: Tour | null = await TourModel.findByIdAndDelete(id);
 
     if (!tour) {
       res.status(404).json({

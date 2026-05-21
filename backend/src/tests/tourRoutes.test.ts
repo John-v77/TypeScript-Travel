@@ -1,6 +1,6 @@
 import request from "supertest";
 import { createServer } from "../server";
-import { Tour, TourModel } from "../models/tourModel";
+import { TourModel } from "../models/tourModel";
 
 jest.mock("../models/tourModel");
 
@@ -20,10 +20,15 @@ describe("Tour Routes", () => {
         { _id: "2", name: "Tour 2", price: 399 },
       ];
 
-      mockTourModel.find.mockResolvedValue(mockTours as any);
+      const mockQuery = {
+        sort: jest.fn().mockResolvedValue(mockTours),
+      };
+
+      mockTourModel.find.mockReturnValue(mockQuery as any);
 
       const response = await request(app).get("/api/v1/tours").expect(200);
 
+      expect(mockQuery.sort).toHaveBeenCalledWith("-createdAt");
       expect(response.body).toEqual({
         status: "success",
         results: 2,
@@ -33,8 +38,167 @@ describe("Tour Routes", () => {
       });
     });
 
+    it("should sort tours by price ascending", async () => {
+      const mockTours = [
+        { _id: "1", name: "Tour 1", price: 299 },
+        { _id: "2", name: "Tour 2", price: 399 },
+      ];
+
+      const mockQuery = {
+        sort: jest.fn().mockResolvedValue(mockTours),
+      };
+
+      mockTourModel.find.mockReturnValue(mockQuery as any);
+
+      const response = await request(app)
+        .get("/api/v1/tours?sort=price")
+        .expect(200);
+
+      expect(mockQuery.sort).toHaveBeenCalledWith("price");
+      expect(response.body).toEqual({
+        status: "success",
+        results: 2,
+        data: {
+          tours: mockTours,
+        },
+      });
+    });
+
+    it("should sort tours by price descending", async () => {
+      const mockTours = [
+        { _id: "1", name: "Tour 1", price: 299 },
+        { _id: "2", name: "Tour 2", price: 399 },
+      ];
+
+      const mockQuery = {
+        sort: jest.fn().mockResolvedValue(mockTours),
+      };
+
+      mockTourModel.find.mockReturnValue(mockQuery as any);
+
+      const response = await request(app)
+        .get("/api/v1/tours?sort=-price")
+        .expect(200);
+
+      expect(mockQuery.sort).toHaveBeenCalledWith("-price");
+      expect(response.body).toEqual({
+        status: "success",
+        results: 2,
+        data: {
+          tours: mockTours,
+        },
+      });
+    });
+
+    it("should sort tours by multiple fiels", async () => {
+      const mockTours = [
+        { _id: "1", name: "Tour A", price: 299, difficulty: "easy" },
+        { _id: "2", name: "Tour B", price: 299, difficulty: "medium" },
+      ];
+
+      const mockQuery = {
+        sort: jest.fn().mockResolvedValue(mockTours),
+      };
+
+      mockTourModel.find.mockReturnValue(mockQuery as any);
+
+      const response = await request(app)
+        .get("/api/v1/tours?sort=price,difficulty")
+        .expect(200);
+
+      expect(mockQuery.sort).toHaveBeenCalledWith("price difficulty");
+      expect(response.body).toEqual({
+        status: "success",
+        results: 2,
+        data: {
+          tours: mockTours,
+        },
+      });
+    });
+
+    it("should sort tours by name ascending", async () => {
+      const mockTours = [
+        { _id: "1", name: "A Tour", price: 299 },
+        { _id: "2", name: "B Tour", price: 399 },
+      ];
+
+      const mockQuery = {
+        sort: jest.fn().mockResolvedValue(mockTours),
+      };
+
+      mockTourModel.find.mockReturnValue(mockQuery as any);
+      const response = await request(app)
+        .get("/api/v1/tours?sort=name")
+        .expect(200);
+
+      expect(mockQuery.sort).toHaveBeenCalledWith("name");
+      expect(response.body).toEqual({
+        status: "success",
+        results: 2,
+        data: {
+          tours: mockTours,
+        },
+      });
+    });
+
+    it("should handle filtering with sorting", async () => {
+      const mockTours = [
+        { _id: "1", name: "Easy Tour", price: 299, difficulty: "easy" },
+      ];
+
+      const mockQuery = {
+        sort: jest.fn().mockResolvedValue(mockTours),
+      };
+
+      mockTourModel.find.mockReturnValue(mockQuery as any);
+
+      const response = await request(app)
+        .get("/api/v1/tours?difficulty=easy&sort=price")
+        .expect(200);
+
+      expect(mockTourModel.find).toHaveBeenCalledWith({ difficulty: "easy" });
+      expect(mockQuery.sort).toHaveBeenCalledWith("price");
+      expect(response.body).toEqual({
+        status: "success",
+        results: 1,
+        data: {
+          tours: mockTours,
+        },
+      });
+    });
+
+    it("should handle advanced filtering with sorting", async () => {
+      const mockTours = [{ _id: "1", name: "Expensive Tour", price: 500 }];
+
+      const mockQuery = {
+        sort: jest.fn().mockResolvedValue(mockTours),
+      };
+
+      mockTourModel.find.mockReturnValue(mockQuery as any);
+
+      const response = await request(app)
+        .get("/api/v1/tours?price[gte]=400&sort=-price")
+        .expect(200);
+
+      expect(mockTourModel.find).toHaveBeenCalledWith({
+        price: { $gte: "400" },
+      });
+      expect(mockQuery.sort).toHaveBeenCalledWith("-price");
+      expect(response.body).toEqual({
+        status: "success",
+        results: 1,
+        data: {
+          tours: mockTours,
+        },
+      });
+    });
+
     it("should handle database error", async () => {
-      mockTourModel.find.mockRejectedValue(new Error("Database error"));
+      const mockQuery = {
+        sort: jest.fn().mockRejectedValue(new Error("Database error")),
+      };
+
+      mockTourModel.find.mockReturnValue(mockQuery as any);
 
       const response = await request(app).get("/api/v1/tours").expect(500);
 
