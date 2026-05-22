@@ -7,12 +7,12 @@ export const getAllTours = async (
   res: Response,
 ): Promise<void> => {
   try {
-    // const tours = await TourModel.find();
-
+    // Filtering
     const queryObj: Record<string, any> = { ...req.query };
     const excludedFields: string[] = ["page", "sort", "limit", "fields"];
     excludedFields.forEach((el: string) => delete queryObj[el]);
 
+    // Advanced filtering
     let queryStr: string = JSON.stringify(queryObj);
     queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
     let query: Query<Tour[], Tour> = TourModel.find(JSON.parse(queryStr));
@@ -25,12 +25,31 @@ export const getAllTours = async (
       query = query.sort("-createdAt");
     }
 
+    // Field limiting
     if (req.query.fields) {
       const fields: string = (req.query.fields as string).split(",").join(" ");
       query = query.select(fields);
     } else {
       query = query.select("-__v");
     }
+
+    // Pagination
+    const page: number = parseInt(req.query.page as string) || 1;
+    const limitNo: number = parseInt(req.query.limit as string) || 20;
+    const skipNo: number = (page - 1) * limitNo;
+
+    if (req.query.page) {
+      const numTours: number = await TourModel.countDocuments();
+      if (skipNo >= numTours) {
+        res.status(400).json({
+          status: "error",
+          message: "This page does not exist",
+        });
+        return;
+      }
+    }
+
+    query = query.skip(skipNo).limit(limitNo);
 
     const tours: Tour[] = await query;
 

@@ -22,7 +22,9 @@ describe("Tour Routes", () => {
 
       const mockQuery = {
         sort: jest.fn().mockReturnThis(),
-        select: jest.fn().mockResolvedValue(mockTours),
+        select: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue(mockTours),
       };
 
       mockTourModel.find.mockReturnValue(mockQuery as any);
@@ -31,6 +33,8 @@ describe("Tour Routes", () => {
 
       expect(mockQuery.sort).toHaveBeenCalledWith("-createdAt");
       expect(mockQuery.select).toHaveBeenCalledWith("-__v");
+      expect(mockQuery.skip).toHaveBeenCalledWith(0);
+      expect(mockQuery.limit).toHaveBeenCalledWith(20);
       expect(response.body).toEqual({
         status: "success",
         results: 2,
@@ -48,7 +52,9 @@ describe("Tour Routes", () => {
 
       const mockQuery = {
         sort: jest.fn().mockReturnThis(),
-        select: jest.fn().mockResolvedValue(mockTours),
+        select: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue(mockTours),
       };
 
       mockTourModel.find.mockReturnValue(mockQuery as any);
@@ -59,6 +65,8 @@ describe("Tour Routes", () => {
 
       expect(mockQuery.sort).toHaveBeenCalledWith("price");
       expect(mockQuery.select).toHaveBeenCalledWith("-__v");
+      expect(mockQuery.skip).toHaveBeenCalledWith(0);
+      expect(mockQuery.limit).toHaveBeenCalledWith(20);
       expect(response.body).toEqual({
         status: "success",
         results: 2,
@@ -76,7 +84,9 @@ describe("Tour Routes", () => {
 
       const mockQuery = {
         sort: jest.fn().mockReturnThis(),
-        select: jest.fn().mockResolvedValue(mockTours),
+        select: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue(mockTours),
       };
 
       mockTourModel.find.mockReturnValue(mockQuery as any);
@@ -87,6 +97,8 @@ describe("Tour Routes", () => {
 
       expect(mockQuery.sort).toHaveBeenCalledWith("-price");
       expect(mockQuery.select).toHaveBeenCalledWith("-__v");
+      expect(mockQuery.skip).toHaveBeenCalledWith(0);
+      expect(mockQuery.limit).toHaveBeenCalledWith(20);
       expect(response.body).toEqual({
         status: "success",
         results: 2,
@@ -104,7 +116,9 @@ describe("Tour Routes", () => {
 
       const mockQuery = {
         sort: jest.fn().mockReturnThis(),
-        select: jest.fn().mockResolvedValue(mockTours),
+        select: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue(mockTours),
       };
 
       mockTourModel.find.mockReturnValue(mockQuery as any);
@@ -115,6 +129,8 @@ describe("Tour Routes", () => {
 
       expect(mockQuery.sort).toHaveBeenCalledWith("price difficulty");
       expect(mockQuery.select).toHaveBeenCalledWith("-__v");
+      expect(mockQuery.skip).toHaveBeenCalledWith(0);
+      expect(mockQuery.limit).toHaveBeenCalledWith(20);
       expect(response.body).toEqual({
         status: "success",
         results: 2,
@@ -132,7 +148,9 @@ describe("Tour Routes", () => {
 
       const mockQuery = {
         sort: jest.fn().mockReturnThis(),
-        select: jest.fn().mockResolvedValue(mockTours),
+        select: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue(mockTours),
       };
 
       mockTourModel.find.mockReturnValue(mockQuery as any);
@@ -142,6 +160,8 @@ describe("Tour Routes", () => {
 
       expect(mockQuery.sort).toHaveBeenCalledWith("name");
       expect(mockQuery.select).toHaveBeenCalledWith("-__v");
+      expect(mockQuery.skip).toHaveBeenCalledWith(0);
+      expect(mockQuery.limit).toHaveBeenCalledWith(20);
       expect(response.body).toEqual({
         status: "success",
         results: 2,
@@ -158,7 +178,9 @@ describe("Tour Routes", () => {
 
       const mockQuery = {
         sort: jest.fn().mockReturnThis(),
-        select: jest.fn().mockResolvedValue(mockTours),
+        select: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue(mockTours),
       };
 
       mockTourModel.find.mockReturnValue(mockQuery as any);
@@ -170,6 +192,8 @@ describe("Tour Routes", () => {
       expect(mockTourModel.find).toHaveBeenCalledWith({ difficulty: "easy" });
       expect(mockQuery.sort).toHaveBeenCalledWith("price");
       expect(mockQuery.select).toHaveBeenCalledWith("-__v");
+      expect(mockQuery.skip).toHaveBeenCalledWith(0);
+      expect(mockQuery.limit).toHaveBeenCalledWith(20);
       expect(response.body).toEqual({
         status: "success",
         results: 1,
@@ -184,7 +208,9 @@ describe("Tour Routes", () => {
 
       const mockQuery = {
         sort: jest.fn().mockReturnThis(),
-        select: jest.fn().mockResolvedValue(mockTours),
+        select: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue(mockTours),
       };
 
       mockTourModel.find.mockReturnValue(mockQuery as any);
@@ -197,7 +223,9 @@ describe("Tour Routes", () => {
         price: { $gte: "400" },
       });
       expect(mockQuery.sort).toHaveBeenCalledWith("-price");
-      expect(mockQuery.select).toHaveBeenLastCalledWith("__v");
+      expect(mockQuery.select).toHaveBeenLastCalledWith("-__v");
+      expect(mockQuery.skip).toHaveBeenCalledWith(0);
+      expect(mockQuery.limit).toHaveBeenCalledWith(20);
       expect(response.body).toEqual({
         status: "success",
         results: 1,
@@ -215,26 +243,30 @@ describe("Tour Routes", () => {
 
       const mockQuery = {
         sort: jest.fn().mockReturnThis(),
-        select: jest.fn().mockResolvedValue(mockTours),
+        select: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue(mockTours),
       };
 
       mockTourModel.find.mockReturnValue(mockQuery as any);
 
       const response = await request(app)
-        .get("/api/v1/tours?field=name, price")
+        .get("/api/v1/tours?fields=name,price")
         .expect(200);
 
       expect(mockQuery.select).toHaveBeenLastCalledWith("name price");
+      expect(mockQuery.skip).toHaveBeenCalledWith(0);
+      expect(mockQuery.limit).toHaveBeenCalledWith(20);
       expect(response.body).toEqual({
         status: "success",
         results: 2,
         data: {
-          tour: mockTours,
+          tours: mockTours,
         },
       });
     });
 
-    it("should exclude __v field by defaul when no fields spefified", async () => {
+    it("should exclude __v field by defaul when no fields specified", async () => {
       const mockTours = [
         { _id: "1", name: "Tour 1", price: 299 },
         { _id: "2", name: "Tour 2", price: 399 },
@@ -242,11 +274,13 @@ describe("Tour Routes", () => {
 
       const mockQuery = {
         sort: jest.fn().mockReturnThis(),
-        select: jest.fn().mockResolvedValue(mockTours),
+        select: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue(mockTours),
       };
 
       mockTourModel.find.mockReturnValue(mockQuery as any);
-      const response = await request(app).get("./api/v1/tours").expect(200);
+      const response = await request(app).get("/api/v1/tours").expect(200);
 
       expect(mockQuery.select).toHaveBeenCalledWith("-__v");
       expect(response.body).toEqual({
@@ -263,16 +297,20 @@ describe("Tour Routes", () => {
 
       const mockQuery = {
         sort: jest.fn().mockReturnThis(),
-        select: jest.fn().mockResolvedValue(mockTours),
+        select: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue(mockTours),
       };
 
       mockTourModel.find.mockReturnValue(mockQuery as any);
 
       const response = await request(app)
-        .get("./api/v1/tours?fields=name")
+        .get("/api/v1/tours?fields=name")
         .expect(200);
 
       expect(mockQuery.select).toHaveBeenCalledWith("name");
+      expect(mockQuery.skip).toHaveBeenCalledWith(0);
+      expect(mockQuery.limit).toHaveBeenCalledWith(20);
       expect(response.body).toEqual({
         status: "success",
         results: 2,
@@ -287,7 +325,9 @@ describe("Tour Routes", () => {
 
       const mockQuery = {
         sort: jest.fn().mockReturnThis(),
-        select: jest.fn().mockResolvedValue(mockTours),
+        select: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue(mockTours),
       };
 
       mockTourModel.find.mockReturnValue(mockQuery as any);
@@ -309,19 +349,191 @@ describe("Tour Routes", () => {
 
       const mockQuery = {
         sort: jest.fn().mockReturnThis(),
-        select: jest.fn().mockResolvedValue(mockTours),
+        select: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue(mockTours),
       };
 
       mockTourModel.find.mockReturnValue(mockQuery as any);
 
       const response = await request(app)
-        .get("./api/v1/tours?fields=-price,-summary")
+        .get("/api/v1/tours?fields=-price,-summary")
         .expect(200);
 
       expect(mockQuery.select).toHaveBeenCalledWith("-price -summary");
+      expect(mockQuery.skip).toHaveBeenCalledWith(0);
+      expect(mockQuery.limit).toHaveBeenCalledWith(20);
       expect(response.body).toEqual({
         status: "success",
-        result: 2,
+        results: 2,
+        data: {
+          tours: mockTours,
+        },
+      });
+    });
+
+    it("should handle pagination with default values", async () => {
+      const mockTours = [
+        { _id: "1", name: "Tour 1", price: 299 },
+        { _id: "2", name: "Tour 2", price: 399 },
+      ];
+
+      const mockQuery = {
+        sort: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue(mockTours),
+      };
+
+      mockTourModel.find.mockReturnValue(mockQuery as any);
+
+      const response = await request(app).get("/api/v1/tours").expect(200);
+
+      expect(mockQuery.skip).toHaveBeenCalledWith(0);
+      expect(mockQuery.limit).toHaveBeenCalledWith(20);
+      expect(response.body).toEqual({
+        status: "success",
+        results: 2,
+        data: {
+          tours: mockTours,
+        },
+      });
+    });
+
+    it("should handle custom pagination", async () => {
+      const mockTours = [
+        { _id: "3", name: "Tour 3", price: 499 },
+        { _id: "4", name: "Tour 4", price: 599 },
+      ];
+
+      const mockQuery = {
+        sort: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue(mockTours),
+      };
+
+      mockTourModel.find.mockReturnValue(mockQuery as any);
+
+      const response = await request(app)
+        .get("/api/v1/tours?page=2&limit=5")
+        .expect(200);
+
+      expect(mockQuery.skip).toHaveBeenCalledWith(5);
+      expect(mockQuery.limit).toHaveBeenCalledWith(5);
+      expect(response.body).toEqual({
+        status: "success",
+        results: 2,
+        data: {
+          tours: mockTours,
+        },
+      });
+    });
+
+    it("should handle page 3 with custom limit", async () => {
+      const mockTours = [{ _id: "11", name: "Tour 11", price: 799 }];
+
+      const mockQuery = {
+        sort: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue(mockTours),
+      };
+
+      mockTourModel.find.mockReturnValue(mockQuery as any);
+
+      const response = await request(app)
+        .get("/api/v1/tours?page=3&limit=10")
+        .expect(200);
+
+      expect(mockQuery.skip).toHaveBeenCalledWith(20);
+      expect(mockQuery.limit).toHaveBeenCalledWith(10);
+      expect(response.body).toEqual({
+        status: "success",
+        results: 1,
+        data: {
+          tours: mockTours,
+        },
+      });
+    });
+
+    it("should handle pagination with page validation", async () => {
+      const mockQuery = {
+        sort: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([]),
+      };
+
+      mockTourModel.find.mockReturnValue(mockQuery as any);
+      mockTourModel.countDocuments.mockResolvedValue(25);
+
+      const response = await request(app)
+        .get("/api/v1/tours?page=5&limit=10")
+        .expect(400);
+
+      expect(mockTourModel.countDocuments).toHaveBeenCalled();
+      expect(response.body).toEqual({
+        status: "error",
+        message: "This page does not exist",
+      });
+    });
+
+    it("should handle pagination combined with filtering and sorting", async () => {
+      const mockTours = [
+        { _id: "1", name: "Easy Tour 1", price: 299, difficulty: "easy" },
+      ];
+
+      const mockQuery = {
+        sort: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue(mockTours),
+      };
+
+      mockTourModel.find.mockReturnValue(mockQuery as any);
+
+      const response = await request(app)
+        .get(
+          "/api/v1/tours?difficulty=easy&sort=price&fields=name,price&page=1&limit=5",
+        )
+        .expect(200);
+
+      expect(mockTourModel.find).toHaveBeenCalledWith({ difficulty: "easy" });
+      expect(mockQuery.sort).toHaveBeenCalledWith("price");
+      expect(mockQuery.select).toHaveBeenCalledWith("name price");
+      expect(mockQuery.skip).toHaveBeenCalledWith(0);
+      expect(mockQuery.limit).toHaveBeenCalledWith(5);
+      expect(response.body).toEqual({
+        status: "success",
+        results: 1,
+        data: {
+          tours: mockTours,
+        },
+      });
+    });
+
+    it("should handle invalid page parameter as default", async () => {
+      const mockTours = [{ _id: "1", name: "Tour 1", price: 299 }];
+
+      const mockQuery = {
+        sort: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue(mockTours),
+      };
+
+      mockTourModel.find.mockReturnValue(mockQuery as any);
+
+      const response = await request(app)
+        .get("/api/v1/tours?page=abc&limit=xyz")
+        .expect(200);
+
+      expect(mockQuery.skip).toHaveBeenCalledWith(0);
+      expect(mockQuery.limit).toHaveBeenCalledWith(20);
+      expect(response.body).toEqual({
+        status: "success",
+        results: 1,
         data: {
           tours: mockTours,
         },
@@ -331,7 +543,9 @@ describe("Tour Routes", () => {
     it("should handle database error", async () => {
       const mockQuery = {
         sort: jest.fn().mockReturnThis(),
-        select: jest.fn().mockRejectedValue(new Error("Database error")),
+        select: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockRejectedValue(new Error("Database error")),
       };
 
       mockTourModel.find.mockReturnValue(mockQuery as any);
