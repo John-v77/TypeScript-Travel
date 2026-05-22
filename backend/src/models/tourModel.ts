@@ -67,6 +67,7 @@ const TourSchema = new Schema<Tour>({
   createdAt: {
     type: Date,
     default: Date.now,
+    select: false,
   },
   startDates: [Date],
 });
