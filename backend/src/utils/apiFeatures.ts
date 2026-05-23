@@ -1,5 +1,4 @@
 import { Query, Model } from "mongoose";
-import { json } from "stream/consumers";
 
 export interface QueryString {
   page?: string;
@@ -70,7 +69,7 @@ export class APIFeatures<T> {
     const limitNo: number = parseInt(this.queryString.limit as string) || 20;
     const skipNo: number = (page - 1) * limitNo;
 
-    this.query = this.queryString.skip(skipNo).limit(limitNo);
+    this.query = this.query.skip(skipNo).limit(limitNo);
     return this;
   }
 }

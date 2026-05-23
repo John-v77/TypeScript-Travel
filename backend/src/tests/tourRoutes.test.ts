@@ -5,6 +5,7 @@ import { TourModel } from "../models/tourModel";
 jest.mock("../models/tourModel");
 
 const mockTourModel = TourModel as jest.Mocked<typeof TourModel>;
+mockTourModel.aggregate = jest.fn();
 
 describe("Tour Routes", () => {
   const app = createServer();
@@ -586,11 +587,11 @@ describe("Tour Routes", () => {
   describe("GET /api/v1/tours/top-5-cheap", () => {
     it("should get top 5 cheap tours successfully", async () => {
       const mockTours = [
-        { _id: "1", name: "Cheap Tour 1", price: 199, ratingAverate: 4.8 },
-        { _id: "2", name: "Cheap Tour 2", price: 249, ratingAverate: 4.7 },
-        { _id: "3", name: "Cheap Tour 3", price: 299, ratingAverate: 4.6 },
-        { _id: "4", name: "Cheap Tour 4", price: 349, ratingAverate: 4.5 },
-        { _id: "5", name: "Cheap Tour 5", price: 399, ratingAverate: 4.4 },
+        { _id: "1", name: "Cheap Tour 1", price: 199, ratingAverage: 4.8 },
+        { _id: "2", name: "Cheap Tour 2", price: 249, ratingAverage: 4.7 },
+        { _id: "3", name: "Cheap Tour 3", price: 299, ratingAverage: 4.6 },
+        { _id: "4", name: "Cheap Tour 4", price: 349, ratingAverage: 4.5 },
+        { _id: "5", name: "Cheap Tour 5", price: 399, ratingAverage: 4.4 },
       ];
 
       const mockQuery = {
@@ -607,9 +608,9 @@ describe("Tour Routes", () => {
         .get("/api/v1/tours/top-5-cheap")
         .expect(200);
 
-      expect(mockQuery.sort).toHaveBeenCalledWith("-ratingAverate price");
+      expect(mockQuery.sort).toHaveBeenCalledWith("-ratingAverage price");
       expect(mockQuery.select).toHaveBeenCalledWith(
-        "name price ratingAverate summary difficulty",
+        "name price ratingAverage summary difficulty",
       );
       expect(mockQuery.skip).toHaveBeenCalledWith(0);
       expect(mockQuery.limit).toHaveBeenCalledWith(5);
@@ -624,8 +625,8 @@ describe("Tour Routes", () => {
 
     it("should handle top-5-cheap with custom fields (middleware overrides)", async () => {
       const mockTours = [
-        { name: "Cheap Tour 1", price: 199, ratingAverate: 4.8 },
-        { name: "Cheap Tour 2", price: 249, ratingAverate: 4.7 },
+        { name: "Cheap Tour 1", price: 199, ratingAverage: 4.8 },
+        { name: "Cheap Tour 2", price: 249, ratingAverage: 4.7 },
       ];
 
       const mockQuery = {
@@ -639,12 +640,12 @@ describe("Tour Routes", () => {
       mockTourModel.find.mockReturnValue(mockQuery as any);
 
       const response = await request(app)
-        .get("/api/v1/tours/top-5-cheap?fields=name,price,ratingAverate")
+        .get("/api/v1/tours/top-5-cheap?fields=name,price,ratingAverage")
         .expect(200);
 
-      expect(mockQuery.sort).toHaveBeenCalledWith("-ratingAverate price");
+      expect(mockQuery.sort).toHaveBeenCalledWith("-ratingAverage price");
       expect(mockQuery.select).toHaveBeenCalledWith(
-        "name price ratingAverate summary difficulty",
+        "name price ratingAverage summary difficulty",
       );
       expect(mockQuery.skip).toHaveBeenCalledWith(0);
       expect(mockQuery.limit).toHaveBeenCalledWith(5);
@@ -663,7 +664,7 @@ describe("Tour Routes", () => {
           _id: "1",
           name: "Easy Cheap Tour",
           price: 199,
-          ratingAverate: 4.8,
+          ratingAverage: 4.8,
           difficulty: "easy",
         },
       ];
@@ -683,9 +684,9 @@ describe("Tour Routes", () => {
         .expect(200);
 
       expect(mockQuery.where).toHaveBeenCalledWith({ difficulty: "easy" });
-      expect(mockQuery.sort).toHaveBeenCalledWith("-ratingAverate price");
+      expect(mockQuery.sort).toHaveBeenCalledWith("-ratingAverage price");
       expect(mockQuery.select).toHaveBeenCalledWith(
-        "name price ratingAverate summary difficulty",
+        "name price ratingAverage summary difficulty",
       );
       expect(mockQuery.skip).toHaveBeenCalledWith(0);
       expect(mockQuery.limit).toHaveBeenCalledWith(5);
@@ -700,7 +701,7 @@ describe("Tour Routes", () => {
 
     it("should override any limit parameter with 5", async () => {
       const mockTours = [
-        { _id: "1", name: "Cheap Tour 1", price: 199, ratingAverate: 4.8 },
+        { _id: "1", name: "Cheap Tour 1", price: 199, ratingAverage: 4.8 },
       ];
 
       const mockQuery = {
@@ -717,9 +718,9 @@ describe("Tour Routes", () => {
         .get("/api/v1/tours/top-5-cheap?limit=100")
         .expect(200);
 
-      expect(mockQuery.sort).toHaveBeenCalledWith("-ratingAverate price");
+      expect(mockQuery.sort).toHaveBeenCalledWith("-ratingAverage price");
       expect(mockQuery.select).toHaveBeenCalledWith(
-        "name price ratingAverate summary difficulty",
+        "name price ratingAverage summary difficulty",
       );
       expect(mockQuery.skip).toHaveBeenCalledWith(0);
       expect(mockQuery.limit).toHaveBeenCalledWith(5);
@@ -734,7 +735,7 @@ describe("Tour Routes", () => {
 
     it("should override any sort parameter with rating and price sort", async () => {
       const mockTours = [
-        { _id: "1", name: "Cheap Tour 1", price: 199, ratingAverate: 4.8 },
+        { _id: "1", name: "Cheap Tour 1", price: 199, ratingAverage: 4.8 },
       ];
 
       const mockQuery = {
@@ -751,9 +752,9 @@ describe("Tour Routes", () => {
         .get("/api/v1/tours/top-5-cheap?sort=name")
         .expect(200);
 
-      expect(mockQuery.sort).toHaveBeenCalledWith("-ratingAverate price");
+      expect(mockQuery.sort).toHaveBeenCalledWith("-ratingAverage price");
       expect(mockQuery.select).toHaveBeenCalledWith(
-        "name price ratingAverate summary difficulty",
+        "name price ratingAverage summary difficulty",
       );
       expect(mockQuery.skip).toHaveBeenCalledWith(0);
       expect(mockQuery.limit).toHaveBeenCalledWith(5);
@@ -783,6 +784,281 @@ describe("Tour Routes", () => {
       expect(response.body).toEqual({
         status: "error",
         message: "Failed to fetch tours",
+      });
+    });
+  });
+
+  describe("GET /api/v1/tours/tour-stats", () => {
+    it("should get tour statistics successfully", async () => {
+      const mockStats = [
+        {
+          _id: "MEDIUM",
+          num: 3,
+          numRatings: 150,
+          avgRating: 4.6,
+          avgPrice: 1200,
+          minPrice: 800,
+          maxPrice: 1600,
+        },
+        {
+          _id: "DIFFICULT",
+          num: 2,
+          numRatings: 100,
+          avgRating: 4.8,
+          avgPrice: 1800,
+          minPrice: 1500,
+          maxPrice: 2100,
+        },
+      ];
+
+      mockTourModel.aggregate.mockResolvedValue(mockStats);
+
+      const response = await request(app)
+        .get("/api/v1/tours/tour-stats")
+        .expect(200);
+
+      expect(mockTourModel.aggregate).toHaveBeenCalledWith([
+        {
+          $group: {
+            _id: { $toUpper: "$difficulty" },
+            num: { $sum: 1 },
+            numRatings: { $sum: "$ratingQuantity" },
+            avgRating: { $avg: "$ratingAverage" },
+            avgPrice: { $avg: "$price" },
+            minPrice: { $min: "$price" },
+            maxPrice: { $max: "$price" },
+          },
+        },
+        { $sort: { avgPrice: 1 } },
+        { $match: { _id: { $ne: "EASY" } } },
+      ]);
+
+      expect(response.body).toEqual({
+        status: "success",
+        data: {
+          stats: mockStats,
+        },
+      });
+    });
+
+    it("should handle database error for tour stats", async () => {
+      mockTourModel.aggregate.mockRejectedValue(new Error("Aggregation error"));
+
+      const response = await request(app)
+        .get("/api/v1/tours/tour-stats")
+        .expect(500);
+
+      expect(response.body).toEqual({
+        status: "error",
+        message: "Failed to get tour statistics",
+      });
+    });
+  });
+
+  describe("GET /api/v1/tours/monthly-plan/:year", () => {
+    it("should get monthly plan for a specific year", async () => {
+      const mockPlan = [
+        {
+          month: 7,
+          numTourStarts: 3,
+          tours: ["Summer Adventure", "Beach Paradise", "Mountain Trek"],
+        },
+        {
+          month: 8,
+          numTourStarts: 2,
+          tours: ["Desert Safari", "City Explorer"],
+        },
+        {
+          month: 6,
+          numTourStarts: 2,
+          tours: ["Spring Hike", "Valley Tour"],
+        },
+      ];
+
+      mockTourModel.aggregate.mockResolvedValue(mockPlan);
+
+      const response = await request(app)
+        .get("/api/v1/tours/monthly-plan/2024")
+        .expect(200);
+
+      expect(mockTourModel.aggregate).toHaveBeenCalledWith([
+        {
+          $unwind: "$startDates",
+        },
+        {
+          $match: {
+            startDates: {
+              $gte: new Date("2024-01-01"),
+              $lte: new Date("2024-12-31"),
+            },
+          },
+        },
+        {
+          $group: {
+            _id: { $month: "$startDates" },
+            numTourStarts: { $sum: 1 },
+            tours: { $push: "$name" },
+          },
+        },
+        {
+          $addFields: { month: "$_id" },
+        },
+        {
+          $project: {
+            _id: 0,
+          },
+        },
+        {
+          $sort: { numTourStarts: -1 },
+        },
+        {
+          $limit: 6,
+        },
+      ]);
+
+      expect(response.body).toEqual({
+        status: "success",
+        data: {
+          plan: mockPlan,
+        },
+      });
+    });
+
+    it("should handle different year parameter", async () => {
+      const mockPlan = [
+        {
+          month: 12,
+          numTourStarts: 1,
+          tours: ["Winter Wonder"],
+        },
+      ];
+
+      mockTourModel.aggregate.mockResolvedValue(mockPlan);
+
+      const response = await request(app)
+        .get("/api/v1/tours/monthly-plan/2023")
+        .expect(200);
+
+      expect(mockTourModel.aggregate).toHaveBeenCalledWith([
+        {
+          $unwind: "$startDates",
+        },
+        {
+          $match: {
+            startDates: {
+              $gte: new Date("2023-01-01"),
+              $lte: new Date("2023-12-31"),
+            },
+          },
+        },
+        {
+          $group: {
+            _id: { $month: "$startDates" },
+            numTourStarts: { $sum: 1 },
+            tours: { $push: "$name" },
+          },
+        },
+        {
+          $addFields: { month: "$_id" },
+        },
+        {
+          $project: {
+            _id: 0,
+          },
+        },
+        {
+          $sort: { numTourStarts: -1 },
+        },
+        {
+          $limit: 6,
+        },
+      ]);
+
+      expect(response.body).toEqual({
+        status: "success",
+        data: {
+          plan: mockPlan,
+        },
+      });
+    });
+
+    it("should handle empty results for monthly plan", async () => {
+      mockTourModel.aggregate.mockResolvedValue([]);
+
+      const response = await request(app)
+        .get("/api/v1/tours/monthly-plan/2025")
+        .expect(200);
+
+      expect(response.body).toEqual({
+        status: "success",
+        data: {
+          plan: [],
+        },
+      });
+    });
+
+    it("should handle database error for monthly plan", async () => {
+      mockTourModel.aggregate.mockRejectedValue(new Error("Aggregation error"));
+
+      const response = await request(app)
+        .get("/api/v1/tours/monthly-plan/2024")
+        .expect(500);
+
+      expect(response.body).toEqual({
+        status: "error",
+        message: "Failed to get monthly plan",
+      });
+    });
+
+    it("should handle invalid year parameter gracefully", async () => {
+      const mockPlan: any[] = [];
+      mockTourModel.aggregate.mockResolvedValue(mockPlan);
+      const currentYear = new Date().getFullYear();
+
+      const response = await request(app)
+        .get("/api/v1/tours/monthly-plan/abc")
+        .expect(200);
+
+      expect(mockTourModel.aggregate).toHaveBeenCalledWith([
+        {
+          $unwind: "$startDates",
+        },
+        {
+          $match: {
+            startDates: {
+              $gte: new Date(`${currentYear}-01-01`),
+              $lte: new Date(`${currentYear}-12-31`),
+            },
+          },
+        },
+        {
+          $group: {
+            _id: { $month: "$startDates" },
+            numTourStarts: { $sum: 1 },
+            tours: { $push: "$name" },
+          },
+        },
+        {
+          $addFields: { month: "$_id" },
+        },
+        {
+          $project: {
+            _id: 0,
+          },
+        },
+        {
+          $sort: { numTourStarts: -1 },
+        },
+        {
+          $limit: 6,
+        },
+      ]);
+
+      expect(response.body).toEqual({
+        status: "success",
+        data: {
+          plan: [],
+        },
       });
     });
   });

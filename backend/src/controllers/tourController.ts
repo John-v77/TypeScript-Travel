@@ -1,8 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { Tour, TourModel } from "../models/tourModel";
-import { Query } from "mongoose";
 import { APIFeatures } from "../utils/apiFeatures";
-import { skip } from "node:test";
 
 export const aliasTopTours = (
   req: Request,
@@ -169,6 +167,100 @@ export const deleteTourPackage = async (
     res.status(500).json({
       status: "error",
       message: "Failed to delete tour",
+    });
+  }
+};
+
+interface TourStats {
+  _id: string;
+  num: number;
+  numRatings: number;
+  avgRating: number;
+  avgPrice: number;
+  minPrice: number;
+  maxPrice: number;
+}
+
+export const getTourStats = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const stats: TourStats[] = await TourModel.aggregate([
+      {
+        $group: {
+          _id: { $toUpper: "$difficulty" },
+          num: { $sum: 1 },
+          numRatings: { $sum: "$ratingQuantity" },
+          avgRating: { $avg: "$ratingAverage" },
+          avgPrice: { $avg: "$price" },
+          minPrice: { $min: "$price" },
+          maxPrice: { $max: "$price" },
+        },
+      },
+      { $sort: { avgPrice: 1 } },
+      { $match: { _id: { $ne: "EASY" } } },
+    ]);
+    res.status(200).json({
+      status: "success",
+      data: { stats },
+    });
+  } catch (err) {
+    res.status(500).json({
+      status: "error",
+      message: "Failed to get tour statistics",
+    });
+  }
+};
+
+interface MonthlyPlan {
+  month: number;
+  numToursStarts: number;
+  tours: string[];
+}
+
+export const getMonthlyPlan = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const year: number =
+      parseInt(req.params.year as string, 10) || new Date().getFullYear();
+
+    const plan: MonthlyPlan[] = await TourModel.aggregate([
+      { $unwind: "$startDates" },
+      {
+        $match: {
+          startDates: {
+            $gte: new Date(`${year}-01-01`),
+            $lte: new Date(`${year}-12-31`),
+          },
+        },
+      },
+      {
+        $group: {
+          _id: { $month: "$startDates" },
+          numTourStarts: { $sum: 1 },
+          tours: { $push: "$name" },
+        },
+      },
+      { $addFields: { month: "$_id" } },
+      {
+        $project: {
+          _id: 0,
+        },
+      },
+      { $sort: { numTourStarts: -1 } },
+      { $limit: 6 },
+    ]);
+    res.status(200).json({
+      status: "success",
+      data: { plan },
+    });
+  } catch (err) {
+    res.status(500).json({
+      status: "error",
+      message: "Failed to get monthly plan",
     });
   }
 };
