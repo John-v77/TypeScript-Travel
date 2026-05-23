@@ -559,6 +559,189 @@ describe("Tour Routes", () => {
     });
   });
 
+  describe("GET /api/v1/tours/top-5-cheap", () => {
+    it("should get top 5 cheap tours successfully", async () => {
+      const mockTours = [
+        { _id: "1", name: "Cheap Tour 1", price: 199, ratingAverage: 4.8 },
+        { _id: "2", name: "Cheap Tour 2", price: 249, ratingAverage: 4.7 },
+        { _id: "3", name: "Cheap Tour 3", price: 299, ratingAverage: 4.6 },
+        { _id: "4", name: "Cheap Tour 4", price: 349, ratingAverage: 4.5 },
+        { _id: "5", name: "Cheap Tour 5", price: 399, ratingAverage: 4.4 },
+      ];
+
+      const mockQuery = {
+        sort: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue(mockTours),
+      };
+
+      mockTourModel.find.mockReturnValue(mockQuery as any);
+
+      const response = await request(app)
+        .get("/api/v1/tours/top-5-cheap")
+        .expect(200);
+
+      expect(mockQuery.sort).toHaveBeenCalledWith("-ratingAverage price");
+      expect(mockQuery.select).toHaveBeenCalledWith("-__v");
+      expect(mockQuery.skip).toHaveBeenCalledWith(0);
+      expect(mockQuery.limit).toHaveBeenCalledWith(5);
+      expect(response.body).toEqual({
+        status: "success",
+        results: 5,
+        data: {
+          tours: mockTours,
+        },
+      });
+    });
+
+    it("should handle top-5-cheap with custom fields", async () => {
+      const mockTours = [
+        { name: "Cheap Tour 1", price: 199, ratingAverage: 4.8 },
+        { name: "Cheap Tour 2", price: 249, ratingAverage: 4.7 },
+      ];
+
+      const mockQuery = {
+        sort: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue(mockTours),
+      };
+
+      mockTourModel.find.mockReturnValue(mockQuery as any);
+
+      const response = await request(app)
+        .get("/api/v1/tours/top-5-cheap?fields=name,price,ratingAverage")
+        .expect(200);
+
+      expect(mockQuery.sort).toHaveBeenCalledWith("-ratingAverage price");
+      expect(mockQuery.select).toHaveBeenCalledWith("name price ratingAverage");
+      expect(mockQuery.skip).toHaveBeenCalledWith(0);
+      expect(mockQuery.limit).toHaveBeenCalledWith(5);
+      expect(response.body).toEqual({
+        status: "success",
+        results: 2,
+        data: {
+          tours: mockTours,
+        },
+      });
+    });
+
+    it("should handle top-5-cheap with additional filters", async () => {
+      const mockTours = [
+        {
+          _id: "1",
+          name: "Easy Cheap Tour",
+          price: 199,
+          ratingAverage: 4.8,
+          difficulty: "easy",
+        },
+      ];
+
+      const mockQuery = {
+        sort: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue(mockTours),
+      };
+
+      mockTourModel.find.mockReturnValue(mockQuery as any);
+
+      const response = await request(app)
+        .get("/api/v1/tours/top-5-cheap?difficulty=easy")
+        .expect(200);
+
+      expect(mockTourModel.find).toHaveBeenCalledWith({ difficulty: "easy" });
+      expect(mockQuery.sort).toHaveBeenCalledWith("-ratingAverage price");
+      expect(mockQuery.select).toHaveBeenCalledWith("-__v");
+      expect(mockQuery.skip).toHaveBeenCalledWith(0);
+      expect(mockQuery.limit).toHaveBeenCalledWith(5);
+      expect(response.body).toEqual({
+        status: "success",
+        results: 1,
+        data: {
+          tours: mockTours,
+        },
+      });
+    });
+
+    it("should override any limit parameter with 5", async () => {
+      const mockTours = [
+        { _id: "1", name: "Cheap Tour 1", price: 199, ratingAverage: 4.8 },
+      ];
+
+      const mockQuery = {
+        sort: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue(mockTours),
+      };
+
+      mockTourModel.find.mockReturnValue(mockQuery as any);
+
+      const response = await request(app)
+        .get("/api/v1/tours/top-5-cheap?limit=100")
+        .expect(200);
+
+      expect(mockQuery.limit).toHaveBeenCalledWith(5);
+      expect(response.body).toEqual({
+        status: "success",
+        results: 1,
+        data: {
+          tours: mockTours,
+        },
+      });
+    });
+
+    it("should override any sort parameter with rating and price sort", async () => {
+      const mockTours = [
+        { _id: "1", name: "Cheap Tour 1", price: 199, ratingAverage: 4.8 },
+      ];
+
+      const mockQuery = {
+        sort: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue(mockTours),
+      };
+
+      mockTourModel.find.mockReturnValue(mockQuery as any);
+
+      const response = await request(app)
+        .get("/api/v1/tours/top-5-cheap?sort=name")
+        .expect(200);
+
+      expect(mockQuery.sort).toHaveBeenCalledWith("-ratingAverage price");
+      expect(response.body).toEqual({
+        status: "success",
+        results: 1,
+        data: {
+          tours: mockTours,
+        },
+      });
+    });
+
+    it("should handle database error for top-5-cheap", async () => {
+      const mockQuery = {
+        sort: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockRejectedValue(new Error("Database error")),
+      };
+
+      mockTourModel.find.mockReturnValue(mockQuery as any);
+
+      const response = await request(app)
+        .get("/api/v1/tours/top-5-cheap")
+        .expect(500);
+
+      expect(response.body).toEqual({
+        status: "error",
+        message: "Failed to fetch tours",
+      });
+    });
+  });
+
   describe("POST /api/v1/tours", () => {
     it("should create a new tour", async () => {
       const tourData = {

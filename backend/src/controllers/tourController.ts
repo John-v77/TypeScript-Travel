@@ -1,6 +1,23 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { Tour, TourModel } from "../models/tourModel";
 import { Query } from "mongoose";
+
+export const aliasTopTours = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void => {
+  try {
+    req.query.limit = "5";
+    req.query.sort = "-ratingAverage,price";
+    next();
+  } catch (err) {
+    res.status(500).json({
+      status: "error",
+      message: "Failed to set top tours parameters",
+    });
+  }
+};
 
 export const getAllTours = async (
   req: Request,
