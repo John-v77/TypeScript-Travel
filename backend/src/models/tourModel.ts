@@ -6,7 +6,7 @@ export interface Tour extends Document {
   duration: number;
   maxGroupSize: string;
   difficulty: string;
-  ratingAverate?: number;
+  ratingAverage?: number;
   ratingQuantity?: number;
   price: number;
   priceDiscount?: number;
@@ -37,7 +37,7 @@ const TourSchema = new Schema<Tour>({
     type: String,
     required: [true, "A tour must have a difficulty"],
   },
-  ratingAverate: {
+  ratingAverage: {
     type: Number,
     default: 4.5,
   },
