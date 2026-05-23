@@ -1,6 +1,8 @@
 import { NextFunction, Request, Response } from "express";
 import { Tour, TourModel } from "../models/tourModel";
 import { Query } from "mongoose";
+import { APIFeatures } from "../utils/apiFeatures";
+import { skip } from "node:test";
 
 export const aliasTopTours = (
   req: Request,
@@ -10,6 +12,7 @@ export const aliasTopTours = (
   try {
     req.query.limit = "5";
     req.query.sort = "-ratingAverage,price";
+    req.query.fields = "name,price,ratingAverage,summary,difficulty";
     next();
   } catch (err) {
     res.status(500).json({
@@ -24,38 +27,10 @@ export const getAllTours = async (
   res: Response,
 ): Promise<void> => {
   try {
-    // Filtering
-    const queryObj: Record<string, any> = { ...req.query };
-    const excludedFields: string[] = ["page", "sort", "limit", "fields"];
-    excludedFields.forEach((el: string) => delete queryObj[el]);
-
-    // Advanced filtering
-    let queryStr: string = JSON.stringify(queryObj);
-    queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
-    let query: Query<Tour[], Tour> = TourModel.find(JSON.parse(queryStr));
-
-    //Sorting
-    if (req.query.sort) {
-      const sortBy: string = (req.query.sort as string).split(",").join(" ");
-      query = query.sort(sortBy);
-    } else {
-      query = query.sort("-createdAt");
-    }
-
-    // Field limiting
-    if (req.query.fields) {
-      const fields: string = (req.query.fields as string).split(",").join(" ");
-      query = query.select(fields);
-    } else {
-      query = query.select("-__v");
-    }
-
-    // Pagination
-    const page: number = parseInt(req.query.page as string) || 1;
-    const limitNo: number = parseInt(req.query.limit as string) || 20;
-    const skipNo: number = (page - 1) * limitNo;
-
     if (req.query.page) {
+      const page: number = parseInt(req.query.page as string) || 1;
+      const limitNo: number = parseInt(req.query.limit as string) || 20;
+      const skipNo: number = (page - 1) * limitNo;
       const numTours: number = await TourModel.countDocuments();
       if (skipNo >= numTours) {
         res.status(400).json({
@@ -66,9 +41,13 @@ export const getAllTours = async (
       }
     }
 
-    query = query.skip(skipNo).limit(limitNo);
+    const features = new APIFeatures<Tour>(TourModel, req.query)
+      .filter()
+      .sort()
+      .limitFields()
+      .paginate();
 
-    const tours: Tour[] = await query;
+    const tours: Tour[] = await features.query;
 
     res.status(200).json({
       status: "success",
