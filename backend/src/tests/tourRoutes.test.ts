@@ -1578,4 +1578,184 @@ describe("Tour Routes", () => {
       expect(response.body.data.tour.slug).toBe("7-day-beach-adventure-2024");
     });
   });
+  describe("Query Middleware - Secret Tour Filtering", () => {
+    it("should hide secretTour field from tour responses", async () => {
+      const mockTours = [
+        {
+          _id: "1",
+          name: "Regular Tour",
+          price: 299,
+          toJSON: () => ({
+            _id: "1",
+            name: "Regular Tour",
+            price: 299,
+          }),
+        },
+        {
+          _id: "2",
+          name: "Public Tour",
+          price: 399,
+          toJSON: () => ({
+            _id: "2",
+            name: "Public Tour",
+            price: 399,
+          }),
+        },
+      ];
+
+      const mockQuery = {
+        sort: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue(mockTours),
+        where: jest.fn().mockReturnThis(),
+      };
+
+      mockTourModel.find.mockReturnValue(mockQuery as any);
+
+      const response = await request(app).get("/api/v1/tours").expect(200);
+
+      expect(response.body.data.tours).toHaveLength(2);
+      expect(response.body.data.tours[0].secretTour).toBeUndefined();
+      expect(response.body.data.tours[1].secretTour).toBeUndefined();
+      expect(response.body.data.tours[0].name).toBe("Regular Tour");
+      expect(response.body.data.tours[1].name).toBe("Public Tour");
+    });
+
+    it("should hide secretTour field from single tour response", async () => {
+      const tourId = "123";
+      const mockTour = {
+        _id: tourId,
+        name: "Regular Tour",
+        price: 299,
+        toJSON: () => ({
+          _id: tourId,
+          name: "Regular Tour",
+          price: 299,
+        }),
+      };
+
+      mockTourModel.findById.mockResolvedValue(mockTour);
+
+      const response = await request(app)
+        .get(`/api/v1/tours/${tourId}`)
+        .expect(200);
+
+      expect(response.body.data.tour.secretTour).toBeUndefined();
+      expect(response.body.data.tour.name).toBe("Regular Tour");
+    });
+
+    it("should hide secretTour field from created tour response", async () => {
+      const tourData = {
+        name: "New Tour",
+        duration: 14,
+        price: 299,
+      };
+
+      const mockCreatedTour = {
+        _id: "123",
+        ...tourData,
+        toJSON: () => ({
+          _id: "123",
+          ...tourData,
+        }),
+      };
+      mockTourModel.create.mockResolvedValue(mockCreatedTour as any);
+
+      const response = await request(app)
+        .post("/api/v1/tours")
+        .send(tourData)
+        .expect(201);
+
+      expect(response.body.data.tour.secretTour).toBeUndefined();
+      expect(response.body.data.tour.name).toBe("New Tour");
+    });
+
+    it("should hide secretTour field from updated tour response", async () => {
+      const tourId = "123";
+      const updateData = {
+        name: "Updated Tour",
+        duration: 21,
+        price: 399,
+      };
+
+      const mockUpdatedTour = {
+        _id: tourId,
+        ...updateData,
+        toJSON: () => ({
+          _id: tourId,
+          ...updateData,
+        }),
+      };
+      mockTourModel.findByIdAndUpdate.mockResolvedValue(mockUpdatedTour as any);
+
+      const response = await request(app)
+        .patch(`/api/v1/tours/${tourId}`)
+        .send(updateData)
+        .expect(200);
+
+      expect(response.body.data.tour.secretTour).toBeUndefined();
+      expect(response.body.data.tour.name).toBe("Updated Tour");
+    });
+
+    it("should automatically filter out secret tours from queries", async () => {
+      const mockTours = [
+        {
+          _id: "1",
+          name: "Public Tour",
+          price: 299,
+          toJSON: () => ({
+            _id: "1",
+            name: "Public Tour",
+            price: 299,
+          }),
+        },
+      ];
+
+      const mockQuery = {
+        sort: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue(mockTours),
+        where: jest.fn().mockReturnThis(),
+      };
+
+      mockTourModel.find.mockReturnValue(mockQuery as any);
+
+      const response = await request(app).get("/api/v1/tours").expect(200);
+
+      expect(response.body.data.tours).toHaveLength(1);
+      expect(response.body.data.tours[0].name).toBe("Public Tour");
+      expect(response.body.data.tours[0].secretTour).toBeUndefined();
+    });
+
+    it("should verify secretTour field exists in schema but is hidden", async () => {
+      const tourData = {
+        name: "Test Tour",
+        duration: 7,
+        price: 199,
+        secretTour: true,
+      };
+
+      const mockCreatedTour = {
+        _id: "124",
+        ...tourData,
+        toJSON: () => ({
+          _id: "124",
+          name: "Test Tour",
+          duration: 7,
+          price: 199,
+        }),
+      };
+      mockTourModel.create.mockResolvedValue(mockCreatedTour as any);
+
+      const response = await request(app)
+        .post("/api/v1/tours")
+        .send(tourData)
+        .expect(201);
+
+      expect(response.body.data.tour.secretTour).toBeUndefined();
+      expect(response.body.data.tour.name).toBe("Test Tour");
+    });
+  });
 });

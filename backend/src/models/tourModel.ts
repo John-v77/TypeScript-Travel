@@ -17,6 +17,7 @@ export interface Tour extends Document {
   images?: string[];
   createdAt?: Date;
   startDates?: Date[];
+  secretTour?: boolean;
   durationWeeks?: number;
 }
 
@@ -74,6 +75,11 @@ const TourSchema = new Schema<Tour>(
       select: false,
     },
     startDates: [Date],
+    secretTour: {
+      type: Boolean,
+      default: false,
+      select: false,
+    },
   },
   {
     toJSON: { virtuals: true },
@@ -87,6 +93,18 @@ TourSchema.virtual("durationWeeks").get(function () {
 
 TourSchema.pre("save", function (next) {
   this.slug = slugify(this.name, { lower: true });
+  next();
+});
+
+TourSchema.pre(/^find/, function (next) {
+  (this as any).find({ secretTour: { $ne: true } });
+  (this as any).start = Date.now();
+  next();
+});
+
+TourSchema.post(/^find/, function (docs, next) {
+  console.log(`Query took ${Date.now() - (this as any).start} milliseconds!`);
+  console.log(docs);
   next();
 });
 export const TourModel = model<Tour>("Tour", TourSchema);
