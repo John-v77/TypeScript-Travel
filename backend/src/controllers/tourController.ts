@@ -99,11 +99,14 @@ export const getTourById = async (
       status: "success",
       data: { tour },
     });
-  } catch (err) {
-    res.status(500).json({
-      status: "error",
-      message: "Failed to fetch tour",
-    });
+  } catch (err: any) {
+    //Handle invalid ObjectId format as "not found"
+    if (err.name === "CastError" || err.kind === "ObjectId") {
+      res.status(404).json({
+        status: "error",
+        message: "Tour not found",
+      });
+    }
   }
 };
 
@@ -136,11 +139,14 @@ export const updateTourPackage = async (
         tour,
       },
     });
-  } catch (err) {
-    res.status(400).json({
-      status: "error",
-      message: "Failed to update tour",
-    });
+  } catch (err: any) {
+    //Handle invalid ObjectId format as "not found"
+    if (err.name === "CastError" || err.kind === "ObjectId") {
+      res.status(404).json({
+        status: "error",
+        message: "Tour not found",
+      });
+    }
   }
 };
 
@@ -163,11 +169,14 @@ export const deleteTourPackage = async (
       status: "success",
       data: null,
     });
-  } catch (err) {
-    res.status(500).json({
-      status: "error",
-      message: "Failed to delete tour",
-    });
+  } catch (err: any) {
+    //Handle invalid ObjectId format as "not found"
+    if (err.name === "CastError" || err.kind === "ObjectId") {
+      res.status(404).json({
+        status: "error",
+        message: "Tour not found",
+      });
+    }
   }
 };
 
