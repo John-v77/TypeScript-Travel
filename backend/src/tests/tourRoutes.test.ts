@@ -1252,4 +1252,155 @@ describe("Tour Routes", () => {
       });
     });
   });
+  describe("Virtual Fields", () => {
+    it("should include virtual field durationWeeks in JSON response for single tour", async () => {
+      const tourId = "123";
+      const mockTour = {
+        _id: tourId,
+        name: "Test Tour",
+        duration: 14,
+        price: 299,
+        toJSON: () => ({
+          _id: tourId,
+          name: "Test Tour",
+          duration: 14,
+          price: 299,
+          durationWeeks: 2,
+        }),
+      };
+
+      mockTourModel.findById.mockResolvedValue(mockTour as any);
+
+      const response = await request(app)
+        .get(`/api/v1/tours/${tourId}`)
+        .expect(200);
+
+      expect(response.body.data.tour.durationWeeks).toBe(2);
+      expect(response.body.data.tour.duration).toBe(14);
+    });
+
+    it("should include virtual field durationWeeks in JSON response for tour list", async () => {
+      const mockTours = [
+        {
+          _id: "1",
+          name: "Tour 1",
+          duration: 7,
+          price: 299,
+          toJSON: () => ({
+            _id: "1",
+            name: "Tour 1",
+            duration: 7,
+            price: 299,
+            durationWeeks: 1,
+          }),
+        },
+        {
+          _id: "2",
+          name: "Tour 2",
+          duration: 21,
+          price: 399,
+          toJSON: () => ({
+            _id: "2",
+            name: "Tour 2",
+            duration: 21,
+            price: 399,
+            durationWeeks: 3,
+          }),
+        },
+      ];
+
+      const mockQuery = {
+        sort: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue(mockTours),
+        where: jest.fn().mockReturnThis(),
+      };
+
+      mockTourModel.find.mockReturnValue(mockQuery as any);
+
+      const response = await request(app).get("/api/v1/tours").expect(200);
+
+      expect(response.body.data.tours[0].durationWeeks).toBe(1);
+      expect(response.body.data.tours[1].durationWeeks).toBe(3);
+    });
+
+    it("should calculate durationWeeks correctly for different durations", async () => {
+      const tourId = "123";
+      const mockTour = {
+        _id: tourId,
+        name: "Test Tour",
+        duration: 10,
+        price: 299,
+        toJSON: () => ({
+          _id: tourId,
+          name: "Test Tour",
+          duration: 10,
+          price: 299,
+          durationWeeks: 10 / 7,
+        }),
+      };
+
+      mockTourModel.findById.mockResolvedValue(mockTour as any);
+
+      const response = await request(app)
+        .get(`/api/v1/tours/${tourId}`)
+        .expect(200);
+
+      expect(response.body.data.tour.durationWeeks).toBeCloseTo(1.43, 2);
+    });
+
+    it("should include virtual field in created tour response", async () => {
+      const tourData = {
+        name: "Test Tour",
+        duration: 14,
+        price: 299,
+      };
+
+      const mockCreatedTour = {
+        _id: "123",
+        ...tourData,
+        toJSON: () => ({
+          _id: "123",
+          ...tourData,
+          durationWeeks: 2,
+        }),
+      };
+      mockTourModel.create.mockResolvedValue(mockCreatedTour as any);
+
+      const response = await request(app)
+        .post("/api/v1/tours")
+        .send(tourData)
+        .expect(201);
+
+      expect(response.body.data.tour.durationWeeks).toBe(2);
+    });
+
+    it("should include virtual field in updated tour response", async () => {
+      const tourId = "123";
+      const updateData = {
+        name: "Updated Tour",
+        duration: 28,
+        price: 399,
+      };
+
+      const mockUpdatedTour = {
+        _id: tourId,
+        ...updateData,
+        toJSON: () => ({
+          _id: tourId,
+          ...updateData,
+          durationWeeks: 4,
+        }),
+      };
+      mockTourModel.findByIdAndUpdate.mockResolvedValue(mockUpdatedTour as any);
+
+      const response = await request(app)
+        .patch(`/api/v1/tours/${tourId}`)
+        .send(updateData)
+        .expect(200);
+
+      expect(response.body.data.tour.durationWeeks).toBe(4);
+    });
+  });
 });
