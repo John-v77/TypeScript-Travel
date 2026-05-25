@@ -1,5 +1,7 @@
 import { Schema, model, Document } from "mongoose";
 import slugify from "slugify";
+import validator from "validator";
+
 // Defines a TypeScript interface for type safety
 export interface Tour extends Document {
   name: string;
@@ -28,6 +30,14 @@ const TourSchema = new Schema<Tour>(
       type: String,
       required: [true, "Add a name for Tours"],
       unique: true,
+      maxlength: [40, "A tour name must have less or equal then 40 characters"],
+      minlength: [10, "A tour name must at least 10 characters"],
+      validate: {
+        validator: function (strName: string) {
+          return validator.isAlpha(strName, "en-US", { ignore: " " });
+        },
+        message: "Tour name must only contain characters and spaces",
+      },
     },
     slug: String,
     duration: {
@@ -45,6 +55,8 @@ const TourSchema = new Schema<Tour>(
     ratingAverage: {
       type: Number,
       default: 4.5,
+      min: [1, "Rating must be above 1.0"],
+      max: [5, "Rating must be below 5.0"],
     },
     ratingQuantity: {
       type: Number,
@@ -116,6 +128,12 @@ TourSchema.pre(/^find/, function (next) {
 TourSchema.post(/^find/, function (docs, next) {
   console.log(`Query took ${Date.now() - (this as any).start} milliseconds!`);
   console.log(docs);
+  next();
+});
+
+TourSchema.pre("aggregate", function (next) {
+  (this as any).pipeline().unshift({ $match: { secretTour: { $ne: true } } });
+  console.log((this as any).pipeline());
   next();
 });
 export const TourModel = model<Tour>("Tour", TourSchema);
