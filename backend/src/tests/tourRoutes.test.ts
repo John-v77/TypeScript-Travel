@@ -1403,4 +1403,179 @@ describe("Tour Routes", () => {
       expect(response.body.data.tour.durationWeeks).toBe(4);
     });
   });
+
+  describe("Document Middleware - Slugify", () => {
+    it("should generate slug when creating a new tour", async () => {
+      const tourData = {
+        name: "The Forest Hiker",
+        duration: 14,
+        price: 299,
+      };
+
+      const mockCreatedTour = {
+        _id: "123",
+        ...tourData,
+        slug: "the-forest-hiker",
+        toJSON: () => ({
+          _id: "123",
+          ...tourData,
+          slug: "the-forest-hiker",
+          durationWeeks: 2,
+        }),
+      };
+      mockTourModel.create.mockResolvedValue(mockCreatedTour as any);
+
+      const response = await request(app)
+        .post("/api/v1/tours")
+        .send(tourData)
+        .expect(201);
+
+      expect(response.body.data.tour.slug).toBe("the-forest-hiker");
+      expect(response.body.data.tour.name).toBe("The Forest Hiker");
+    });
+
+    it("should generate slug with special characters removed", async () => {
+      const tourData = {
+        name: "The Amazing Tour: Adventure & Fun!",
+        duration: 7,
+        price: 199,
+      };
+
+      const mockCreatedTour = {
+        _id: "124",
+        ...tourData,
+        slug: "the-amazing-tour-adventure-fun",
+        toJSON: () => ({
+          _id: "124",
+          ...tourData,
+          slug: "the-amazing-tour-adventure-fun",
+          durationWeeks: 1,
+        }),
+      };
+      mockTourModel.create.mockResolvedValue(mockCreatedTour as any);
+
+      const response = await request(app)
+        .post("/api/v1/tours")
+        .send(tourData)
+        .expect(201);
+
+      expect(response.body.data.tour.slug).toBe(
+        "the-amazing-tour-adventure-fun",
+      );
+    });
+
+    it("should generate slug with spaces converted to hyphens", async () => {
+      const tourData = {
+        name: "Mountain Climbing Experience",
+        duration: 21,
+        price: 599,
+      };
+
+      const mockCreatedTour = {
+        _id: "125",
+        ...tourData,
+        slug: "mountain-climbing-experience",
+        toJSON: () => ({
+          _id: "125",
+          ...tourData,
+          slug: "mountain-climbing-experience",
+          durationWeeks: 3,
+        }),
+      };
+      mockTourModel.create.mockResolvedValue(mockCreatedTour as any);
+
+      const response = await request(app)
+        .post("/api/v1/tours")
+        .send(tourData)
+        .expect(201);
+
+      expect(response.body.data.tour.slug).toBe("mountain-climbing-experience");
+    });
+
+    it("should generate lowercase slug", async () => {
+      const tourData = {
+        name: "EXTREME ADVENTURE TOUR",
+        duration: 10,
+        price: 899,
+      };
+
+      const mockCreatedTour = {
+        _id: "126",
+        ...tourData,
+        slug: "extreme-adventure-tour",
+        toJSON: () => ({
+          _id: "126",
+          ...tourData,
+          slug: "extreme-adventure-tour",
+          durationWeeks: 10 / 7,
+        }),
+      };
+      mockTourModel.create.mockResolvedValue(mockCreatedTour as any);
+
+      const response = await request(app)
+        .post("/api/v1/tours")
+        .send(tourData)
+        .expect(201);
+
+      expect(response.body.data.tour.slug).toBe("extreme-adventure-tour");
+    });
+
+    it("should update slug when tour name is updated", async () => {
+      const tourId = "123";
+      const updateData = {
+        name: "New Adventure Name",
+        duration: 28,
+        price: 399,
+      };
+
+      const mockUpdatedTour = {
+        _id: tourId,
+        ...updateData,
+        slug: "new-adventure-name",
+        toJSON: () => ({
+          _id: tourId,
+          ...updateData,
+          slug: "new-adventure-name",
+          durationWeeks: 4,
+        }),
+      };
+      mockTourModel.findByIdAndUpdate.mockResolvedValue(mockUpdatedTour as any);
+
+      const response = await request(app)
+        .patch(`/api/v1/tours/${tourId}`)
+        .send(updateData)
+        .expect(200);
+
+      expect(response.body.data.tour.slug).toBe("new-adventure-name");
+      expect(response.body.data.tour.name).toBe("New Adventure Name");
+    });
+
+    it("should handle numbers in tour name for slug generation", async () => {
+      const tourData = {
+        name: "7-Day Beach Adventure 2024",
+        duration: 7,
+        price: 299,
+      };
+
+      const mockCreatedTour = {
+        _id: "127",
+        ...tourData,
+        slug: "7-day-beach-adventure-2024",
+        toJSON: () => ({
+          _id: "127",
+          ...tourData,
+          slug: "7-day-beach-adventure-2024",
+          durationWeeks: 1,
+        }),
+      };
+      mockTourModel.create.mockResolvedValue(mockCreatedTour as any);
+
+      const response = await request(app)
+        .post("/api/v1/tours")
+        .send(tourData)
+        .expect(201);
+
+      expect(response.body.data.tour.slug).toBe("7-day-beach-adventure-2024");
+    });
+  });
 });

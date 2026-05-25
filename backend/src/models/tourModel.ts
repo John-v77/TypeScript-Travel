@@ -1,8 +1,9 @@
 import { Schema, model, Document } from "mongoose";
-
+import slugify from "slugify";
 // Defines a TypeScript interface for type safety
 export interface Tour extends Document {
   name: string;
+  slug?: string;
   duration: number;
   maxGroupSize: string;
   difficulty: string;
@@ -27,6 +28,7 @@ const TourSchema = new Schema<Tour>(
       required: [true, "Add a name for Tours"],
       unique: true,
     },
+    slug: String,
     duration: {
       type: Number,
       required: [true, "A tour must have a duration"],
@@ -81,5 +83,10 @@ const TourSchema = new Schema<Tour>(
 
 TourSchema.virtual("durationWeeks").get(function () {
   return this.duration / 7;
+});
+
+TourSchema.pre("save", function (next) {
+  this.slug = slugify(this.name, { lower: true });
+  next();
 });
 export const TourModel = model<Tour>("Tour", TourSchema);
