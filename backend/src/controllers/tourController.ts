@@ -2,6 +2,9 @@ import { NextFunction, Request, Response } from "express";
 import { Tour, TourModel } from "../models/tourModel";
 import { APIFeatures } from "../utils/apiFeatures";
 
+import catchAsync from "../utils/catchAsync";
+import AppError from "../utils/appError";
+
 export const aliasTopTours = (
   req: Request,
   res: Response,
@@ -20,22 +23,16 @@ export const aliasTopTours = (
   }
 };
 
-export const getAllTours = async (
-  req: Request,
-  res: Response,
-): Promise<void> => {
-  try {
+export const getAllTours = catchAsync(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    // Check for page validation if page parameter is provided
     if (req.query.page) {
       const page: number = parseInt(req.query.page as string) || 1;
       const limitNo: number = parseInt(req.query.limit as string) || 20;
       const skipNo: number = (page - 1) * limitNo;
       const numTours: number = await TourModel.countDocuments();
       if (skipNo >= numTours) {
-        res.status(400).json({
-          status: "error",
-          message: "This page does not exist",
-        });
-        return;
+        return next(new AppError("This page does not exist", 400));
       }
     }
 
@@ -52,19 +49,11 @@ export const getAllTours = async (
       results: tours.length,
       data: { tours },
     });
-  } catch (err) {
-    res.status(500).json({
-      status: "error",
-      message: "Failed to fetch tours",
-    });
-  }
-};
+  },
+);
 
-export const createTour = async (
-  req: Request,
-  res: Response,
-): Promise<void> => {
-  try {
+export const createTour = catchAsync(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const newTour: Tour = await TourModel.create(req.body);
     res.status(201).json({
       status: "success",
@@ -72,49 +61,26 @@ export const createTour = async (
         tour: newTour,
       },
     });
-  } catch (err) {
-    res.status(400).json({
-      status: "error",
-      message: "Failed to create tour",
-    });
-  }
-};
+  },
+);
 
-export const getTourById = async (
-  req: Request,
-  res: Response,
-): Promise<void> => {
-  try {
+export const getTourById = catchAsync(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { id } = req.params;
     const tour: Tour | null = await TourModel.findById(id as string);
 
     if (!tour) {
-      res.status(404).json({
-        status: "error",
-        message: "Tour not found",
-      });
-      return;
+      return next(new AppError("Tour not found", 404));
     }
     res.status(200).json({
       status: "success",
       data: { tour },
     });
-  } catch (err: any) {
-    //Handle invalid ObjectId format as "not found"
-    if (err.name === "CastError" || err.kind === "ObjectId") {
-      res.status(404).json({
-        status: "error",
-        message: "Tour not found",
-      });
-    }
-  }
-};
+  },
+);
 
-export const updateTourPackage = async (
-  req: Request,
-  res: Response,
-): Promise<void> => {
-  try {
+export const updateTourPackage = catchAsync(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { id } = req.params;
     const tour: Tour | null = await TourModel.findByIdAndUpdate(
       id as string,
@@ -126,11 +92,7 @@ export const updateTourPackage = async (
     );
 
     if (!tour) {
-      res.status(404).json({
-        status: "error",
-        message: "Tour not found",
-      });
-      return;
+      return next(new AppError("Tour not found", 404));
     }
 
     res.status(200).json({
@@ -139,46 +101,23 @@ export const updateTourPackage = async (
         tour,
       },
     });
-  } catch (err: any) {
-    //Handle invalid ObjectId format as "not found"
-    if (err.name === "CastError" || err.kind === "ObjectId") {
-      res.status(404).json({
-        status: "error",
-        message: "Tour not found",
-      });
-    }
-  }
-};
+  },
+);
 
-export const deleteTourPackage = async (
-  req: Request,
-  res: Response,
-): Promise<void> => {
-  try {
+export const deleteTourPackage = catchAsync(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { id } = req.params;
     const tour: Tour | null = await TourModel.findByIdAndDelete(id);
 
     if (!tour) {
-      res.status(404).json({
-        status: "error",
-        message: "Tour not found",
-      });
-      return;
+      return next(new AppError("Tour not found", 404));
     }
     res.status(204).json({
       status: "success",
       data: null,
     });
-  } catch (err: any) {
-    //Handle invalid ObjectId format as "not found"
-    if (err.name === "CastError" || err.kind === "ObjectId") {
-      res.status(404).json({
-        status: "error",
-        message: "Tour not found",
-      });
-    }
-  }
-};
+  },
+);
 
 interface TourStats {
   _id: string;
@@ -190,11 +129,8 @@ interface TourStats {
   maxPrice: number;
 }
 
-export const getTourStats = async (
-  req: Request,
-  res: Response,
-): Promise<void> => {
-  try {
+export const getTourStats = catchAsync(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const stats: TourStats[] = await TourModel.aggregate([
       {
         $group: {
@@ -214,13 +150,8 @@ export const getTourStats = async (
       status: "success",
       data: { stats },
     });
-  } catch (err) {
-    res.status(500).json({
-      status: "error",
-      message: "Failed to get tour statistics",
-    });
-  }
-};
+  },
+);
 
 interface MonthlyPlan {
   month: number;
@@ -228,11 +159,8 @@ interface MonthlyPlan {
   tours: string[];
 }
 
-export const getMonthlyPlan = async (
-  req: Request,
-  res: Response,
-): Promise<void> => {
-  try {
+export const getMonthlyPlan = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
     const year: number =
       parseInt(req.params.year as string, 10) || new Date().getFullYear();
 
@@ -266,10 +194,5 @@ export const getMonthlyPlan = async (
       status: "success",
       data: { plan },
     });
-  } catch (err) {
-    res.status(500).json({
-      status: "error",
-      message: "Failed to get monthly plan",
-    });
-  }
-};
+  },
+);
