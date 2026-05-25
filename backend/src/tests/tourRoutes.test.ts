@@ -1758,4 +1758,173 @@ describe("Tour Routes", () => {
       expect(response.body.data.tour.name).toBe("Test Tour");
     });
   });
+
+  describe("Price Discount Validation", () => {
+    it("should accept valid discount percentages", async () => {
+      const validDiscounts = [3, 5, 8, 10, 11, 15, 20, 25, 30, 35, 40];
+
+      for (const discount of validDiscounts) {
+        const tourData = {
+          name: `Tour with ${discount}% discount`,
+          duration: 7,
+          price: 299,
+          priceDiscount: discount,
+        };
+
+        const mockCreatedTour = {
+          _id: `123${discount}`,
+          ...tourData,
+          toJSON: () => ({
+            _id: `123${discount}`,
+            ...tourData,
+          }),
+        };
+        mockTourModel.create.mockResolvedValue(mockCreatedTour as any);
+
+        const response = await request(app)
+          .post("/api/v1/tours")
+          .send(tourData)
+          .expect(201);
+
+        expect(response.body.data.tour.priceDiscount).toBe(discount);
+        expect(response.body.data.tour.name).toBe(
+          `Tour with ${discount}% discount`,
+        );
+      }
+    });
+
+    it("should reject invalid discount percentages", async () => {
+      const invalidDiscounts = [
+        1, 2, 4, 6, 7, 9, 12, 13, 14, 16, 18, 22, 28, 33, 37, 45, 50, 100,
+      ];
+
+      for (const discount of invalidDiscounts) {
+        const tourData = {
+          name: `Tour with ${discount}% discount`,
+          duration: 7,
+          price: 299,
+          priceDiscount: discount,
+        };
+
+        mockTourModel.create.mockRejectedValue(new Error("Validation error"));
+
+        const response = await request(app)
+          .post("/api/v1/tours")
+          .send(tourData)
+          .expect(400);
+
+        expect(response.body.status).toBe("error");
+        expect(response.body.message).toBe("Failed to create tour");
+      }
+    });
+
+    it("should allow tours without priceDiscount", async () => {
+      const tourData = {
+        name: "Tour without discount",
+        duration: 7,
+        price: 299,
+      };
+
+      const mockCreatedTour = {
+        _id: "123nodiscount",
+        ...tourData,
+        toJSON: () => ({
+          _id: "123nodiscount",
+          ...tourData,
+        }),
+      };
+      mockTourModel.create.mockResolvedValue(mockCreatedTour as any);
+
+      const response = await request(app)
+        .post("/api/v1/tours")
+        .send(tourData)
+        .expect(201);
+
+      expect(response.body.data.tour.priceDiscount).toBeUndefined();
+      expect(response.body.data.tour.name).toBe("Tour without discount");
+    });
+
+    it("should reject zero discount", async () => {
+      const tourData = {
+        name: "Tour with zero discount",
+        duration: 7,
+        price: 299,
+        priceDiscount: 0,
+      };
+
+      mockTourModel.create.mockRejectedValue(new Error("Validation error"));
+
+      const response = await request(app)
+        .post("/api/v1/tours")
+        .send(tourData)
+        .expect(400);
+
+      expect(response.body.status).toBe("error");
+      expect(response.body.message).toBe("Failed to create tour");
+    });
+
+    it("should reject negative discount", async () => {
+      const tourData = {
+        name: "Tour with negative discount",
+        duration: 7,
+        price: 299,
+        priceDiscount: -5,
+      };
+
+      mockTourModel.create.mockRejectedValue(new Error("Validation error"));
+
+      const response = await request(app)
+        .post("/api/v1/tours")
+        .send(tourData)
+        .expect(400);
+
+      expect(response.body.status).toBe("error");
+      expect(response.body.message).toBe("Failed to create tour");
+    });
+
+    it("should validate discount when updating tour", async () => {
+      const tourId = "123";
+      const updateData = {
+        name: "Updated Tour",
+        priceDiscount: 15,
+      };
+
+      const mockUpdatedTour = {
+        _id: tourId,
+        ...updateData,
+        toJSON: () => ({
+          _id: tourId,
+          ...updateData,
+        }),
+      };
+      mockTourModel.findByIdAndUpdate.mockResolvedValue(mockUpdatedTour as any);
+
+      const response = await request(app)
+        .patch(`/api/v1/tours/${tourId}`)
+        .send(updateData)
+        .expect(200);
+
+      expect(response.body.data.tour.priceDiscount).toBe(15);
+    });
+
+    it("should reject invalid discount when updating tour", async () => {
+      const tourId = "123";
+      const updateData = {
+        name: "Updated Tour",
+        priceDiscount: 17,
+      };
+
+      mockTourModel.findByIdAndUpdate.mockRejectedValue(
+        new Error("Validation error"),
+      );
+
+      const response = await request(app)
+        .patch(`/api/v1/tours/${tourId}`)
+        .send(updateData)
+        .expect(400);
+
+      expect(response.body.status).toBe("error");
+      expect(response.body.message).toBe("Failed to update tour");
+    });
+  });
 });

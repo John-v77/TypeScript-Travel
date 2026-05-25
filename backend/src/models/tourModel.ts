@@ -54,7 +54,18 @@ const TourSchema = new Schema<Tour>(
       type: Number,
       required: [true, "Add price for your package"],
     },
-    priceDiscount: Number,
+    priceDiscount: {
+      type: Number,
+      validate: {
+        validator: function (val: number) {
+          if (val == undefined || val === null) return true;
+          const allowedDiscounts = [3, 5, 8, 10, 11, 15, 20, 25, 30, 35, 40];
+          return allowedDiscounts.includes(val);
+        },
+        message:
+          "Price discount must be one of the following values: 3%, 5%, 8%, 10%, 11%, 15%, 20%, 25%, 30%, 35%, 40%",
+      },
+    },
     summary: {
       type: String,
       trim: true,
