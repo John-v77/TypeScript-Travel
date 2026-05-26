@@ -2,6 +2,7 @@ import express, { Request, Response, NextFunction, response } from "express";
 import morgan from "morgan";
 import cors from "cors";
 import tourRouter from "./routes/tourRoutes";
+import userRouter from "./routes/userRoutes";
 import AppError from "./utils/appError";
 import globalErrorHandler from "./utils/errorController";
 
@@ -15,6 +16,7 @@ export const createServer = () => {
     .use(cors({ origin: "http://localhost:3000" }));
 
   app.use("/api/v1/tours", tourRouter);
+  app.use("api/v1/users", userRouter);
 
   app.get("/health", (req, res) => {
     res.json({ ok: true });
