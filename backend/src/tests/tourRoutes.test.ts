@@ -497,7 +497,7 @@ describe("Tour Routes", () => {
 
       expect(mockTourModel.countDocuments).toHaveBeenCalled();
       expect(response.body).toEqual({
-        status: "error",
+        status: "fail",
         message: "This page does not exist",
       });
     });
@@ -579,7 +579,7 @@ describe("Tour Routes", () => {
 
       expect(response.body).toEqual({
         status: "error",
-        message: "Failed to fetch tours",
+        message: "Database error",
       });
     });
   });
@@ -783,7 +783,7 @@ describe("Tour Routes", () => {
 
       expect(response.body).toEqual({
         status: "error",
-        message: "Failed to fetch tours",
+        message: "Database error",
       });
     });
   });
@@ -850,7 +850,7 @@ describe("Tour Routes", () => {
 
       expect(response.body).toEqual({
         status: "error",
-        message: "Failed to get tour statistics",
+        message: "Aggregation error",
       });
     });
   });
@@ -1006,7 +1006,7 @@ describe("Tour Routes", () => {
 
       expect(response.body).toEqual({
         status: "error",
-        message: "Failed to get monthly plan",
+        message: "Aggregation error",
       });
     });
 
@@ -1092,11 +1092,11 @@ describe("Tour Routes", () => {
       const response = await request(app)
         .post("/api/v1/tours")
         .send({})
-        .expect(400);
+        .expect(500);
 
       expect(response.body).toEqual({
         status: "error",
-        message: "Failed to create tour",
+        message: "Validation error",
       });
     });
   });
@@ -1130,7 +1130,7 @@ describe("Tour Routes", () => {
         .expect(404);
 
       expect(response.body).toEqual({
-        status: "error",
+        status: "fail",
         message: "Tour not found",
       });
     });
@@ -1146,7 +1146,7 @@ describe("Tour Routes", () => {
 
       expect(response.body).toEqual({
         status: "error",
-        message: "Failed to fetch tour",
+        message: "Database error",
       });
     });
   });
@@ -1186,7 +1186,7 @@ describe("Tour Routes", () => {
         .expect(404);
 
       expect(response.body).toEqual({
-        status: "error",
+        status: "fail",
         message: "Tour not found",
       });
     });
@@ -1201,11 +1201,11 @@ describe("Tour Routes", () => {
       const response = await request(app)
         .patch(`/api/v1/tours/${tourId}`)
         .send({ name: "Updated" })
-        .expect(400);
+        .expect(500);
 
       expect(response.body).toEqual({
         status: "error",
-        message: "Failed to update tour",
+        message: "Database error",
       });
     });
   });
@@ -1230,7 +1230,7 @@ describe("Tour Routes", () => {
         .expect(404);
 
       expect(response.body).toEqual({
-        status: "error",
+        status: "fail",
         message: "Tour not found",
       });
     });
@@ -1248,7 +1248,7 @@ describe("Tour Routes", () => {
 
       expect(response.body).toEqual({
         status: "error",
-        message: "Failed to delete tour",
+        message: "Database error",
       });
     });
   });

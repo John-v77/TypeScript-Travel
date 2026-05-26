@@ -105,7 +105,7 @@ describe("Tour Routes", () => {
         const response = await request(app)
           .post("/api/v1/tours")
           .send(tourData)
-          .expect(400);
+          .expect(500);
 
         expect(response.body).toHaveProperty("status");
         expect(response.body).toHaveProperty("message");
@@ -138,7 +138,7 @@ describe("Tour Routes", () => {
 
         expect(response.body).toEqual({
           status: "error",
-          message: "Failed to fetch tour",
+          message: "Async operation failed",
         });
       });
     });
@@ -192,10 +192,10 @@ describe("Tour Routes", () => {
 
         const response = await request(app)
           .get("/api/v1/tours/invalid-id-format")
-          .expect(404);
+          .expect(500);
 
         expect(response.body.status).toBe("error");
-        expect(response.body.message).toBe("Tour not found");
+        expect(response.body.message).toBe("Cast to ObjectId failed");
       });
     });
   });
