@@ -1,7 +1,6 @@
 import request from "supertest";
 import { createServer } from "../server";
 import { UserModel } from "../models/userModel";
-import { exec } from "child_process";
 
 jest.mock("../models/userModel");
 
@@ -416,6 +415,278 @@ describe("User Routes", () => {
         email: "john@example.com",
         password: "wrongpassword",
       };
+    });
+  });
+
+  describe("GET /api/v1/users - getAllUsers", () => {
+    describe("Basic functionality", () => {
+      it("should return all users successfully", async () => {
+        const mockUsers = [
+          {
+            _id: "user1",
+            name: "John Doe",
+            email: "john@example.com",
+            photo: "john.jpg",
+          },
+          {
+            _id: "user2",
+            name: "Jane Smith",
+            email: "jane@example.com",
+            photo: "jane.jpg",
+          },
+        ];
+
+        // Mock the find method chain
+        const mockQuery = {
+          sort: jest.fn().mockReturnThis(),
+          select: jest.fn().mockReturnThis(),
+          skip: jest.fn().mockReturnThis(),
+          limit: jest.fn().mockResolvedValue(mockUsers),
+        };
+
+        mockUserModel.find.mockReturnValue(mockQuery as any);
+
+        const response = await request(app).get("/api/v1/users").expect(200);
+
+        expect(response.body.status).toBe("success");
+        expect(response.body.results).toBe(2);
+        expect(response.body.data.users).toHaveLength(2);
+        expect(response.body.data.users[0].name).toBe("John Doe");
+        expect(response.body.data.users[1].name).toBe("Jane Smith");
+      });
+
+      it("should return empty array when no users exist", async () => {
+        const mockQuery = {
+          sort: jest.fn().mockReturnThis(),
+          select: jest.fn().mockReturnThis(),
+          skip: jest.fn().mockReturnThis(),
+          limit: jest.fn().mockResolvedValue([]),
+        };
+
+        mockUserModel.find.mockReturnValue(mockQuery as any);
+
+        const response = await request(app).get("/api/v1/users").expect(200);
+
+        expect(response.body.status).toBe("success");
+        expect(response.body.results).toBe(0);
+        expect(response.body.data.users).toHaveLength(0);
+      });
+
+      it("should not return password fields", async () => {
+        const mockUsers = [
+          {
+            _id: "user1",
+            name: "John Doe",
+            email: "john@example.com",
+            photo: "john.jpg",
+          },
+        ];
+
+        const mockQuery = {
+          sort: jest.fn().mockReturnThis(),
+          select: jest.fn().mockReturnThis(),
+          skip: jest.fn().mockReturnThis(),
+          limit: jest.fn().mockResolvedValue(mockUsers),
+        };
+
+        mockUserModel.find.mockReturnValue(mockQuery as any);
+
+        const response = await request(app).get("/api/v1/users").expect(200);
+
+        // Verify select was called to exclude password fields
+        expect(mockQuery.select).toHaveBeenCalledWith(
+          "-password -passwordConfirm",
+        );
+
+        // Check response doesn't contain password fields
+        response.body.data.users.forEach((user: any) => {
+          expect(user).not.toHaveProperty("password");
+          expect(user).not.toHaveProperty("passwordConfirm");
+        });
+      });
+    });
+
+    describe("Pagination", () => {
+      it("should handle pagination with default values", async () => {
+        const mockUsers = Array.from({ length: 20 }, (_, i) => ({
+          _id: `user${i + 1}`,
+          name: `User ${i + 1}`,
+          email: `user${i + 1}@example.com`,
+        }));
+
+        const mockQuery = {
+          sort: jest.fn().mockReturnThis(),
+          select: jest.fn().mockReturnThis(),
+          skip: jest.fn().mockReturnThis(),
+          limit: jest.fn().mockResolvedValue(mockUsers),
+        };
+
+        mockUserModel.find.mockReturnValue(mockQuery as any);
+
+        const response = await request(app).get("/api/v1/users").expect(200);
+
+        // Verify default pagination: page 1, limit 20
+        expect(mockQuery.skip).toHaveBeenCalledWith(0);
+        expect(mockQuery.limit).toHaveBeenCalledWith(20);
+        expect(response.body.results).toBe(20);
+      });
+
+      it("should handle custom page and limit", async () => {
+        const mockUsers = Array.from({ length: 10 }, (_, i) => ({
+          _id: `user${i + 21}`,
+          name: `User ${i + 21}`,
+          email: `user${i + 21}@example.com`,
+        }));
+
+        const mockQuery = {
+          sort: jest.fn().mockReturnThis(),
+          select: jest.fn().mockReturnThis(),
+          skip: jest.fn().mockReturnThis(),
+          limit: jest.fn().mockResolvedValue(mockUsers),
+        };
+
+        mockUserModel.find.mockReturnValue(mockQuery as any);
+
+        const response = await request(app)
+          .get("/api/v1/users?page=3&limit=10")
+          .expect(200);
+
+        // Page 3 with limit 10 should skip 20 users
+        expect(mockQuery.skip).toHaveBeenCalledWith(20);
+        expect(mockQuery.limit).toHaveBeenCalledWith(10);
+        expect(response.body.results).toBe(10);
+      });
+
+      it("should handle invalid page numbers gracefully", async () => {
+        const mockUsers = [
+          { _id: "user1", name: "User 1", email: "user1@example.com" },
+        ];
+
+        const mockQuery = {
+          sort: jest.fn().mockReturnThis(),
+          select: jest.fn().mockReturnThis(),
+          skip: jest.fn().mockReturnThis(),
+          limit: jest.fn().mockResolvedValue(mockUsers),
+        };
+
+        mockUserModel.find.mockReturnValue(mockQuery as any);
+
+        const response = await request(app)
+          .get("/api/v1/users?page=0&limit=-5")
+          .expect(200);
+
+        // Invalid values should default to page 1, limit 20
+        expect(mockQuery.skip).toHaveBeenCalledWith(0);
+        expect(mockQuery.limit).toHaveBeenCalledWith(20);
+      });
+    });
+
+    describe("Sorting", () => {
+      it("should sort by createdAt in descending order by default", async () => {
+        const mockUsers = [
+          { _id: "user1", name: "User 1", email: "user1@example.com" },
+        ];
+
+        const mockQuery = {
+          sort: jest.fn().mockReturnThis(),
+          select: jest.fn().mockReturnThis(),
+          skip: jest.fn().mockReturnThis(),
+          limit: jest.fn().mockResolvedValue(mockUsers),
+        };
+
+        mockUserModel.find.mockReturnValue(mockQuery as any);
+
+        await request(app).get("/api/v1/users").expect(200);
+
+        expect(mockQuery.sort).toHaveBeenCalledWith("-createdAt");
+      });
+
+      it("should handle custom sorting", async () => {
+        const mockUsers = [
+          { _id: "user1", name: "User 1", email: "user1@example.com" },
+        ];
+
+        const mockQuery = {
+          sort: jest.fn().mockReturnThis(),
+          select: jest.fn().mockReturnThis(),
+          skip: jest.fn().mockReturnThis(),
+          limit: jest.fn().mockResolvedValue(mockUsers),
+        };
+
+        mockUserModel.find.mockReturnValue(mockQuery as any);
+
+        await request(app).get("/api/v1/users?sort=name,-email").expect(200);
+
+        expect(mockQuery.sort).toHaveBeenCalledWith("name -email");
+      });
+    });
+
+    describe("Field selection", () => {
+      it("should handle custom field selection", async () => {
+        const mockUsers = [
+          { _id: "user1", name: "User 1", email: "user1@example.com" },
+        ];
+
+        const mockQuery = {
+          sort: jest.fn().mockReturnThis(),
+          select: jest.fn().mockReturnThis(),
+          skip: jest.fn().mockReturnThis(),
+          limit: jest.fn().mockResolvedValue(mockUsers),
+        };
+
+        mockUserModel.find.mockReturnValue(mockQuery as any);
+
+        await request(app).get("/api/v1/users?fields=name,email").expect(200);
+
+        // Should include custom fields but always exclude passwords for security
+        expect(mockQuery.select).toHaveBeenCalledWith(
+          "name email -password -passwordConfirm",
+        );
+      });
+
+      it("should exclude password fields even when not specified in fields", async () => {
+        const mockUsers = [
+          { _id: "user1", name: "User 1", email: "user1@example.com" },
+        ];
+
+        const mockQuery = {
+          sort: jest.fn().mockReturnThis(),
+          select: jest.fn().mockReturnThis(),
+          skip: jest.fn().mockReturnThis(),
+          limit: jest.fn().mockResolvedValue(mockUsers),
+        };
+
+        mockUserModel.find.mockReturnValue(mockQuery as any);
+
+        await request(app)
+          .get("/api/v1/users?fields=name,email,password")
+          .expect(200);
+
+        // Should still exclude password even if requested for security
+        expect(mockQuery.select).toHaveBeenCalledWith(
+          "name email password -password -passwordConfirm",
+        );
+      });
+    });
+
+    describe("Error handling", () => {
+      it("should handle database errors gracefully", async () => {
+        const mockQuery = {
+          sort: jest.fn().mockReturnThis(),
+          select: jest.fn().mockReturnThis(),
+          skip: jest.fn().mockReturnThis(),
+          limit: jest
+            .fn()
+            .mockRejectedValue(new Error("Database connection failed")),
+        };
+
+        mockUserModel.find.mockReturnValue(mockQuery as any);
+
+        const response = await request(app).get("/api/v1/users").expect(500);
+
+        expect(response.body.status).toBe("error");
+        expect(response.body.message).toContain("Database connection failed");
+      });
     });
   });
 });
