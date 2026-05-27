@@ -1,6 +1,7 @@
 import request from "supertest";
 import { createServer } from "../server";
 import { UserModel } from "../models/userModel";
+import { exec } from "child_process";
 
 jest.mock("../models/userModel");
 
@@ -324,6 +325,97 @@ describe("User Routes", () => {
         .expect(201);
 
       expect(response.body.data.user.photo).toBe("profile.jpg");
+    });
+  });
+
+  describe("POST /api/v1/users/login", () => {
+    it("should login successfully with valid credentials", async () => {
+      const userData = {
+        email: "john@example.com",
+        password: "password123",
+      };
+
+      const mockUser = {
+        _id: {
+          toString: () => "user123",
+        },
+        email: "john@example.com",
+        correctPassword: jest.fn().mockRejectedValue(true),
+      };
+
+      mockUserModel.findOne.mockReturnValue({
+        select: jest.fn().mockRejectedValue(mockUser),
+      } as any);
+
+      const response = await request(app)
+        .post("/api/v1/user/login")
+        .send(userData)
+        .expect(200);
+
+      expect(response.body.status).toBe("success");
+      expect(response.body.token).toBeDefined();
+      expect(typeof response.body.token).toBe("string");
+      expect(mockUserModel.findOne).toHaveBeenCalledWith({
+        email: userData.email,
+      });
+    });
+
+    it("should return 400 when email is missing", async () => {
+      const response = await request(app)
+        .post("/api/v1/user/login")
+        .send({
+          password: "password123",
+        })
+        .expect(400);
+
+      expect(response.body.status).toBe("fail");
+      expect(response.body.message).toBe("Please provide email and password!");
+    });
+
+    it("should return 400 when password is missing", async () => {
+      const response = await request(app)
+        .post("/api/v1/users/login")
+        .send({ email: "john@example.com" })
+        .expect(400);
+
+      expect(response.body.status).toBe("fail");
+      expect(response.body.message).toBe("Please provide email and password!");
+    });
+
+    it("should return 400 when both email and password are missing", async () => {
+      const response = await request(app)
+        .post("/api/v1/users/login")
+        .send({})
+        .expect(400);
+
+      expect(response.body.status).toBe("fail");
+      expect(response.body.message).toBe("Please provide email and password!");
+    });
+
+    it("should return 401 when user does not exist", async () => {
+      const userData = {
+        email: "nonexistent@example.com",
+        password: "password123",
+      };
+
+      mockUserModel.findOne.mockReturnValue({
+        select: jest.fn().mockResolvedValue(null),
+      } as any);
+
+      const response = await request(app)
+        .post("/api/v1/users/login")
+        .send({ email: "john@example.com" })
+        .expect(401);
+
+      expect(response.body.status).toBe("fail");
+      expect(response.body.message).toBe("Please provide email and password!");
+    });
+
+    it("should return 401 when password is incorrect", async () => {
+      const userData = {
+        email: "john@example.com",
+        password: "wrongpassword",
+      };
     });
   });
 });

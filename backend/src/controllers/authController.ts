@@ -1,7 +1,12 @@
 import { NextFunction, Request, Response } from "express";
 import catchAsync from "../utils/catchAsync";
 import { User, UserModel } from "../models/userModel";
-import jwt, { SignOptions } from "jsonwebtoken";
+import jwt, { SignOptions, JwtPayload } from "jsonwebtoken";
+
+import AppError from "../utils/appError";
+interface AuthenticatedRequest extends Request {
+  user?: User;
+}
 
 export const signToken = (id: string): string => {
   if (!process.env.JWT_SECRET) {
@@ -33,6 +38,28 @@ export const signup = catchAsync(
       data: {
         user: newUser,
       },
+    });
+  },
+);
+
+export const login = catchAsync(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return next(new AppError("Please provide email and password!", 400));
+    }
+
+    const user = await UserModel.findOne({ email }).select("+password");
+
+    if (!user || !(await user.correctPassword(password, user.password))) {
+      return next(new AppError("Incorrect email or password", 401));
+    }
+
+    const token = signToken((user._id as any).toString());
+    res.status(200).json({
+      status: "success",
+      token,
     });
   },
 );
