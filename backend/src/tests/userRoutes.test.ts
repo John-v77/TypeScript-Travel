@@ -1294,4 +1294,360 @@ describe("User Routes", () => {
       expect(tokenParts).toHaveLength(3);
     });
   });
+
+  describe("PATCH /api/v1/users/updateMyPassword - updatePassword", () => {
+    beforeEach(() => {
+      // Mock the protect middleware to add user to request
+      mockAuthController.protect.mockImplementation(
+        (req: any, res: any, next: any) => {
+          req.user = { _id: "user123" };
+          next();
+        },
+      );
+    });
+
+    it("should update password successfully with correct current password", async () => {
+      const passwordData = {
+        passwordCurrent: "currentPassword123",
+        password: "newPassword123",
+        passwordConfirm: "newPassword123",
+      };
+
+      const mockUser = {
+        _id: "user123",
+        email: "user@example.com",
+        password: "hashedCurrentPassword",
+        correctPassword: jest.fn().mockResolvedValue(true),
+        save: jest.fn().mockResolvedValue(true),
+      } as any;
+
+      // Mock user selection with password
+      const mockQuery = {
+        select: jest.fn().mockResolvedValue(mockUser),
+      };
+      mockUserModel.findById.mockReturnValue(mockQuery as any);
+
+      const response = await request(app)
+        .patch("/api/v1/users/updateMyPassword")
+        .set("Authorization", "Bearer valid-jwt-token")
+        .send(passwordData)
+        .expect(200);
+
+      // Verify the database query with password selection
+      expect(mockUserModel.findById).toHaveBeenCalledWith("user123");
+      expect(mockQuery.select).toHaveBeenCalledWith("+password");
+
+      // Verify current password check
+      expect(mockUser.correctPassword).toHaveBeenCalledWith(
+        "currentPassword123",
+        "hashedCurrentPassword",
+      );
+
+      // Verify new password was set
+      expect(mockUser.password).toBe("newPassword123");
+      expect(mockUser.passwordConfirm).toBe("newPassword123");
+      expect(mockUser.save).toHaveBeenCalled();
+
+      // Verify response
+      expect(response.body.status).toBe("success");
+      expect(response.body.token).toBeDefined();
+      expect(response.body.data.user._id).toBe(mockUser._id);
+      expect(response.body.data.user.email).toBe(mockUser.email);
+    });
+
+    it("should return 401 for incorrect current password", async () => {
+      const passwordData = {
+        passwordCurrent: "wrongCurrentPassword",
+        password: "newPassword123",
+        passwordConfirm: "newPassword123",
+      };
+
+      const mockUser = {
+        _id: "user123",
+        email: "user@example.com",
+        password: "hashedCurrentPassword",
+        correctPassword: jest.fn().mockResolvedValue(false),
+      } as any;
+
+      const mockQuery = {
+        select: jest.fn().mockResolvedValue(mockUser),
+      };
+      mockUserModel.findById.mockReturnValue(mockQuery as any);
+
+      const response = await request(app)
+        .patch("/api/v1/users/updateMyPassword")
+        .set("Authorization", "Bearer valid-jwt-token")
+        .send(passwordData)
+        .expect(401);
+
+      expect(response.body.status).toBe("fail");
+      expect(response.body.message).toBe("Your current password is wrong.");
+      expect(mockUser.correctPassword).toHaveBeenCalledWith(
+        "wrongCurrentPassword",
+        "hashedCurrentPassword",
+      );
+    });
+
+    it("should require authentication", async () => {
+      // Mock protect to reject authentication
+      mockAuthController.protect.mockImplementation(
+        (req: any, res: any, next: any) => {
+          res.status(401).json({
+            status: "fail",
+            message: "You are not logged in! Please log in to get access.",
+          });
+        },
+      );
+
+      const response = await request(app)
+        .patch("/api/v1/users/updateMyPassword")
+        .send({
+          passwordCurrent: "current123",
+          password: "new123",
+          passwordConfirm: "new123",
+        })
+        .expect(401);
+
+      expect(response.body.status).toBe("fail");
+      expect(response.body.message).toContain("You are not logged in");
+    });
+
+    it("should handle missing passwordCurrent field", async () => {
+      const passwordData = {
+        password: "newPassword123",
+        passwordConfirm: "newPassword123",
+      };
+
+      const mockUser = {
+        _id: "user123",
+        correctPassword: jest.fn().mockResolvedValue(true),
+        save: jest
+          .fn()
+          .mockRejectedValue(new Error("Current password is required")),
+      } as any;
+
+      const mockQuery = {
+        select: jest.fn().mockResolvedValue(mockUser),
+      };
+      mockUserModel.findById.mockReturnValue(mockQuery as any);
+
+      const response = await request(app)
+        .patch("/api/v1/users/updateMyPassword")
+        .set("Authorization", "Bearer valid-jwt-token")
+        .send(passwordData)
+        .expect(500);
+
+      expect(response.body.status).toBe("error");
+      expect(response.body.message).toBe("Current password is required");
+    });
+
+    it("should handle missing new password field", async () => {
+      const passwordData = {
+        passwordCurrent: "currentPassword123",
+        passwordConfirm: "newPassword123",
+      };
+
+      const mockUser = {
+        _id: "user123",
+        password: "hashedCurrentPassword",
+        correctPassword: jest.fn().mockResolvedValue(true),
+        save: jest
+          .fn()
+          .mockRejectedValue(new Error("Please provide a password")),
+      } as any;
+
+      const mockQuery = {
+        select: jest.fn().mockResolvedValue(mockUser),
+      };
+      mockUserModel.findById.mockReturnValue(mockQuery as any);
+
+      const response = await request(app)
+        .patch("/api/v1/users/updateMyPassword")
+        .set("Authorization", "Bearer valid-jwt-token")
+        .send(passwordData)
+        .expect(500);
+
+      expect(response.body.status).toBe("error");
+      expect(response.body.message).toBe("Please provide a password");
+    });
+
+    it("should handle password confirmation mismatch", async () => {
+      const passwordData = {
+        passwordCurrent: "currentPassword123",
+        password: "newPassword123",
+        passwordConfirm: "differentPassword123",
+      };
+
+      const mockUser = {
+        _id: "user123",
+        password: "hashedCurrentPassword",
+        correctPassword: jest.fn().mockResolvedValue(true),
+        save: jest
+          .fn()
+          .mockRejectedValue(new Error("Passwords are not the same!")),
+      } as any;
+
+      const mockQuery = {
+        select: jest.fn().mockResolvedValue(mockUser),
+      };
+      mockUserModel.findById.mockReturnValue(mockQuery as any);
+
+      const response = await request(app)
+        .patch("/api/v1/users/updateMyPassword")
+        .set("Authorization", "Bearer valid-jwt-token")
+        .send(passwordData)
+        .expect(500);
+
+      expect(response.body.status).toBe("error");
+      expect(response.body.message).toBe("Passwords are not the same!");
+    });
+
+    it("should handle password too short validation", async () => {
+      const passwordData = {
+        passwordCurrent: "currentPassword123",
+        password: "123",
+        passwordConfirm: "123",
+      };
+
+      const mockUser = {
+        _id: "user123",
+        password: "hashedCurrentPassword",
+        correctPassword: jest.fn().mockResolvedValue(true),
+        save: jest
+          .fn()
+          .mockRejectedValue(
+            new Error("Password must be at least 8 characters long"),
+          ),
+      } as any;
+
+      const mockQuery = {
+        select: jest.fn().mockResolvedValue(mockUser),
+      };
+      mockUserModel.findById.mockReturnValue(mockQuery as any);
+
+      const response = await request(app)
+        .patch("/api/v1/users/updateMyPassword")
+        .set("Authorization", "Bearer valid-jwt-token")
+        .send(passwordData)
+        .expect(500);
+
+      expect(response.body.status).toBe("error");
+      expect(response.body.message).toBe(
+        "Password must be at least 8 characters long",
+      );
+    });
+
+    it("should handle database errors gracefully", async () => {
+      const passwordData = {
+        passwordCurrent: "currentPassword123",
+        password: "newPassword123",
+        passwordConfirm: "newPassword123",
+      };
+
+      const mockQuery = {
+        select: jest
+          .fn()
+          .mockRejectedValue(new Error("Database connection failed")),
+      };
+      mockUserModel.findById.mockReturnValue(mockQuery as any);
+
+      const response = await request(app)
+        .patch("/api/v1/users/updateMyPassword")
+        .set("Authorization", "Bearer valid-jwt-token")
+        .send(passwordData)
+        .expect(500);
+
+      expect(response.body.status).toBe("error");
+      expect(response.body.message).toBe("Database connection failed");
+    });
+
+    it("should handle user not found error", async () => {
+      const passwordData = {
+        passwordCurrent: "currentPassword123",
+        password: "newPassword123",
+        passwordConfirm: "newPassword123",
+      };
+
+      const mockQuery = {
+        select: jest.fn().mockResolvedValue(null),
+      };
+      mockUserModel.findById.mockReturnValue(mockQuery as any);
+
+      const response = await request(app)
+        .patch("/api/v1/users/updateMyPassword")
+        .set("Authorization", "Bearer valid-jwt-token")
+        .send(passwordData)
+        .expect(500);
+
+      expect(response.body.status).toBe("error");
+    });
+
+    it("should return JWT token and user data after successful password update", async () => {
+      const passwordData = {
+        passwordCurrent: "currentPassword123",
+        password: "newPassword123",
+        passwordConfirm: "newPassword123",
+      };
+
+      const mockUser = {
+        _id: "user123",
+        name: "Test User",
+        email: "user@example.com",
+        password: "hashedCurrentPassword",
+        correctPassword: jest.fn().mockResolvedValue(true),
+        save: jest.fn().mockResolvedValue(true),
+      } as any;
+
+      const mockQuery = {
+        select: jest.fn().mockResolvedValue(mockUser),
+      };
+      mockUserModel.findById.mockReturnValue(mockQuery as any);
+
+      const response = await request(app)
+        .patch("/api/v1/users/updateMyPassword")
+        .set("Authorization", "Bearer valid-jwt-token")
+        .send(passwordData)
+        .expect(200);
+
+      expect(response.body.status).toBe("success");
+      expect(response.body.token).toBeDefined();
+      expect(typeof response.body.token).toBe("string");
+      expect(response.body.data.user._id).toBe(mockUser._id);
+      expect(response.body.data.user.email).toBe(mockUser.email);
+      expect(response.body.data.user.name).toBe(mockUser.name);
+
+      // JWT token should be a valid format (3 parts separated by dots)
+      const tokenParts = response.body.token.split(".");
+      expect(tokenParts).toHaveLength(3);
+    });
+
+    it("should call save() without validateBeforeSave option", async () => {
+      const passwordData = {
+        passwordCurrent: "currentPassword123",
+        password: "newPassword123",
+        passwordConfirm: "newPassword123",
+      };
+
+      const mockUser = {
+        _id: "user123",
+        password: "hashedCurrentPassword",
+        correctPassword: jest.fn().mockResolvedValue(true),
+        save: jest.fn().mockResolvedValue(true),
+      } as any;
+
+      const mockQuery = {
+        select: jest.fn().mockResolvedValue(mockUser),
+      };
+      mockUserModel.findById.mockReturnValue(mockQuery as any);
+
+      await request(app)
+        .patch("/api/v1/users/updateMyPassword")
+        .set("Authorization", "Bearer valid-jwt-token")
+        .send(passwordData)
+        .expect(200);
+
+      // Should call save without any options (default validation applies)
+      expect(mockUser.save).toHaveBeenCalledWith();
+    });
+  });
 });

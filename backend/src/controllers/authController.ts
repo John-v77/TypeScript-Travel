@@ -6,6 +6,7 @@ import { promisify } from "util";
 import crypto from "crypto";
 import AppError from "../utils/appError";
 import { filterObj } from "../utils";
+
 interface AuthenticatedRequest extends Request {
   user?: User;
 }
@@ -18,6 +19,20 @@ export const signToken = (id: string): string => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || "7d",
   } as SignOptions);
+};
+
+const createSendToken = (
+  user: User,
+  statusCode: number,
+  res: Response,
+): void => {
+  const token = signToken((user._id as any).toString());
+
+  res.status(statusCode).json({
+    status: "success",
+    token,
+    data: { user },
+  });
 };
 
 export const signup = catchAsync(
@@ -205,5 +220,30 @@ export const resetPassword = catchAsync(
       status: "success",
       token,
     });
+  },
+);
+
+export const updatePassword = catchAsync(
+  async (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    // 1) Get user from collection
+    const user = await UserModel.findById(req.user!._id).select("+password");
+    // 2) Check if POSTed current password is correct
+    if (
+      !(await user!.correctPassword(req.body.passwordCurrent, user!.password))
+    ) {
+      return next(new AppError("Your current password is wrong", 401));
+    }
+    // 3) If so, update password
+
+    user!.password = req.body.password;
+    user!.passwordConfirm = req.body.passwordConfirm;
+    await user!.save();
+
+    // 4) Log user in, send JWT
+    createSendToken(user!, 200, res);
   },
 );

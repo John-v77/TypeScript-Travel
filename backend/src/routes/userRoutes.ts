@@ -11,6 +11,11 @@ router.route("/login").post(authController.login);
 router.patch("/resetPassword/:token", authController.resetPassword);
 
 // Protected routes
+router.patch(
+  "/updateMyPassword",
+  authController.protect,
+  authController.updatePassword,
+);
 router.patch("/updateMe", authController.protect, authController.updateUser);
 router.delete("/deleteMe", authController.protect, authController.deleteUser);
 
