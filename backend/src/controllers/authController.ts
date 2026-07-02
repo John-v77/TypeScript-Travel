@@ -1,10 +1,10 @@
-import { NextFunction, Request, Response } from "express";
-import catchAsync from "../utils/catchAsync";
+import { Request, Response, NextFunction } from "express";
 import { User, UserModel } from "../models/userModel";
 import jwt, { SignOptions, JwtPayload } from "jsonwebtoken";
-
-import AppError from "../utils/appError";
+import catchAsync from "../utils/catchAsync";
 import { promisify } from "util";
+import crypto from "crypto";
+import AppError from "../utils/appError";
 import { filterObj } from "../utils";
 interface AuthenticatedRequest extends Request {
   user?: User;
@@ -169,6 +169,41 @@ export const updateUser = catchAsync(
       data: {
         user: updateUser,
       },
+    });
+  },
+);
+
+export const resetPassword = catchAsync(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    // 1)Get user based on token
+
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(req.params.token as string)
+      .digest("hex");
+
+    const user = await UserModel.findOne({
+      passwordResetToken: hashedToken,
+      passwordResetExpires: { $gt: Date.now() },
+    });
+
+    // 2) If token has not expired, and there is user, set the new password
+    if (!user) {
+      return next(new AppError("Token is invalid or has expired", 400));
+    }
+
+    user.password = req.body.password;
+    user.passwordConfirm = req.body.passwordConfirm;
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save({ validateBeforeSave: false });
+
+    // 3) Update changePasswordAt property for the user(done in middleware)*
+    // 4) Log the user in, send JWT
+    const token = signToken((user._id as any).toString());
+    res.status(200).json({
+      status: "success",
+      token,
     });
   },
 );

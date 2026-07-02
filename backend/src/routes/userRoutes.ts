@@ -8,6 +8,7 @@ const router = express.Router();
 // Authentication routes
 router.route("/signup").post(authController.signup);
 router.route("/login").post(authController.login);
+router.patch("/resetPassword/:token", authController.resetPassword);
 
 // Protected routes
 router.patch("/updateMe", authController.protect, authController.updateUser);

@@ -2,6 +2,7 @@ import request from "supertest";
 import { createServer } from "../server";
 import { UserModel } from "../models/userModel";
 import * as authController from "../controllers/authController";
+import crypto from "crypto";
 jest.mock("../models/userModel");
 jest.mock("../controllers/authController", () => ({
   ...jest.requireActual("../controllers/authController"),
@@ -1002,6 +1003,295 @@ describe("User Routes", () => {
       );
 
       expect(response.body.data.user.email).toBe("newemail@example.com");
+    });
+  });
+
+  describe("PATCH /api/v1/users/resetPassword/:token - resetPassword", () => {
+    const validToken = "validresettoken123";
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(validToken)
+      .digest("hex");
+
+    it("should reset password successfully with valid token", async () => {
+      const resetData = {
+        password: "newPassword123",
+        passwordConfirm: "newPassword123",
+      };
+
+      const mockUser = {
+        _id: "user123",
+        email: "user@example.com",
+        passwordResetToken: hashedToken,
+        passwordResetExpires: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes from now
+        password: "oldHashedPassword",
+        passwordConfirm: undefined,
+        save: jest.fn().mockResolvedValue(true),
+      } as any;
+
+      mockUserModel.findOne.mockResolvedValue(mockUser);
+
+      const response = await request(app)
+        .patch(`/api/v1/users/resetPassword/${validToken}`)
+        .send(resetData)
+        .expect(200);
+
+      // Verify the database query
+      expect(mockUserModel.findOne).toHaveBeenCalledWith({
+        passwordResetToken: hashedToken,
+        passwordResetExpires: { $gt: expect.any(Number) },
+      });
+
+      // Verify password was set and reset fields cleared
+      expect(mockUser.password).toBe("newPassword123");
+      expect(mockUser.passwordConfirm).toBe("newPassword123");
+      expect(mockUser.passwordResetToken).toBeUndefined();
+      expect(mockUser.passwordResetExpires).toBeUndefined();
+      expect(mockUser.save).toHaveBeenCalledWith({ validateBeforeSave: false });
+
+      // Verify response
+      expect(response.body.status).toBe("success");
+      expect(response.body.token).toBeDefined();
+      expect(typeof response.body.token).toBe("string");
+    });
+
+    it("should return 400 for invalid token", async () => {
+      const resetData = {
+        password: "newPassword123",
+        passwordConfirm: "newPassword123",
+      };
+
+      mockUserModel.findOne.mockResolvedValue(null);
+
+      const response = await request(app)
+        .patch(`/api/v1/users/resetPassword/invalidtoken`)
+        .send(resetData)
+        .expect(400);
+
+      expect(response.body.status).toBe("fail");
+      expect(response.body.message).toBe("Token is invalid or has expired");
+    });
+
+    it("should return 400 for expired token", async () => {
+      const expiredToken = "expiredtoken123";
+      const hashedExpiredToken = crypto
+        .createHash("sha256")
+        .update(expiredToken)
+        .digest("hex");
+
+      const resetData = {
+        password: "newPassword123",
+        passwordConfirm: "newPassword123",
+      };
+
+      // Mock user with expired token
+      mockUserModel.findOne.mockResolvedValue(null);
+
+      const response = await request(app)
+        .patch(`/api/v1/users/resetPassword/${expiredToken}`)
+        .send(resetData)
+        .expect(400);
+
+      expect(response.body.status).toBe("fail");
+      expect(response.body.message).toBe("Token is invalid or has expired");
+    });
+
+    it("should handle missing password field", async () => {
+      const resetData = {
+        passwordConfirm: "newPassword123",
+      };
+
+      const mockUser = {
+        _id: "user123",
+        email: "user@example.com",
+        passwordResetToken: hashedToken,
+        passwordResetExpires: new Date(Date.now() + 10 * 60 * 1000),
+        password: undefined,
+        passwordConfirm: undefined,
+        save: jest
+          .fn()
+          .mockRejectedValue(new Error("Please provide a password")),
+      } as any;
+
+      mockUserModel.findOne.mockResolvedValue(mockUser);
+
+      const response = await request(app)
+        .patch(`/api/v1/users/resetPassword/${validToken}`)
+        .send(resetData)
+        .expect(500);
+
+      expect(response.body.status).toBe("error");
+      expect(response.body.message).toBe("Please provide a password");
+    });
+
+    it("should handle missing passwordConfirm field", async () => {
+      const resetData = {
+        password: "newPassword123",
+      };
+
+      const mockUser = {
+        _id: "user123",
+        email: "user@example.com",
+        passwordResetToken: hashedToken,
+        passwordResetExpires: new Date(Date.now() + 10 * 60 * 1000),
+        password: undefined,
+        passwordConfirm: undefined,
+        save: jest
+          .fn()
+          .mockRejectedValue(new Error("Please confirm a password")),
+      } as any;
+
+      mockUserModel.findOne.mockResolvedValue(mockUser);
+
+      const response = await request(app)
+        .patch(`/api/v1/users/resetPassword/${validToken}`)
+        .send(resetData)
+        .expect(500);
+
+      expect(response.body.status).toBe("error");
+      expect(response.body.message).toBe("Please confirm a password");
+    });
+
+    it("should handle password mismatch validation", async () => {
+      const resetData = {
+        password: "newPassword123",
+        passwordConfirm: "differentPassword123",
+      };
+
+      const mockUser = {
+        _id: "user123",
+        email: "user@example.com",
+        passwordResetToken: hashedToken,
+        passwordResetExpires: new Date(Date.now() + 10 * 60 * 1000),
+        password: undefined,
+        passwordConfirm: undefined,
+        save: jest
+          .fn()
+          .mockRejectedValue(new Error("Passwords are not the same!")),
+      } as any;
+
+      mockUserModel.findOne.mockResolvedValue(mockUser);
+
+      const response = await request(app)
+        .patch(`/api/v1/users/resetPassword/${validToken}`)
+        .send(resetData)
+        .expect(500);
+
+      expect(response.body.status).toBe("error");
+      expect(response.body.message).toBe("Passwords are not the same!");
+    });
+
+    it("should handle password too short validation", async () => {
+      const resetData = {
+        password: "123",
+        passwordConfirm: "123",
+      };
+
+      const mockUser = {
+        _id: "user123",
+        email: "user@example.com",
+        passwordResetToken: hashedToken,
+        passwordResetExpires: new Date(Date.now() + 10 * 60 * 1000),
+        password: undefined,
+        passwordConfirm: undefined,
+        save: jest
+          .fn()
+          .mockRejectedValue(
+            new Error("Password must be at least 8 characters long"),
+          ),
+      } as any;
+
+      mockUserModel.findOne.mockResolvedValue(mockUser);
+
+      const response = await request(app)
+        .patch(`/api/v1/users/resetPassword/${validToken}`)
+        .send(resetData)
+        .expect(500);
+
+      expect(response.body.status).toBe("error");
+      expect(response.body.message).toBe(
+        "Password must be at least 8 characters long",
+      );
+    });
+
+    it("should handle database errors gracefully", async () => {
+      const resetData = {
+        password: "newPassword123",
+        passwordConfirm: "newPassword123",
+      };
+
+      mockUserModel.findOne.mockRejectedValue(
+        new Error("Database connection failed"),
+      );
+
+      const response = await request(app)
+        .patch(`/api/v1/users/resetPassword/${validToken}`)
+        .send(resetData)
+        .expect(500);
+
+      expect(response.body.status).toBe("error");
+      expect(response.body.message).toBe("Database connection failed");
+    });
+
+    it("should clear reset token and expiry after successful reset", async () => {
+      const resetData = {
+        password: "newPassword123",
+        passwordConfirm: "newPassword123",
+      };
+
+      const mockUser = {
+        _id: "user123",
+        email: "user@example.com",
+        passwordResetToken: hashedToken,
+        passwordResetExpires: new Date(Date.now() + 10 * 60 * 1000),
+        password: undefined,
+        passwordConfirm: undefined,
+        save: jest.fn().mockResolvedValue(true),
+      } as any;
+
+      mockUserModel.findOne.mockResolvedValue(mockUser);
+
+      await request(app)
+        .patch(`/api/v1/users/resetPassword/${validToken}`)
+        .send(resetData)
+        .expect(200);
+
+      // Verify reset fields are cleared
+      expect(mockUser.passwordResetToken).toBeUndefined();
+      expect(mockUser.passwordResetExpires).toBeUndefined();
+      expect(mockUser.save).toHaveBeenCalledWith({ validateBeforeSave: false });
+    });
+
+    it("should return JWT token after successful password reset", async () => {
+      const resetData = {
+        password: "newPassword123",
+        passwordConfirm: "newPassword123",
+      };
+
+      const mockUser = {
+        _id: "user123",
+        email: "user@example.com",
+        passwordResetToken: hashedToken,
+        passwordResetExpires: new Date(Date.now() + 10 * 60 * 1000),
+        password: undefined,
+        passwordConfirm: undefined,
+        save: jest.fn().mockResolvedValue(true),
+      } as any;
+
+      mockUserModel.findOne.mockResolvedValue(mockUser);
+
+      const response = await request(app)
+        .patch(`/api/v1/users/resetPassword/${validToken}`)
+        .send(resetData)
+        .expect(200);
+
+      expect(response.body.status).toBe("success");
+      expect(response.body.token).toBeDefined();
+      expect(typeof response.body.token).toBe("string");
+
+      // JWT token should be a valid format (3 parts separated by dots)
+      const tokenParts = response.body.token.split(".");
+      expect(tokenParts).toHaveLength(3);
     });
   });
 });

@@ -9,6 +9,8 @@ export interface User extends Document {
   password: string;
   passwordConfirm: string | undefined;
   passwordChangeAt?: Date;
+  passwordResetToken?: string;
+  passwordResetExpires?: Date;
   active: boolean;
   role: "user" | "guide" | "lead-guide" | "admin";
   correctPassword(
@@ -50,6 +52,8 @@ const userSchema = new Schema<User>({
     },
   },
   passwordChangeAt: Date,
+  passwordResetToken: String,
+  passwordResetExpires: Date,
   active: {
     type: Boolean,
     default: true,
@@ -73,6 +77,15 @@ userSchema.pre<User>("save", async function (next) {
 
   // Delete passwordConfirm field
   this.passwordConfirm = undefined;
+  next();
+});
+
+// Update passwordChangedAt when password is changed
+userSchema.pre<User>("save", function (next) {
+  if (!this.isModified("password") || this.isNew) {
+    return next();
+  }
+  this.passwordChangeAt = new Date(Date.now() - 1000);
   next();
 });
 
