@@ -21,7 +21,7 @@ export const signToken = (id: string): string => {
 
 export const signup = catchAsync(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const { name, email, password, passwordConfirm, photo } = req.body;
+    const { name, email, password, passwordConfirm, photo, role } = req.body;
 
     const newUser: User = await UserModel.create({
       name,
@@ -29,6 +29,7 @@ export const signup = catchAsync(
       password,
       passwordConfirm,
       photo,
+      role,
     });
 
     const token = signToken((newUser._id as any).toString());
@@ -111,6 +112,17 @@ export const protect = catchAsync(
     next();
   },
 );
+
+export const restrictTo = (...roles: string[]) => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    if (!roles.includes(req.user!.role)) {
+      return next(
+        new AppError("You do not have permission to perform this action", 403),
+      );
+    }
+    next();
+  };
+};
 
 export const deleteUser = catchAsync(
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {

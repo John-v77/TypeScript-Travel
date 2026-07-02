@@ -10,6 +10,7 @@ export interface User extends Document {
   passwordConfirm: string | undefined;
   passwordChangeAt?: Date;
   active: boolean;
+  role: "user" | "guide" | "lead-guide" | "admin";
   correctPassword(
     candidatePassword: string,
     userPassword: string,
@@ -52,6 +53,11 @@ const userSchema = new Schema<User>({
   active: {
     type: Boolean,
     default: true,
+  },
+  role: {
+    type: String,
+    enum: ["user", "guide", "lead-guide", "admin"],
+    default: "user",
   },
 });
 
