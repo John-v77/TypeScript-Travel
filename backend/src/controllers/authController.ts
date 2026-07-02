@@ -111,3 +111,14 @@ export const protect = catchAsync(
     next();
   },
 );
+
+export const deleteUser = catchAsync(
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    await UserModel.findByIdAndUpdate(req.user!.id, { active: false });
+
+    res.status(204).json({
+      status: "success",
+      data: null,
+    });
+  },
+);

@@ -9,6 +9,7 @@ export interface User extends Document {
   password: string;
   passwordConfirm: string | undefined;
   passwordChangeAt?: Date;
+  active: boolean;
   correctPassword(
     candidatePassword: string,
     userPassword: string,
@@ -48,6 +49,10 @@ const userSchema = new Schema<User>({
     },
   },
   passwordChangeAt: Date,
+  active: {
+    type: Boolean,
+    default: true,
+  },
 });
 
 //Hash password before saving

@@ -9,6 +9,9 @@ const router = express.Router();
 router.route("/signup").post(authController.signup);
 router.route("/login").post(authController.login);
 
+// Protected routes
+router.delete("/deleteMe", authController.protect, authController.deleteUser);
+
 // User Crud routes
 router.route("/").get(userController.getAllUsers);
 
