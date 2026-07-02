@@ -12,16 +12,18 @@ process.env.JWT_EXPIRES_IN = testExpiry;
 
 describe("JWT Fuctionality", () => {
   describe("signToken function", () => {
-    const userId = "507f1f77bcf86cd799439012";
-    const token = signToken(userId);
+    it("should return a valid signed JWT string", () => {
+      const userId = "507f1f77bcf86cd799439012";
+      const token = signToken(userId);
 
-    expect(token).toBeDefined();
-    expect(typeof token).toBe("string");
+      expect(token).toBeDefined();
+      expect(typeof token).toBe("string");
 
-    const decoded = jwt.verify(token, testSecret) as any;
-    expect(decoded.id).toBe(userId);
-    expect(decoded.exp).toBeDefined();
-    expect(decoded.iat).toBeDefined();
+      const decoded = jwt.verify(token, testSecret) as any;
+      expect(decoded.id).toBe(userId);
+      expect(decoded.exp).toBeDefined();
+      expect(decoded.iat).toBeDefined();
+    });
   });
 
   it("should create tokens with correct expiration", () => {
@@ -48,5 +50,13 @@ describe("JWT Fuctionality", () => {
 
     expect(decoded1.id).toBe(userId1);
     expect(decoded2.id).toBe(userId2);
+  });
+
+  describe("protect middleware", () => {
+    it("should be implemented and exported from authController", () => {
+      const { protect } = require("../controllers/authController");
+      expect(protect).toBeDefined();
+      expect(typeof protect).toBe("function");
+    });
   });
 });

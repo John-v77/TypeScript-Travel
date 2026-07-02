@@ -4,6 +4,7 @@ import { User, UserModel } from "../models/userModel";
 import jwt, { SignOptions, JwtPayload } from "jsonwebtoken";
 
 import AppError from "../utils/appError";
+import { promisify } from "util";
 interface AuthenticatedRequest extends Request {
   user?: User;
 }
@@ -61,5 +62,52 @@ export const login = catchAsync(
       status: "success",
       token,
     });
+  },
+);
+
+export const protect = catchAsync(
+  async (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    // 1) Get token and check if it exists
+    let token: string | undefined;
+    if (
+      req.headers.authorization &&
+      req.headers.authorization.startsWith("Bearer")
+    ) {
+      token = req.headers.authorization.split(" ")[1];
+    }
+
+    if (!token) {
+      return next(new AppError("You are not logged in!", 401));
+    }
+
+    // 2) Verify token
+    const jwtVerify = promisify(jwt.verify) as (
+      token: string,
+      secret: string,
+    ) => Promise<JwtPayload>;
+    const decoded = await jwtVerify(token, process.env.JWT_SECRET!);
+    // 3) Check if user still exists
+    const freshUser = await UserModel.findById(decoded.id);
+    if (!freshUser) {
+      return next(
+        new AppError("The user belonging to this token no longer exists.", 401),
+      );
+    }
+    // 4) Check if user changed password after the token was issued
+    if (freshUser.changedPasswordAfter(decoded.iat!)) {
+      return next(
+        new AppError(
+          "User recently changed password! Please log in again.",
+          401,
+        ),
+      );
+    }
+    // Grant access to protected route
+    req.user = freshUser;
+    next();
   },
 );

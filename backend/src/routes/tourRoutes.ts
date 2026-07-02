@@ -1,6 +1,6 @@
 import { Router } from "express";
 import * as tourController from "../controllers/tourController";
-
+import * as authController from "../controllers/authController";
 const router = Router();
 
 router
@@ -13,7 +13,7 @@ router.route("/monthly-plan/:year").get(tourController.getMonthlyPlan);
 
 router
   .route("/")
-  .get(tourController.getAllTours)
+  .get(authController.protect, tourController.getAllTours)
   .post(tourController.createTour);
 
 router

@@ -1,4 +1,4 @@
-import express, { Request, Response, NextFunction, response } from "express";
+import express, { Request, Response, NextFunction } from "express";
 import morgan from "morgan";
 import cors from "cors";
 import tourRouter from "./routes/tourRoutes";
@@ -16,7 +16,7 @@ export const createServer = () => {
     .use(cors({ origin: "http://localhost:3000" }));
 
   app.use("/api/v1/tours", tourRouter);
-  app.use("api/v1/users", userRouter);
+  app.use("/api/v1/users", userRouter);
 
   app.get("/health", (req, res) => {
     res.json({ ok: true });

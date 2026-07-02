@@ -17,15 +17,6 @@ export const getAllUsers = catchAsync(
       query = query.sort("-createdAt");
     }
 
-    //Apply field selection and always exclude password fields
-    if (req.query.fields) {
-      const fields = (req.query.fields as string).split(",").join(" ");
-      query = query.select(`${fields} -password -passwordConfirm`);
-    } else {
-      // Default field selection excluding passwords
-      query = query.select("-password -passwordConfirm");
-    }
-
     //Apply pagination with proper validation
     const pageNum = parseInt(req.query.page as string) || 1;
     const limitNum = parseInt(req.query.limit as string) || 20;
@@ -35,8 +26,13 @@ export const getAllUsers = catchAsync(
 
     query = query.skip(skip).limit(limit);
 
-    //Execute the query
-    const users = await query;
+    //Build field selection string and always exclude password fields
+    const fields = req.query.fields
+      ? `${(req.query.fields as string).split(",").join(" ")} -password -passwordConfirm`
+      : "-password -passwordConfirm";
+
+    //Execute the query with field selection applied at the end
+    const users = await query.select(fields);
 
     res.status(200).json({
       status: "success",

@@ -8,10 +8,12 @@ export interface User extends Document {
   photo: string;
   password: string;
   passwordConfirm: string | undefined;
+  passwordChangeAt?: Date;
   correctPassword(
     candidatePassword: string,
     userPassword: string,
   ): Promise<boolean>;
+  changedPasswordAfter(JWTTimestamp: number): boolean;
 }
 
 const userSchema = new Schema<User>({
@@ -45,6 +47,7 @@ const userSchema = new Schema<User>({
       message: "Passwords are not the same!",
     },
   },
+  passwordChangeAt: Date,
 });
 
 //Hash password before saving
@@ -68,6 +71,22 @@ userSchema.methods.correctPassword = async function (
   userPassword: string,
 ): Promise<boolean> {
   return await bcrypt.compare(candidatePassword, userPassword);
+};
+
+// Instance method to check if password changed after JWT was issued
+userSchema.methods.changedPasswordAfter = function (
+  JWTTimestamp: number,
+): boolean {
+  if (this.passwordChangeAt) {
+    const changedTimeStamp = parseInt(
+      (this.passwordChangeAt.getTime() / 1000).toString(),
+      10,
+    );
+    return JWTTimestamp < changedTimeStamp;
+  }
+
+  // Returns false if password has not changed
+  return false;
 };
 
 export const UserModel = model<User>("User", userSchema);
