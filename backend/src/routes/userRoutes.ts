@@ -10,6 +10,7 @@ router.route("/signup").post(authController.signup);
 router.route("/login").post(authController.login);
 
 // Protected routes
+router.patch("/updateMe", authController.protect, authController.updateUser);
 router.delete("/deleteMe", authController.protect, authController.deleteUser);
 
 // User Crud routes

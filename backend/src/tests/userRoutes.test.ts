@@ -771,4 +771,237 @@ describe("User Routes", () => {
       });
     });
   });
+
+  describe("PATCH /api/v1/users/updateMe - updateUser", () => {
+    beforeEach(() => {
+      // Mock the protect middleware to add user to request
+      mockAuthController.protect.mockImplementation(
+        (req: any, res: any, next: any) => {
+          req.user = { id: "user123" };
+          next();
+        },
+      );
+    });
+
+    it("should update user name and email successfully", async () => {
+      const updateData = {
+        name: "Updated Name",
+        email: "updated@example.com",
+      };
+
+      const mockUpdatedUser = {
+        _id: "user123",
+        name: "Updated Name",
+        email: "updated@example.com",
+      };
+
+      mockUserModel.findByIdAndUpdate.mockResolvedValue(mockUpdatedUser);
+
+      const response = await request(app)
+        .patch("/api/v1/users/updateMe")
+        .set("Authorization", "Bearer valid-jwt-token")
+        .send(updateData)
+        .expect(200);
+
+      expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
+        "user123",
+        { name: "Updated Name", email: "updated@example.com" },
+        { new: true, runValidators: true },
+      );
+
+      expect(response.body).toEqual({
+        status: "success",
+        data: {
+          user: mockUpdatedUser,
+        },
+      });
+    });
+
+    it("should reject password updates with 400 error", async () => {
+      const updateData = {
+        name: "Updated Name",
+        password: "newpassword123",
+      };
+
+      const response = await request(app)
+        .patch("/api/v1/users/updateMe")
+        .set("Authorization", "Bearer valid-jwt-token")
+        .send(updateData)
+        .expect(400);
+
+      expect(response.body.status).toBe("fail");
+      expect(response.body.message).toBe(
+        "This route is not for password updates. Please use reset password feature.",
+      );
+    });
+
+    it("should reject passwordConfirm updates with 400 error", async () => {
+      const updateData = {
+        name: "Updated Name",
+        passwordConfirm: "newpassword123",
+      };
+
+      const response = await request(app)
+        .patch("/api/v1/users/updateMe")
+        .set("Authorization", "Bearer valid-jwt-token")
+        .send(updateData)
+        .expect(400);
+
+      expect(response.body.status).toBe("fail");
+      expect(response.body.message).toBe(
+        "This route is not for password updates. Please use reset password feature.",
+      );
+    });
+
+    it("should filter out unwanted fields like role", async () => {
+      const updateData = {
+        name: "Updated Name",
+        email: "updated@example.com",
+        role: "admin",
+        active: false,
+      };
+
+      const mockUpdatedUser = {
+        _id: "user123",
+        name: "Updated Name",
+        email: "updated@example.com",
+      };
+
+      mockUserModel.findByIdAndUpdate.mockResolvedValue(mockUpdatedUser);
+
+      const response = await request(app)
+        .patch("/api/v1/users/updateMe")
+        .set("Authorization", "Bearer valid-jwt-token")
+        .send(updateData)
+        .expect(200);
+
+      // Should only pass allowed fields (name, email) to update
+      expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
+        "user123",
+        { name: "Updated Name", email: "updated@example.com" },
+        { new: true, runValidators: true },
+      );
+
+      expect(response.body).toEqual({
+        status: "success",
+        data: {
+          user: mockUpdatedUser,
+        },
+      });
+    });
+
+    it("should require authentication", async () => {
+      // Mock protect to reject authentication
+      mockAuthController.protect.mockImplementation(
+        (req: any, res: any, next: any) => {
+          res.status(401).json({
+            status: "fail",
+            message: "You are not logged in! Please log in to get access.",
+          });
+        },
+      );
+
+      const response = await request(app)
+        .patch("/api/v1/users/updateMe")
+        .send({ name: "Updated Name" })
+        .expect(401);
+
+      expect(response.body.status).toBe("fail");
+      expect(response.body.message).toContain("You are not logged in");
+    });
+
+    it("should handle database errors gracefully", async () => {
+      const updateData = {
+        name: "Updated Name",
+        email: "updated@example.com",
+      };
+
+      mockUserModel.findByIdAndUpdate.mockRejectedValue(
+        new Error("Database connection failed"),
+      );
+
+      const response = await request(app)
+        .patch("/api/v1/users/updateMe")
+        .set("Authorization", "Bearer valid-jwt-token")
+        .send(updateData)
+        .expect(500);
+
+      expect(response.body.status).toBe("error");
+      expect(response.body.message).toBe("Database connection failed");
+    });
+
+    it("should handle validation errors", async () => {
+      const updateData = {
+        email: "invalid-email",
+      };
+
+      const validationError = new Error("Please provide a valid email");
+      mockUserModel.findByIdAndUpdate.mockRejectedValue(validationError);
+
+      const response = await request(app)
+        .patch("/api/v1/users/updateMe")
+        .set("Authorization", "Bearer valid-jwt-token")
+        .send(updateData)
+        .expect(500);
+
+      expect(response.body.status).toBe("error");
+      expect(response.body.message).toBe("Please provide a valid email");
+    });
+
+    it("should allow updating only name", async () => {
+      const updateData = {
+        name: "Only Name Updated",
+      };
+
+      const mockUpdatedUser = {
+        _id: "user123",
+        name: "Only Name Updated",
+        email: "original@example.com",
+      };
+
+      mockUserModel.findByIdAndUpdate.mockResolvedValue(mockUpdatedUser);
+
+      const response = await request(app)
+        .patch("/api/v1/users/updateMe")
+        .set("Authorization", "Bearer valid-jwt-token")
+        .send(updateData)
+        .expect(200);
+
+      expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
+        "user123",
+        { name: "Only Name Updated" },
+        { new: true, runValidators: true },
+      );
+
+      expect(response.body.data.user.name).toBe("Only Name Updated");
+    });
+
+    it("should allow updating only email", async () => {
+      const updateData = {
+        email: "newemail@example.com",
+      };
+
+      const mockUpdatedUser = {
+        _id: "user123",
+        name: "Original Name",
+        email: "newemail@example.com",
+      };
+
+      mockUserModel.findByIdAndUpdate.mockResolvedValue(mockUpdatedUser);
+
+      const response = await request(app)
+        .patch("/api/v1/users/updateMe")
+        .set("Authorization", "Bearer valid-jwt-token")
+        .send(updateData)
+        .expect(200);
+
+      expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
+        "user123",
+        { email: "newemail@example.com" },
+        { new: true, runValidators: true },
+      );
+
+      expect(response.body.data.user.email).toBe("newemail@example.com");
+    });
+  });
 });
