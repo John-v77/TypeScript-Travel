@@ -3,6 +3,11 @@ import { createServer } from "../server";
 import { TourModel } from "../models/tourModel";
 
 jest.mock("../models/tourModel");
+// Bypass auth so protected routes (e.g. GET /tours) are reachable in tests
+jest.mock("../controllers/authController", () => ({
+  ...jest.requireActual("../controllers/authController"),
+  protect: jest.fn((req, res, next) => next()),
+}));
 
 const mockTourModel = TourModel as jest.Mocked<typeof TourModel>;
 mockTourModel.aggregate = jest.fn();

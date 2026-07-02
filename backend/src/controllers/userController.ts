@@ -24,15 +24,14 @@ export const getAllUsers = catchAsync(
     const limit = limitNum > 0 ? limitNum : 20;
     const skip = (page - 1) * limit;
 
-    query = query.skip(skip).limit(limit);
-
     //Build field selection string and always exclude password fields
     const fields = req.query.fields
       ? `${(req.query.fields as string).split(",").join(" ")} -password -passwordConfirm`
       : "-password -passwordConfirm";
 
-    //Execute the query with field selection applied at the end
-    const users = await query.select(fields);
+    //Apply field selection and pagination, executing the query at the end
+    query = query.select(fields).skip(skip);
+    const users = await query.limit(limit);
 
     res.status(200).json({
       status: "success",

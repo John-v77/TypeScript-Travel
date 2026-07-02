@@ -1,10 +1,15 @@
 import request from "supertest";
 import { createServer } from "../server";
 import { UserModel } from "../models/userModel";
-
+import * as authController from "../controllers/authController";
 jest.mock("../models/userModel");
+jest.mock("../controllers/authController", () => ({
+  ...jest.requireActual("../controllers/authController"),
+  protect: jest.fn(),
+}));
 
 const mockUserModel = UserModel as jest.Mocked<typeof UserModel>;
+const mockAuthController = authController as jest.Mocked<typeof authController>;
 
 // Set JWT environment variables for tests
 process.env.JWT_SECRET = "test-jwt-secret-key-for-user-routes";
@@ -339,15 +344,15 @@ describe("User Routes", () => {
           toString: () => "user123",
         },
         email: "john@example.com",
-        correctPassword: jest.fn().mockRejectedValue(true),
+        correctPassword: jest.fn().mockResolvedValue(true),
       };
 
       mockUserModel.findOne.mockReturnValue({
-        select: jest.fn().mockRejectedValue(mockUser),
+        select: jest.fn().mockResolvedValue(mockUser),
       } as any);
 
       const response = await request(app)
-        .post("/api/v1/user/login")
+        .post("/api/v1/users/login")
         .send(userData)
         .expect(200);
 
@@ -361,7 +366,7 @@ describe("User Routes", () => {
 
     it("should return 400 when email is missing", async () => {
       const response = await request(app)
-        .post("/api/v1/user/login")
+        .post("/api/v1/users/login")
         .send({
           password: "password123",
         })
@@ -403,11 +408,11 @@ describe("User Routes", () => {
 
       const response = await request(app)
         .post("/api/v1/users/login")
-        .send({ email: "john@example.com" })
+        .send(userData)
         .expect(401);
 
       expect(response.body.status).toBe("fail");
-      expect(response.body.message).toBe("Please provide email and password!");
+      expect(response.body.message).toBe("Incorrect email or password");
     });
 
     it("should return 401 when password is incorrect", async () => {
@@ -686,6 +691,83 @@ describe("User Routes", () => {
 
         expect(response.body.status).toBe("error");
         expect(response.body.message).toContain("Database connection failed");
+      });
+    });
+  });
+
+  describe("DELETE /api/v1/users/deleteMe - deleteUser", () => {
+    beforeEach(() => {
+      // Mock the protect middleware to add user to request
+      mockAuthController.protect.mockImplementation(
+        (req: any, res: any, next: any) => {
+          req.user = { id: "user123" };
+          next();
+        },
+      );
+    });
+
+    it("should deactivate user successfully", async () => {
+      const mockUser = {
+        _id: "user123",
+        active: false,
+      };
+
+      mockUserModel.findByIdAndUpdate.mockResolvedValue(mockUser);
+
+      const response = await request(app)
+        .delete("/api/v1/users/deleteMe")
+        .set("Authorization", "Bearer valid-jwt-token")
+        .expect(204);
+
+      expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith("user123", {
+        active: false,
+      });
+      expect(response.body).toEqual({});
+    });
+
+    it("should require authentication", async () => {
+      // Mock protect to reject authentication
+      mockAuthController.protect.mockImplementation(
+        (req: any, res: any, next: any) => {
+          res.status(401).json({
+            status: "fail",
+            message: "You are not logged in! Please log in to get access.",
+          });
+        },
+      );
+
+      const response = await request(app)
+        .delete("/api/v1/users/deleteMe")
+        .expect(401);
+
+      expect(response.body.status).toBe("fail");
+      expect(response.body.message).toContain("You are not logged in");
+    });
+
+    it("should handle database errors gracefully", async () => {
+      mockUserModel.findByIdAndUpdate.mockRejectedValue(
+        new Error("Database connection failed"),
+      );
+
+      const response = await request(app)
+        .delete("/api/v1/users/deleteMe")
+        .set("Authorization", "Bearer valid-jwt-token")
+        .expect(500);
+
+      expect(response.body.status).toBe("error");
+      expect(response.body.message).toBe("Database connection failed");
+    });
+
+    it("should handle user not found", async () => {
+      mockUserModel.findByIdAndUpdate.mockResolvedValue(null);
+
+      const response = await request(app)
+        .delete("/api/v1/users/deleteMe")
+        .set("Authorization", "Bearer valid-jwt-token")
+        .expect(204);
+
+      expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith("user123", {
+        active: false,
       });
     });
   });
