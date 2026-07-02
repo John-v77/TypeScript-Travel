@@ -42,7 +42,7 @@ class Database implements DatabaseConnection {
 
       console.log("DB connection successful!");
     } catch (err) {
-      console.error("Database connection failed", err);
+      console.error("Database connection failed:", err);
       throw err;
     }
   }

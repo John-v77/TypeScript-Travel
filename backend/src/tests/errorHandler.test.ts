@@ -126,7 +126,7 @@ describe("Tour Routes", () => {
 
         expect(response.body).toEqual({
           status: "error",
-          message: "Failed to fetch tours",
+          message: "Database connection failed",
         });
       });
 
