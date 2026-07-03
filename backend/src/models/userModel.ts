@@ -1,6 +1,7 @@
 import { Schema, model, Document } from "mongoose";
 import validator from "validator";
 import bcrypt from "bcrypt";
+import crypto from "crypto";
 
 export interface User extends Document {
   name: string;
@@ -18,6 +19,7 @@ export interface User extends Document {
     userPassword: string,
   ): Promise<boolean>;
   changedPasswordAfter(JWTTimestamp: number): boolean;
+  createPasswordResetToken(): string;
 }
 
 const userSchema = new Schema<User>({
@@ -111,6 +113,19 @@ userSchema.methods.changedPasswordAfter = function (
 
   // Returns false if password has not changed
   return false;
+};
+
+userSchema.methods.createPasswordResetToken = function (): string {
+  const resetToken = crypto.randomBytes(32).toString("hex");
+
+  this.passwordResetToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+
+  this.passwordResetExpires = new Date(Date.now() + 10 * 60 * 1000); //10 minutes
+
+  return resetToken;
 };
 
 export const UserModel = model<User>("User", userSchema);

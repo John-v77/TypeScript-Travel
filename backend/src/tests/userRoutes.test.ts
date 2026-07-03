@@ -3,14 +3,18 @@ import { createServer } from "../server";
 import { UserModel } from "../models/userModel";
 import * as authController from "../controllers/authController";
 import crypto from "crypto";
+import sendEmail from "../utils/email";
+
 jest.mock("../models/userModel");
 jest.mock("../controllers/authController", () => ({
   ...jest.requireActual("../controllers/authController"),
   protect: jest.fn(),
 }));
+jest.mock("../utils/email");
 
 const mockUserModel = UserModel as jest.Mocked<typeof UserModel>;
 const mockAuthController = authController as jest.Mocked<typeof authController>;
+const mockSendEmail = sendEmail as jest.MockedFunction<typeof sendEmail>;
 
 // Set JWT environment variables for tests
 process.env.JWT_SECRET = "test-jwt-secret-key-for-user-routes";
@@ -1648,6 +1652,261 @@ describe("User Routes", () => {
 
       // Should call save without any options (default validation applies)
       expect(mockUser.save).toHaveBeenCalledWith();
+    });
+  });
+
+  describe("POST /api/v1/users/forgotPassword - forgotPassword", () => {
+    beforeEach(() => {
+      mockSendEmail.mockClear();
+    });
+
+    it("should send password reset email successfully", async () => {
+      const email = "user@example.com";
+      const resetToken = "abcd1234resettoken";
+
+      const mockUser = {
+        _id: "user123",
+        email: "user@example.com",
+        name: "Test User",
+        createPasswordResetToken: jest.fn().mockReturnValue(resetToken),
+        save: jest.fn().mockResolvedValue(true),
+      } as any;
+
+      mockUserModel.findOne.mockResolvedValue(mockUser);
+      mockSendEmail.mockResolvedValue(undefined);
+
+      const response = await request(app)
+        .post("/api/v1/users/forgotPassword")
+        .send({ email })
+        .expect(200);
+
+      // Verify user lookup
+      expect(mockUserModel.findOne).toHaveBeenCalledWith({ email });
+
+      // Verify reset token generation
+      expect(mockUser.createPasswordResetToken).toHaveBeenCalled();
+      expect(mockUser.save).toHaveBeenCalledWith({ validateBeforeSave: false });
+
+      // Verify email sending
+      expect(mockSendEmail).toHaveBeenCalledWith({
+        email: "user@example.com",
+        subject: "Your password reset token - valid for 10 min",
+        message: expect.stringContaining("Forgot your password?"),
+      });
+
+      expect(mockSendEmail).toHaveBeenCalledWith({
+        email: "user@example.com",
+        subject: "Your password reset token - valid for 10 min",
+        message: expect.stringContaining(resetToken),
+      });
+
+      // Verify response
+      expect(response.body.status).toBe("success");
+      expect(response.body.message).toBe("Token send to email!");
+    });
+
+    it("should return 404 for non-existent email", async () => {
+      const email = "nonexistent@example.com";
+
+      mockUserModel.findOne.mockResolvedValue(null);
+
+      const response = await request(app)
+        .post("/api/v1/users/forgotPassword")
+        .send({ email })
+        .expect(404);
+
+      expect(response.body.status).toBe("fail");
+      expect(response.body.message).toBe(
+        "There is no user with email address.",
+      );
+      expect(mockSendEmail).not.toHaveBeenCalled();
+    });
+
+    it("should handle missing email field", async () => {
+      const response = await request(app)
+        .post("/api/v1/users/forgotPassword")
+        .send({})
+        .expect(404);
+
+      expect(response.body.status).toBe("fail");
+      expect(response.body.message).toBe(
+        "There is no user with email address.",
+      );
+    });
+
+    it("should handle email sending failure and cleanup reset token", async () => {
+      const email = "user@example.com";
+      const resetToken = "abcd1234resettoken";
+
+      const mockUser = {
+        _id: "user123",
+        email: "user@example.com",
+        passwordResetToken: "hashed-token",
+        passwordResetExpires: new Date(Date.now() + 10 * 60 * 1000),
+        createPasswordResetToken: jest.fn().mockReturnValue(resetToken),
+        save: jest.fn().mockResolvedValue(true),
+      } as any;
+
+      mockUserModel.findOne.mockResolvedValue(mockUser);
+      mockSendEmail.mockRejectedValue(new Error("SMTP server error"));
+
+      const response = await request(app)
+        .post("/api/v1/users/forgotPassword")
+        .send({ email })
+        .expect(500);
+
+      // Verify cleanup happened
+      expect(mockUser.passwordResetToken).toBeUndefined();
+      expect(mockUser.passwordResetExpires).toBeUndefined();
+      expect(mockUser.save).toHaveBeenCalledWith({ validateBeforeSave: false });
+
+      expect(response.body.status).toBe("error");
+      expect(response.body.message).toBe(
+        "There was an error sending the email. Try again later!",
+      );
+    });
+
+    it("should generate correct reset URL", async () => {
+      const email = "user@example.com";
+      const resetToken = "abcd1234resettoken";
+
+      const mockUser = {
+        _id: "user123",
+        email: "user@example.com",
+        createPasswordResetToken: jest.fn().mockReturnValue(resetToken),
+        save: jest.fn().mockResolvedValue(true),
+      } as any;
+
+      mockUserModel.findOne.mockResolvedValue(mockUser);
+      mockSendEmail.mockResolvedValue(undefined);
+
+      await request(app)
+        .post("/api/v1/users/forgotPassword")
+        .send({ email })
+        .expect(200);
+
+      // Verify the reset URL format in the email message
+      const emailCallArgs = mockSendEmail.mock.calls[0][0];
+      expect(emailCallArgs.message).toMatch(
+        /http:\/\/127\.0\.0\.1:\d+\/api\/v1\/users\/resetPassword\/abcd1234resettoken/,
+      );
+    });
+
+    it("should handle database errors when finding user", async () => {
+      const email = "user@example.com";
+
+      mockUserModel.findOne.mockRejectedValue(
+        new Error("Database connection failed"),
+      );
+
+      const response = await request(app)
+        .post("/api/v1/users/forgotPassword")
+        .send({ email })
+        .expect(500);
+
+      expect(response.body.status).toBe("error");
+      expect(response.body.message).toBe("Database connection failed");
+      expect(mockSendEmail).not.toHaveBeenCalled();
+    });
+
+    it("should handle database errors when saving reset token", async () => {
+      const email = "user@example.com";
+      const resetToken = "abcd1234resettoken";
+
+      const mockUser = {
+        _id: "user123",
+        email: "user@example.com",
+        createPasswordResetToken: jest.fn().mockReturnValue(resetToken),
+        save: jest.fn().mockRejectedValue(new Error("Database save failed")),
+      } as any;
+
+      mockUserModel.findOne.mockResolvedValue(mockUser);
+
+      const response = await request(app)
+        .post("/api/v1/users/forgotPassword")
+        .send({ email })
+        .expect(500);
+
+      expect(response.body.status).toBe("error");
+      expect(response.body.message).toBe("Database save failed");
+      expect(mockSendEmail).not.toHaveBeenCalled();
+    });
+
+    it("should include correct email message content", async () => {
+      const email = "user@example.com";
+      const resetToken = "abcd1234resettoken";
+
+      const mockUser = {
+        _id: "user123",
+        email: "user@example.com",
+        createPasswordResetToken: jest.fn().mockReturnValue(resetToken),
+        save: jest.fn().mockResolvedValue(true),
+      } as any;
+
+      mockUserModel.findOne.mockResolvedValue(mockUser);
+      mockSendEmail.mockResolvedValue(undefined);
+
+      await request(app)
+        .post("/api/v1/users/forgotPassword")
+        .send({ email })
+        .expect(200);
+
+      const emailCallArgs = mockSendEmail.mock.calls[0][0];
+      expect(emailCallArgs.message).toContain("Forgot your password?");
+      expect(emailCallArgs.message).toContain("Submit a PATCH request");
+      expect(emailCallArgs.message).toContain("password and confirm");
+      expect(emailCallArgs.message).toContain(
+        "If you didn't forget your password, please ignore this email!",
+      );
+    });
+
+    it("should use correct email subject and recipient", async () => {
+      const email = "user@example.com";
+      const resetToken = "abcd1234resettoken";
+
+      const mockUser = {
+        _id: "user123",
+        email: "user@example.com",
+        createPasswordResetToken: jest.fn().mockReturnValue(resetToken),
+        save: jest.fn().mockResolvedValue(true),
+      } as any;
+
+      mockUserModel.findOne.mockResolvedValue(mockUser);
+      mockSendEmail.mockResolvedValue(undefined);
+
+      await request(app)
+        .post("/api/v1/users/forgotPassword")
+        .send({ email })
+        .expect(200);
+
+      expect(mockSendEmail).toHaveBeenCalledWith({
+        email: "user@example.com",
+        subject: "Your password reset token - valid for 10 min",
+        message: expect.any(String),
+      });
+    });
+
+    it("should call createPasswordResetToken and save user", async () => {
+      const email = "user@example.com";
+      const resetToken = "abcd1234resettoken";
+
+      const mockUser = {
+        _id: "user123",
+        email: "user@example.com",
+        createPasswordResetToken: jest.fn().mockReturnValue(resetToken),
+        save: jest.fn().mockResolvedValue(true),
+      } as any;
+
+      mockUserModel.findOne.mockResolvedValue(mockUser);
+      mockSendEmail.mockResolvedValue(undefined);
+
+      await request(app)
+        .post("/api/v1/users/forgotPassword")
+        .send({ email })
+        .expect(200);
+
+      expect(mockUser.createPasswordResetToken).toHaveBeenCalledTimes(1);
+      expect(mockUser.save).toHaveBeenCalledWith({ validateBeforeSave: false });
     });
   });
 });
