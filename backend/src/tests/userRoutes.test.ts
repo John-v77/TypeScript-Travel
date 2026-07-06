@@ -19,6 +19,7 @@ const mockSendEmail = sendEmail as jest.MockedFunction<typeof sendEmail>;
 // Set JWT environment variables for tests
 process.env.JWT_SECRET = "test-jwt-secret-key-for-user-routes";
 process.env.JWT_EXPIRES_IN = "7d";
+process.env.JWT_COOKIE_EXPIRES_IN = "7";
 
 describe("User Routes", () => {
   const app = createServer();
@@ -78,6 +79,109 @@ describe("User Routes", () => {
         name: "John Doe",
         email: "john@example.com",
       });
+    });
+
+    it("should send JWT token via cookie with correct options", async () => {
+      const userData = {
+        name: "John Doe",
+        email: "john@example.com",
+        password: "password123",
+        passwordConfirm: "password123",
+      };
+
+      const mockUser = {
+        _id: {
+          toString: () => "user123",
+        },
+        name: "John Doe",
+        email: "john@example.com",
+      };
+
+      mockUserModel.create.mockResolvedValue(mockUser as any);
+
+      const response = await request(app)
+        .post("/api/v1/users/signup")
+        .send(userData);
+
+      expect(response.status).toBe(201);
+
+      // Check if JWT cookie is set
+      const cookies = response.headers["set-cookie"];
+      expect(cookies).toBeDefined();
+
+      const cookieArray = Array.isArray(cookies) ? cookies : [cookies];
+      const jwtCookie = cookieArray.find((cookie: string) =>
+        cookie.startsWith("jwt="),
+      );
+      expect(jwtCookie).toBeDefined();
+
+      // Check cookie options
+      expect(jwtCookie).toContain("HttpOnly");
+      expect(jwtCookie).toContain("Max-Age=");
+    });
+
+    it("should set secure cookie flag in production", async () => {
+      const originalNodeEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = "production";
+
+      const userData = {
+        name: "John Doe",
+        email: "john@example.com",
+        password: "password123",
+        passwordConfirm: "password123",
+      };
+
+      const mockUser = {
+        _id: {
+          toString: () => "user123",
+        },
+        name: "John Doe",
+        email: "john@example.com",
+      };
+
+      mockUserModel.create.mockResolvedValue(mockUser as any);
+
+      const response = await request(app)
+        .post("/api/v1/users/signup")
+        .send(userData);
+
+      expect(response.status).toBe(201);
+
+      const cookies = response.headers["set-cookie"];
+      const cookieArray = Array.isArray(cookies) ? cookies : [cookies];
+      const jwtCookie = cookieArray.find((cookie: string) =>
+        cookie.startsWith("jwt="),
+      );
+      expect(jwtCookie).toContain("Secure");
+
+      process.env.NODE_ENV = originalNodeEnv;
+    });
+
+    it("should not include password in response body when using cookies", async () => {
+      const userData = {
+        name: "John Doe",
+        email: "john@example.com",
+        password: "password123",
+        passwordConfirm: "password123",
+      };
+
+      const mockUser = {
+        _id: {
+          toString: () => "user123",
+        },
+        name: "John Doe",
+        email: "john@example.com",
+        password: "hashedPassword123",
+      };
+
+      mockUserModel.create.mockResolvedValue(mockUser as any);
+
+      const response = await request(app)
+        .post("/api/v1/users/signup")
+        .send(userData);
+
+      expect(response.status).toBe(201);
+      expect(response.body.data.user.password).toBeUndefined();
     });
 
     it("should return 400 when name is missing", async () => {

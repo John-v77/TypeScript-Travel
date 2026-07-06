@@ -29,6 +29,22 @@ const createSendToken = (
 ): void => {
   const token = signToken((user._id as any).toString());
 
+  const cookieOptions = {
+    maxAge:
+      parseInt(process.env.JWT_COOKIE_EXPIRES_IN || "7") * 24 * 60 * 60 * 1000,
+    httpOnly: true,
+    secure: false,
+  };
+
+  if (process.env.NODE_ENV === "production") {
+    cookieOptions.secure = true;
+  }
+
+  res.cookie("jwt", token, cookieOptions);
+
+  // Remove password from output
+  (user as any).password = undefined;
+
   res.status(statusCode).json({
     status: "success",
     token,
@@ -49,15 +65,7 @@ export const signup = catchAsync(
       role,
     });
 
-    const token = signToken((newUser._id as any).toString());
-
-    res.status(201).json({
-      status: "success",
-      token,
-      data: {
-        user: newUser,
-      },
-    });
+    createSendToken(newUser, 201, res);
   },
 );
 
@@ -75,11 +83,7 @@ export const login = catchAsync(
       return next(new AppError("Incorrect email or password", 401));
     }
 
-    const token = signToken((user._id as any).toString());
-    res.status(200).json({
-      status: "success",
-      token,
-    });
+    createSendToken(user, 200, res);
   },
 );
 
@@ -259,11 +263,7 @@ export const resetPassword = catchAsync(
 
     // 3) Update changePasswordAt property for the user(done in middleware)*
     // 4) Log the user in, send JWT
-    const token = signToken((user._id as any).toString());
-    res.status(200).json({
-      status: "success",
-      token,
-    });
+    createSendToken(user, 200, res);
   },
 );
 
