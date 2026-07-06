@@ -5,6 +5,7 @@ import tourRouter from "./routes/tourRoutes";
 import userRouter from "./routes/userRoutes";
 import AppError from "./utils/appError";
 import globalErrorHandler from "./utils/errorController";
+import { globalLimiter } from "./middleware/rateLimiter";
 
 export const createServer = () => {
   const app = express();
@@ -14,6 +15,9 @@ export const createServer = () => {
     .use(express.urlencoded({ extended: true }))
     .use(express.json())
     .use(cors({ origin: "http://localhost:3000" }));
+
+  // Apply global rate limiter to all API routes
+  app.use("/api", globalLimiter);
 
   app.use("/api/v1/tours", tourRouter);
   app.use("/api/v1/users", userRouter);

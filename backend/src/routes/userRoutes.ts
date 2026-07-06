@@ -2,7 +2,7 @@ import express from "express";
 
 import * as userController from "../controllers/userController";
 import * as authController from "../controllers/authController";
-import LoginLimiter from "../middleware/rateLimiter";
+import { LoginLimiter } from "../middleware/rateLimiter";
 
 const router = express.Router();
 

@@ -1,7 +1,7 @@
 import { rateLimit } from "express-rate-limit";
 import { Request, Response } from "express";
 
-const LoginLimiter = rateLimit({
+export const LoginLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour window
   max: 5,
   message: "Too many login attempts, please try again after an hour",
@@ -15,4 +15,10 @@ const LoginLimiter = rateLimit({
   legacyHeaders: true, // Enable the `X-RateLimit-*` headers
 });
 
-export default LoginLimiter;
+export const globalLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour window
+  max: 100, // Max 100 attempts
+  message: "Too many login attempts, please try again after an hour",
+  standardHeaders: false, // Disable the `RateLimit-*` headers
+  legacyHeaders: true, // Enable the `X-RateLimit-*` headers
+});
