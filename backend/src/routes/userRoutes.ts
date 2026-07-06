@@ -2,12 +2,13 @@ import express from "express";
 
 import * as userController from "../controllers/userController";
 import * as authController from "../controllers/authController";
+import LoginLimiter from "../middleware/rateLimiter";
 
 const router = express.Router();
 
 // Authentication routes
-router.route("/signup").post(authController.signup);
-router.route("/login").post(authController.login);
+router.post("/signup", authController.signup);
+router.post("/login", LoginLimiter, authController.login);
 router.post("/forgotPassword", authController.forgotPassword);
 router.patch("/resetPassword/:token", authController.resetPassword);
 
@@ -21,7 +22,7 @@ router.patch("/updateMe", authController.protect, authController.updateUser);
 router.delete("/deleteMe", authController.protect, authController.deleteUser);
 
 // User Crud routes
-router.route("/").get(userController.getAllUsers);
+router.get("/", userController.getAllUsers);
 
 router
   .route("/:id")
