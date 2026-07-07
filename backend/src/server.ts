@@ -1,6 +1,7 @@
 import express, { Request, Response, NextFunction } from "express";
 import morgan from "morgan";
 import cors from "cors";
+import helmet from "helmet";
 import tourRouter from "./routes/tourRoutes";
 import userRouter from "./routes/userRoutes";
 import AppError from "./utils/appError";
@@ -9,15 +10,21 @@ import { globalLimiter } from "./middleware/rateLimiter";
 
 export const createServer = () => {
   const app = express();
-  app
-    .disable("x-powered-by")
-    .use(morgan("dev"))
-    .use(express.urlencoded({ extended: true }))
-    .use(express.json())
-    .use(cors({ origin: "http://localhost:3000" }));
+
+  // Global Middleware
+
+  // Security HTTP headers (always apply for security)
+  app.use(helmet());
+
+  // Development loggin
+  if (process.env.NODE_ENV === "development") {
+    app.use(morgan("dev"));
+  }
 
   // Apply global rate limiter to all API routes
-  app.use("/api", globalLimiter);
+  if (process.env.NODE_ENV !== "test") {
+    app.use("/api", globalLimiter);
+  }
 
   app.use("/api/v1/tours", tourRouter);
   app.use("/api/v1/users", userRouter);
