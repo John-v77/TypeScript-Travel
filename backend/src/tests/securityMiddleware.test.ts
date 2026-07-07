@@ -27,4 +27,38 @@ describe("Security Middleware", () => {
       expect(response.headers["content-security-policy"]).toBeDefined();
     });
   });
+
+  describe("Request Body Size Limits", () => {
+    it("should accept requests within 1kb limit", async () => {
+      const smallData = {
+        name: "Test User",
+        email: "test@example.com",
+        password: "password123",
+        passwordConfirm: "password123",
+      };
+
+      const response = await request(app)
+        .post("/api/v1/users/signup")
+        .send(smallData);
+
+      // Should not be rejected due to size (may fail for other reasons)
+      expect(response.status).not.toBe(413); // Payload Too Large
+    }, 10000);
+
+    it("should reject requests exceeding 1mb limit in test environment", async () => {
+      // Create a payload larger than 1mb (test environment limit)
+      const largeString = "x".repeat(2 * 1024 * 1024); // 2mb string
+      const largeData = {
+        name: largeString,
+        email: "test@example.com",
+        password: "password123",
+      };
+
+      const response = await request(app)
+        .post("/api/v1/users/signup")
+        .send(largeData);
+
+      expect(response.status).toBe(413); // Payload Too Large
+    });
+  });
 });
