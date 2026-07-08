@@ -1,7 +1,7 @@
 import express from "express";
 
-import * as userController from "../controllers/userController";
-import * as authController from "../controllers/authController";
+import userController from "../controllers/userController";
+import authController from "../controllers/authController";
 import { LoginLimiter } from "../middleware/rateLimiter";
 
 const router = express.Router();
@@ -18,8 +18,8 @@ router.patch(
   authController.protect,
   authController.updatePassword,
 );
-router.patch("/updateMe", authController.protect, authController.updateUser);
-router.delete("/deleteMe", authController.protect, authController.deleteUser);
+router.patch("/updateMe", authController.protect, userController.updateUser);
+router.delete("/deleteMe", authController.protect, userController.deleteUser);
 
 // User Crud routes
 router.get("/", userController.getAllUsers);

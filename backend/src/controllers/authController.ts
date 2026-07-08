@@ -145,54 +145,6 @@ export const restrictTo = (...roles: string[]) => {
   };
 };
 
-export const deleteUser = catchAsync(
-  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-    await UserModel.findByIdAndUpdate(req.user!.id, { active: false });
-
-    res.status(204).json({
-      status: "success",
-      data: null,
-    });
-  },
-);
-
-export const updateUser = catchAsync(
-  async (
-    req: AuthenticatedRequest,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> => {
-    // Creates an error if the POSTs password data
-    if (req.body.password || req.body.passwordConfirm) {
-      return next(
-        new AppError(
-          "This route is not for password updates. Please use reset password feature.",
-          400,
-        ),
-      );
-    }
-
-    // Filters out unwanted fields names that are not allowed to be updated
-    const filteredBody = filterObj(req.body, "name", "email");
-
-    const updateUser = await UserModel.findByIdAndUpdate(
-      req.user!.id,
-      filteredBody,
-      {
-        new: true,
-        runValidators: true,
-      },
-    );
-
-    res.status(200).json({
-      status: "success",
-      data: {
-        user: updateUser,
-      },
-    });
-  },
-);
-
 export const forgotPassword = catchAsync(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     // 1) Get user based on POST email
@@ -291,3 +243,12 @@ export const updatePassword = catchAsync(
     createSendToken(user!, 200, res);
   },
 );
+
+export default {
+  signup,
+  login,
+  protect,
+  forgotPassword,
+  resetPassword,
+  updatePassword,
+};

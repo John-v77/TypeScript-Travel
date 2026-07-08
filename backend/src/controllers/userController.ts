@@ -1,9 +1,15 @@
 import { Request, Response, NextFunction } from "express";
-import { UserModel } from "../models/userModel";
+import { User, UserModel } from "../models/userModel";
 import { APIFeatures } from "../utils/apiFeatures";
 import catchAsync from "../utils/catchAsync";
+import AppError from "../utils/appError";
+import { filterObj } from "../utils";
 
-export const getAllUsers = catchAsync(
+interface AuthenticatedRequest extends Request {
+  user?: User;
+}
+
+const getAllUsers = catchAsync(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     //Create base query
     let query = UserModel.find();
@@ -41,17 +47,62 @@ export const getAllUsers = catchAsync(
   },
 );
 
-export const getUserById = (req: Request, res: Response): void => {
+const getUserById = (req: Request, res: Response): void => {
   console.log("Getting UserById");
   res.status(200).send("Get all users");
 };
 
-export const updateUser = (req: Request, res: Response): void => {
-  console.log("updateUser");
-  res.status(200).send("Get all users");
-};
+export const deleteUser = catchAsync(
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    await UserModel.findByIdAndUpdate(req.user!.id, { active: false });
 
-export const deleteUser = (req: Request, res: Response): void => {
-  console.log("deleteUser");
-  res.status(200).send("Get all users");
+    res.status(204).json({
+      status: "success",
+      data: null,
+    });
+  },
+);
+
+export const updateUser = catchAsync(
+  async (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    // Creates an error if the POSTs password data
+    if (req.body.password || req.body.passwordConfirm) {
+      return next(
+        new AppError(
+          "This route is not for password updates. Please use reset password feature.",
+          400,
+        ),
+      );
+    }
+
+    // Filters out unwanted fields names that are not allowed to be updated
+    const filteredBody = filterObj(req.body, "name", "email");
+
+    const updateUser = await UserModel.findByIdAndUpdate(
+      req.user!.id,
+      filteredBody,
+      {
+        new: true,
+        runValidators: true,
+      },
+    );
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        user: updateUser,
+      },
+    });
+  },
+);
+
+export default {
+  getAllUsers,
+  getUserById,
+  updateUser,
+  deleteUser,
 };
