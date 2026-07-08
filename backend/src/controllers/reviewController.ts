@@ -21,22 +21,7 @@ const getAllReviews = catchAsync(
   },
 );
 
-const createReview = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    // Allow nested routes to set tourId automatically
-    if (!req.body.tour && req.params.tourId) {
-      req.body.tour = req.params.tourId;
-    }
-
-    const newReview = await ReviewModel.create(req.body);
-
-    res.status(201).json({
-      status: "success",
-      data: { newReview },
-    });
-  },
-);
-
+const createReview = handlerFactory.createOne(ReviewModel);
 const deleteReview = handlerFactory.deleteOne(ReviewModel);
 
 export default {

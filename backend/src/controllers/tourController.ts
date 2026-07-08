@@ -53,18 +53,6 @@ const getAllTours = catchAsync(
   },
 );
 
-const createTour = catchAsync(
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const newTour: Tour = await TourModel.create(req.body);
-    res.status(201).json({
-      status: "success",
-      data: {
-        tour: newTour,
-      },
-    });
-  },
-);
-
 const getTourById = catchAsync(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { id } = req.params;
@@ -104,8 +92,6 @@ const updateTourPackage = catchAsync(
     });
   },
 );
-
-const deleteTourPackage = handlerFactory.deleteOne(TourModel);
 
 interface TourStats {
   _id: string;
@@ -184,6 +170,9 @@ const getMonthlyPlan = catchAsync(
     });
   },
 );
+
+const createTour = handlerFactory.createOne(TourModel);
+const deleteTourPackage = handlerFactory.deleteOne(TourModel);
 
 export default {
   aliasTopTours,

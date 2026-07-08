@@ -3,6 +3,20 @@ import { Model, Document } from "mongoose";
 import catchAsync from "./catchAsync";
 import AppError from "./appError";
 
+const createOne = <T extends Document>(Model: Model<T>) =>
+  catchAsync(
+    async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+      const newEntryDoc = await Model.create(req.body);
+
+      res.status(201).json({
+        status: "success",
+        data: {
+          data: newEntryDoc,
+        },
+      });
+    },
+  );
+
 const deleteOne = <T extends Document>(Model: Model<T>) =>
   catchAsync(
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -21,4 +35,5 @@ const deleteOne = <T extends Document>(Model: Model<T>) =>
 
 export default {
   deleteOne,
+  createOne,
 };
