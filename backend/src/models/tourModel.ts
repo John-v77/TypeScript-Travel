@@ -21,6 +21,7 @@ export interface Tour extends Document {
   startDates?: Date[];
   secretTour?: boolean;
   durationWeeks?: number;
+  guides?: string[];
 }
 
 // Creates the Mongoose schema using generics
@@ -103,6 +104,12 @@ const TourSchema = new Schema<Tour>(
       default: false,
       select: false,
     },
+    guides: [
+      {
+        type: Schema.ObjectId,
+        ref: "User",
+      },
+    ],
   },
   {
     toJSON: { virtuals: true },
@@ -125,6 +132,15 @@ TourSchema.pre(/^find/, function (next) {
   next();
 });
 
+TourSchema.pre(/^find/, function (next) {
+  console.log("populating");
+  (this as any).populate({
+    path: "guides",
+    select: "-__v -active",
+  });
+  next();
+});
+
 TourSchema.post(/^find/, function (docs, next) {
   console.log(`Query took ${Date.now() - (this as any).start} milliseconds!`);
   console.log(docs);
@@ -136,4 +152,6 @@ TourSchema.pre("aggregate", function (next) {
   console.log((this as any).pipeline());
   next();
 });
+
+export { TourSchema };
 export const TourModel = model<Tour>("Tour", TourSchema);
