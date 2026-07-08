@@ -4,6 +4,7 @@ import { APIFeatures } from "../utils/apiFeatures";
 
 import catchAsync from "../utils/catchAsync";
 import AppError from "../utils/appError";
+import handlerFactory from "../utils/handlerFactory";
 
 export const aliasTopTours = (
   req: Request,
@@ -104,20 +105,7 @@ export const updateTourPackage = catchAsync(
   },
 );
 
-export const deleteTourPackage = catchAsync(
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const { id } = req.params;
-    const tour: Tour | null = await TourModel.findByIdAndDelete(id);
-
-    if (!tour) {
-      return next(new AppError("Tour not found", 404));
-    }
-    res.status(204).json({
-      status: "success",
-      data: null,
-    });
-  },
-);
+export const deleteTourPackage = handlerFactory.deleteOne(TourModel);
 
 interface TourStats {
   _id: string;

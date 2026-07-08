@@ -10,5 +10,10 @@ router
     authController.protect,
     authController.restrictTo("user"),
     reviewController.createReview,
+  )
+  .delete(
+    authController.protect,
+    authController.restrictTo("user", "admin"),
+    reviewController.deleteReview,
   );
 export default router;

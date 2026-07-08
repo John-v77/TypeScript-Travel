@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import catchAsync from "../utils/catchAsync";
 import { ReviewModel } from "../models/reviewModel";
-import { start } from "repl";
+import handlerFactory from "../utils/handlerFactory";
 
 const getAllReviews = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -37,7 +37,10 @@ const createReview = catchAsync(
   },
 );
 
+const deleteReview = handlerFactory.deleteOne(ReviewModel);
+
 export default {
   getAllReviews,
   createReview,
+  deleteReview,
 };
