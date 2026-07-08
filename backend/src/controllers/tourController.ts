@@ -68,31 +68,6 @@ const getTourById = catchAsync(
   },
 );
 
-const updateTourPackage = catchAsync(
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const { id } = req.params;
-    const tour: Tour | null = await TourModel.findByIdAndUpdate(
-      id as string,
-      req.body,
-      {
-        new: true,
-        runValidators: true,
-      },
-    );
-
-    if (!tour) {
-      return next(new AppError("Tour not found", 404));
-    }
-
-    res.status(200).json({
-      status: "success",
-      data: {
-        tour,
-      },
-    });
-  },
-);
-
 interface TourStats {
   _id: string;
   num: number;
@@ -173,6 +148,7 @@ const getMonthlyPlan = catchAsync(
 
 const createTour = handlerFactory.createOne(TourModel);
 const deleteTourPackage = handlerFactory.deleteOne(TourModel);
+const updateTourPackage = handlerFactory.updateOne(TourModel);
 
 export default {
   aliasTopTours,
