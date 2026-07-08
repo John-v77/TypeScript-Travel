@@ -7,6 +7,7 @@ import path from "path";
 import ExpressMongoSanitize from "express-mongo-sanitize";
 import tourRouter from "./routes/tourRoutes";
 import userRouter from "./routes/userRoutes";
+import reviewRouter from "./routes/reviewRoutes";
 import AppError from "./utils/appError";
 import globalErrorHandler from "./utils/errorController";
 import { globalLimiter } from "./middleware/rateLimiter";
@@ -85,6 +86,7 @@ export const createServer = () => {
 
   app.use("/api/v1/tours", tourRouter);
   app.use("/api/v1/users", userRouter);
+  app.use("/api/v1/reviews", reviewRouter);
 
   app.get("/health", (req, res) => {
     res.json({ ok: true });

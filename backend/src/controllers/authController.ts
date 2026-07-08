@@ -12,7 +12,7 @@ interface AuthenticatedRequest extends Request {
   user?: User;
 }
 
-export const signToken = (id: string): string => {
+const signToken = (id: string): string => {
   if (!process.env.JWT_SECRET) {
     throw new Error("JWT_SECRET enviroment variable is required");
   }
@@ -52,7 +52,7 @@ const createSendToken = (
   });
 };
 
-export const signup = catchAsync(
+const signup = catchAsync(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { name, email, password, passwordConfirm, photo, role } = req.body;
 
@@ -69,7 +69,7 @@ export const signup = catchAsync(
   },
 );
 
-export const login = catchAsync(
+const login = catchAsync(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { email, password } = req.body;
 
@@ -87,7 +87,7 @@ export const login = catchAsync(
   },
 );
 
-export const protect = catchAsync(
+const protect = catchAsync(
   async (
     req: AuthenticatedRequest,
     res: Response,
@@ -134,7 +134,7 @@ export const protect = catchAsync(
   },
 );
 
-export const restrictTo = (...roles: string[]) => {
+const restrictTo = (...roles: string[]) => {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     if (!roles.includes(req.user!.role)) {
       return next(
@@ -145,7 +145,7 @@ export const restrictTo = (...roles: string[]) => {
   };
 };
 
-export const forgotPassword = catchAsync(
+const forgotPassword = catchAsync(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     // 1) Get user based on POST email
     const user = await UserModel.findOne({ email: req.body.email });
@@ -188,7 +188,7 @@ export const forgotPassword = catchAsync(
   },
 );
 
-export const resetPassword = catchAsync(
+const resetPassword = catchAsync(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     // 1)Get user based on token
 
@@ -219,7 +219,7 @@ export const resetPassword = catchAsync(
   },
 );
 
-export const updatePassword = catchAsync(
+const updatePassword = catchAsync(
   async (
     req: AuthenticatedRequest,
     res: Response,
@@ -251,4 +251,6 @@ export default {
   forgotPassword,
   resetPassword,
   updatePassword,
+  restrictTo,
+  signToken,
 };
