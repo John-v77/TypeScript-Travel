@@ -3,6 +3,24 @@ import { Model, Document } from "mongoose";
 import catchAsync from "./catchAsync";
 import AppError from "./appError";
 
+const getOne = <T extends Document>(Model: Model<T>, popOptions?: any) =>
+  catchAsync(
+    async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+      let query = Model.findById(req.params.id);
+      if (popOptions) query = query.populate(popOptions);
+      const doc = await query;
+
+      if (!doc) {
+        return next(new AppError("No document found with that ID", 404));
+      }
+
+      res.status(200).json({
+        status: "success",
+        data: { data: doc },
+      });
+    },
+  );
+
 const updateOne = <T extends Document>(Model: Model<T>) =>
   catchAsync(
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -58,4 +76,5 @@ export default {
   deleteOne,
   createOne,
   updateOne,
+  getOne,
 };
