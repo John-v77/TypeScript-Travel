@@ -1,6 +1,7 @@
 import { Router } from "express";
 import * as tourController from "../controllers/tourController";
-import * as authController from "../controllers/authController";
+import authController from "../controllers/authController";
+import reviewRouter from "./reviewRoutes";
 const router = Router();
 
 router
@@ -25,5 +26,7 @@ router
     authController.restrictTo("admin", "lead-guide"),
     tourController.deleteTourPackage,
   );
+
+router.use("/:tourId/reviews", reviewRouter);
 
 export default router;

@@ -2,7 +2,7 @@ import { Router } from "express";
 import reviewController from "../controllers/reviewController";
 import authController from "../controllers/authController";
 
-const router = Router();
+const router = Router({ mergeParams: true });
 router
   .route("/")
   .get(reviewController.getAllReviews)

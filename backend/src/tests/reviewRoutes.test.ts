@@ -1,6 +1,10 @@
 import { Review } from "../models/reviewModel";
 import { UserModel } from "../models/userModel";
 import { TourModel } from "../models/tourModel";
+import authController from "../controllers/authController";
+import request from "supertest";
+import { createServer } from "../server";
+import { ReviewModel } from "../models/reviewModel";
 
 jest.mock("../models/userModel");
 jest.mock("../models/tourModel");
@@ -538,10 +542,6 @@ describe("Review Model", () => {
     });
   });
 });
-import request from "supertest";
-import { createServer } from "../server";
-import { ReviewModel } from "../models/reviewModel";
-import * as authController from "../controllers/authController";
 
 jest.mock("../models/reviewModel");
 jest.mock("../controllers/authController", () => ({
