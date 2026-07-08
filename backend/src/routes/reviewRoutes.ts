@@ -5,6 +5,7 @@ import authController from "../controllers/authController";
 const router = Router();
 router
   .route("/")
+  .get(reviewController.getAllReviews)
   .post(
     authController.protect,
     authController.restrictTo("user"),
