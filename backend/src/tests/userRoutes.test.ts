@@ -1,7 +1,7 @@
 import request from "supertest";
 import { createServer } from "../server";
 import { UserModel } from "../models/userModel";
-import * as authController from "../controllers/authController";
+import authController from "../controllers/authController";
 import crypto from "crypto";
 import sendEmail from "../utils/email";
 

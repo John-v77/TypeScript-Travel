@@ -6,7 +6,7 @@ import catchAsync from "../utils/catchAsync";
 import AppError from "../utils/appError";
 import handlerFactory from "../utils/handlerFactory";
 
-export const aliasTopTours = (
+const aliasTopTours = (
   req: Request,
   res: Response,
   next: NextFunction,
@@ -24,7 +24,7 @@ export const aliasTopTours = (
   }
 };
 
-export const getAllTours = catchAsync(
+const getAllTours = catchAsync(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     // Check for page validation if page parameter is provided
     if (req.query.page) {
@@ -53,7 +53,7 @@ export const getAllTours = catchAsync(
   },
 );
 
-export const createTour = catchAsync(
+const createTour = catchAsync(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const newTour: Tour = await TourModel.create(req.body);
     res.status(201).json({
@@ -65,7 +65,7 @@ export const createTour = catchAsync(
   },
 );
 
-export const getTourById = catchAsync(
+const getTourById = catchAsync(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { id } = req.params;
     const tour: Tour | null = await TourModel.findById(id as string);
@@ -80,7 +80,7 @@ export const getTourById = catchAsync(
   },
 );
 
-export const updateTourPackage = catchAsync(
+const updateTourPackage = catchAsync(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { id } = req.params;
     const tour: Tour | null = await TourModel.findByIdAndUpdate(
@@ -105,7 +105,7 @@ export const updateTourPackage = catchAsync(
   },
 );
 
-export const deleteTourPackage = handlerFactory.deleteOne(TourModel);
+const deleteTourPackage = handlerFactory.deleteOne(TourModel);
 
 interface TourStats {
   _id: string;
@@ -117,7 +117,7 @@ interface TourStats {
   maxPrice: number;
 }
 
-export const getTourStats = catchAsync(
+const getTourStats = catchAsync(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const stats: TourStats[] = await TourModel.aggregate([
       {
@@ -147,7 +147,7 @@ interface MonthlyPlan {
   tours: string[];
 }
 
-export const getMonthlyPlan = catchAsync(
+const getMonthlyPlan = catchAsync(
   async (req: Request, res: Response): Promise<void> => {
     const year: number =
       parseInt(req.params.year as string, 10) || new Date().getFullYear();
@@ -184,3 +184,14 @@ export const getMonthlyPlan = catchAsync(
     });
   },
 );
+
+export default {
+  aliasTopTours,
+  getAllTours,
+  getTourById,
+  createTour,
+  updateTourPackage,
+  deleteTourPackage,
+  getTourStats,
+  getMonthlyPlan,
+};
