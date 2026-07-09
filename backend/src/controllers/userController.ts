@@ -53,7 +53,7 @@ const updateUser = catchAsync(
   },
 );
 
-const deleteUser = catchAsync(
+const deleteMe = catchAsync(
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     await UserModel.findByIdAndUpdate(req.user!.id, { active: false });
 
@@ -63,6 +63,8 @@ const deleteUser = catchAsync(
     });
   },
 );
+
+const deleteUser = deleteMe;
 
 // Middleware to set user ID for "me" routes
 const getMe = (
@@ -80,5 +82,6 @@ export default {
   updateUser,
   createUser,
   deleteUser,
+  deleteMe,
   getMe,
 };

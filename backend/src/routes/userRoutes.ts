@@ -12,44 +12,28 @@ router.post("/login", LoginLimiter, authController.login);
 router.post("/forgotPassword", authController.forgotPassword);
 router.patch("/resetPassword/:token", authController.resetPassword);
 
-// Protected routes
-router.get(
-  "/me",
-  authController.protect,
-  userController.getMe,
-  userController.getUserById,
-);
+// Protect all routes after this middleware
+router.use(authController.protect);
 
-router.patch(
-  "/updateMyPassword",
-  authController.protect,
-  authController.updatePassword,
-);
-router.patch("/updateMe", authController.protect, userController.updateUser);
-router.delete("/deleteMe", authController.protect, userController.deleteUser);
+// Protected routes
+router.get("/me", userController.getMe, userController.getUserById);
+
+router.patch("/updateMyPassword", authController.updatePassword);
+router.patch("/updateMe", userController.updateUser);
+router.delete("/deleteMe", userController.deleteMe);
 
 // Admin only CRUD routes
+router.use(authController.restrictTo("admin"));
+
 router
   .route("/")
   .get(userController.getAllUsers)
-  .post(
-    authController.protect,
-    authController.restrictTo("admin"),
-    userController.createUser,
-  );
+  .post(userController.createUser);
 
 router
   .route("/:id")
   .get(userController.getUserById)
-  .patch(
-    authController.protect,
-    authController.restrictTo("admin"),
-    userController.updateUser,
-  )
-  .delete(
-    authController.protect,
-    authController.restrictTo("admin"),
-    userController.deleteUser,
-  );
+  .patch(userController.updateUser)
+  .delete(userController.deleteUser);
 
 export default router;
