@@ -24,35 +24,6 @@ const aliasTopTours = (
   }
 };
 
-const getAllTours = catchAsync(
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    // Check for page validation if page parameter is provided
-    if (req.query.page) {
-      const page: number = parseInt(req.query.page as string) || 1;
-      const limitNo: number = parseInt(req.query.limit as string) || 20;
-      const skipNo: number = (page - 1) * limitNo;
-      const numTours: number = await TourModel.countDocuments();
-      if (skipNo >= numTours) {
-        return next(new AppError("This page does not exist", 400));
-      }
-    }
-
-    const features = new APIFeatures<Tour>(TourModel, req.query)
-      .filter()
-      .sort()
-      .limitFields()
-      .paginate();
-
-    const tours: Tour[] = await features.query;
-
-    res.status(200).json({
-      status: "success",
-      results: tours.length,
-      data: { tours },
-    });
-  },
-);
-
 interface TourStats {
   _id: string;
   num: number;
@@ -134,6 +105,7 @@ const getMonthlyPlan = catchAsync(
 const createTour = handlerFactory.createOne(TourModel);
 const deleteTourPackage = handlerFactory.deleteOne(TourModel);
 const updateTourPackage = handlerFactory.updateOne(TourModel);
+const getAllTours = handlerFactory.getAll(TourModel);
 const getTourById = handlerFactory.getOne(TourModel, {
   path: "guides",
   select: "-__v -passwordChangedAt",

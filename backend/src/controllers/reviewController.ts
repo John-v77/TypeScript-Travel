@@ -7,24 +7,6 @@ interface AuthenticatedRequest extends Request {
   user?: { id: string; role: string };
 }
 
-const getAllReviews = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    let filter = {};
-
-    if (req.params.tourId) {
-      filter = { tour: req.params.tourId };
-    }
-
-    const allReviews = await ReviewModel.find(filter);
-
-    res.status(200).json({
-      status: "success",
-      results: allReviews.length,
-      data: { allReviews },
-    });
-  },
-);
-
 const setTourUserIds = (
   req: AuthenticatedRequest,
   res: Response,
@@ -40,6 +22,7 @@ const setTourUserIds = (
   next();
 };
 
+const getAllReviews = handlerFactory.getAll(ReviewModel);
 const createReview = handlerFactory.createOne(ReviewModel);
 const deleteReview = handlerFactory.deleteOne(ReviewModel);
 

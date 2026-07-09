@@ -12,8 +12,8 @@ export class APIFeatures<T> {
   query: Query<T[], T>;
   queryString: QueryString;
 
-  constructor(model: Model<T>, queryString: QueryString) {
-    this.query = model.find();
+  constructor(query: Query<T[], T>, queryString: QueryString) {
+    this.query = query;
     this.queryString = queryString;
   }
 

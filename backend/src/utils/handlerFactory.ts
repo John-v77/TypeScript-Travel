@@ -2,6 +2,32 @@ import { Request, Response, NextFunction } from "express";
 import { Model, Document } from "mongoose";
 import catchAsync from "./catchAsync";
 import AppError from "./appError";
+import { APIFeatures } from "./apiFeatures";
+
+const getAll = <T extends Document>(Model: Model<T>) =>
+  catchAsync(
+    async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+      // To allow for nested GET reviews on tour (hack)
+      let filter: any = {};
+      if (req.params.tourId) {
+        filter = { tour: req.params.tourId };
+      }
+
+      // Apply filter to the model then use APIFeatures
+      const features = new APIFeatures(Model.find(filter), req.query);
+
+      // Apply filter then use the other features
+      features.filter().sort().limitFields().paginate();
+
+      const docs = await features.query;
+
+      res.status(200).json({
+        status: "success",
+        results: docs.length,
+        data: { data: docs },
+      });
+    },
+  );
 
 const getOne = <T extends Document>(Model: Model<T>, popOptions?: any) =>
   catchAsync(
@@ -77,4 +103,5 @@ export default {
   createOne,
   updateOne,
   getOne,
+  getAll,
 };
