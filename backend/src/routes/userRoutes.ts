@@ -13,6 +13,13 @@ router.post("/forgotPassword", authController.forgotPassword);
 router.patch("/resetPassword/:token", authController.resetPassword);
 
 // Protected routes
+router.get(
+  "/me",
+  authController.protect,
+  userController.getMe,
+  userController.getUserById,
+);
+
 router.patch(
   "/updateMyPassword",
   authController.protect,
@@ -21,13 +28,28 @@ router.patch(
 router.patch("/updateMe", authController.protect, userController.updateUser);
 router.delete("/deleteMe", authController.protect, userController.deleteUser);
 
-// User Crud routes
-router.get("/", userController.getAllUsers);
+// Admin only CRUD routes
+router
+  .route("/")
+  .get(userController.getAllUsers)
+  .post(
+    authController.protect,
+    authController.restrictTo("admin"),
+    userController.createUser,
+  );
 
 router
   .route("/:id")
   .get(userController.getUserById)
-  .patch(userController.updateUser)
-  .delete(userController.deleteUser);
+  .patch(
+    authController.protect,
+    authController.restrictTo("admin"),
+    userController.updateUser,
+  )
+  .delete(
+    authController.protect,
+    authController.restrictTo("admin"),
+    userController.deleteUser,
+  );
 
 export default router;
