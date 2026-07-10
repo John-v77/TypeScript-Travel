@@ -1,9 +1,7 @@
 import { NextFunction, Request, Response } from "express";
-import { Tour, TourModel } from "../models/tourModel";
-import { APIFeatures } from "../utils/apiFeatures";
+import { TourModel } from "../models/tourModel";
 
 import catchAsync from "../utils/catchAsync";
-import AppError from "../utils/appError";
 import handlerFactory from "../utils/handlerFactory";
 
 const aliasTopTours = (
@@ -13,8 +11,8 @@ const aliasTopTours = (
 ): void => {
   try {
     req.query.limit = "5";
-    req.query.sort = "-ratingAverage,price";
-    req.query.fields = "name,price,ratingAverage,summary,difficulty";
+    req.query.sort = "-ratingsAverage,price";
+    req.query.fields = "name,price,ratingsAverage,summary,difficulty";
     next();
   } catch (err) {
     res.status(500).json({
@@ -42,7 +40,7 @@ const getTourStats = catchAsync(
           _id: { $toUpper: "$difficulty" },
           num: { $sum: 1 },
           numRatings: { $sum: "$ratingQuantity" },
-          avgRating: { $avg: "$ratingAverage" },
+          avgRating: { $avg: "$ratingsAverage" },
           avgPrice: { $avg: "$price" },
           minPrice: { $min: "$price" },
           maxPrice: { $max: "$price" },

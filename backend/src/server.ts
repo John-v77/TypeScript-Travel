@@ -70,7 +70,7 @@ export const createServer = () => {
     hpp({
       whitelist: [
         "duration",
-        "ratingAverage",
+        "ratingsAverage",
         "ratingsQuantity",
         "maxGroupSize",
         "difficulty",

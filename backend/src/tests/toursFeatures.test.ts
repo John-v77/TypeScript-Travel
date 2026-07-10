@@ -733,7 +733,7 @@ describe("Tour Routes", () => {
             _id: { $toUpper: "$difficulty" },
             num: { $sum: 1 },
             numRatings: { $sum: "$ratingQuantity" },
-            avgRating: { $avg: "$ratingAverage" },
+            avgRating: { $avg: "$ratingsAverage" },
             avgPrice: { $avg: "$price" },
             minPrice: { $min: "$price" },
             maxPrice: { $max: "$price" },
@@ -820,7 +820,7 @@ describe("Tour Routes", () => {
             _id: { $toUpper: "$difficulty" },
             num: { $sum: 1 },
             numRatings: { $sum: "$ratingQuantity" },
-            avgRating: { $avg: "$ratingAverage" },
+            avgRating: { $avg: "$ratingsAverage" },
             avgPrice: { $avg: "$price" },
             minPrice: { $min: "$price" },
             maxPrice: { $max: "$price" },
@@ -1080,7 +1080,7 @@ describe("Tour Routes", () => {
             _id: { $toUpper: "$difficulty" },
             num: { $sum: 1 },
             numRatings: { $sum: "$ratingQuantity" },
-            avgRating: { $avg: "$ratingAverage" },
+            avgRating: { $avg: "$ratingsAverage" },
             avgPrice: { $avg: "$price" },
             minPrice: { $min: "$price" },
             maxPrice: { $max: "$price" },
@@ -1167,7 +1167,7 @@ describe("Tour Routes", () => {
             _id: { $toUpper: "$difficulty" },
             num: { $sum: 1 },
             numRatings: { $sum: "$ratingQuantity" },
-            avgRating: { $avg: "$ratingAverage" },
+            avgRating: { $avg: "$ratingsAverage" },
             avgPrice: { $avg: "$price" },
             minPrice: { $min: "$price" },
             maxPrice: { $max: "$price" },
@@ -1227,7 +1227,7 @@ describe("Tour Routes", () => {
           name: "Test Tour Name",
           duration: 7,
           price: 299,
-          ratingAverage: 0.5,
+          ratingsAverage: 0.5,
         };
 
         mockTourModel.create.mockRejectedValue(new Error("Validation error"));
@@ -1246,7 +1246,7 @@ describe("Tour Routes", () => {
           name: "Test Tour Name",
           duration: 7,
           price: 299,
-          ratingAverage: 5.5,
+          ratingsAverage: 5.5,
         };
 
         mockTourModel.create.mockRejectedValue(new Error("Validation error"));
@@ -1265,7 +1265,7 @@ describe("Tour Routes", () => {
           name: "Test Tour Name",
           duration: 7,
           price: 299,
-          ratingAverage: 4.2,
+          ratingsAverage: 4.2,
         };
 
         const mockCreatedTour = {
@@ -1283,13 +1283,13 @@ describe("Tour Routes", () => {
           .send(tourData)
           .expect(201);
 
-        expect(response.body.data.tour.ratingAverage).toBe(4.2);
+        expect(response.body.data.tour.ratingsAverage).toBe(4.2);
       });
 
       it("should reject invalid rating when updating tour", async () => {
         const tourId = "123";
         const updateData = {
-          ratingAverage: 6.0,
+          ratingsAverage: 6.0,
         };
 
         mockTourModel.findByIdAndUpdate.mockRejectedValue(
@@ -1482,7 +1482,7 @@ describe("Tour Routes", () => {
         name: "Bad123", // invalid characters
         duration: 7,
         price: 299,
-        ratingAverage: 6.0, // invalid rating
+        ratingsAverage: 6.0, // invalid rating
       };
 
       mockTourModel.create.mockRejectedValue(new Error("Validation error"));
@@ -1501,7 +1501,7 @@ describe("Tour Routes", () => {
         name: "Perfect Adventure Tour",
         duration: 14,
         price: 599,
-        ratingAverage: 4.7,
+        ratingsAverage: 4.7,
         priceDiscount: 15,
       };
 
@@ -1521,7 +1521,7 @@ describe("Tour Routes", () => {
         .expect(201);
 
       expect(response.body.data.tour.name).toBe("Perfect Adventure Tour");
-      expect(response.body.data.tour.ratingAverage).toBe(4.7);
+      expect(response.body.data.tour.ratingsAverage).toBe(4.7);
       expect(response.body.data.tour.priceDiscount).toBe(15);
     });
   });

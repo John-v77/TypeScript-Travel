@@ -615,11 +615,11 @@ describe("Tour Routes", () => {
   describe("GET /api/v1/tours/top-5-cheap", () => {
     it("should get top 5 cheap tours successfully", async () => {
       const mockTours = [
-        { _id: "1", name: "Cheap Tour 1", price: 199, ratingAverage: 4.8 },
-        { _id: "2", name: "Cheap Tour 2", price: 249, ratingAverage: 4.7 },
-        { _id: "3", name: "Cheap Tour 3", price: 299, ratingAverage: 4.6 },
-        { _id: "4", name: "Cheap Tour 4", price: 349, ratingAverage: 4.5 },
-        { _id: "5", name: "Cheap Tour 5", price: 399, ratingAverage: 4.4 },
+        { _id: "1", name: "Cheap Tour 1", price: 199, ratingsAverage: 4.8 },
+        { _id: "2", name: "Cheap Tour 2", price: 249, ratingsAverage: 4.7 },
+        { _id: "3", name: "Cheap Tour 3", price: 299, ratingsAverage: 4.6 },
+        { _id: "4", name: "Cheap Tour 4", price: 349, ratingsAverage: 4.5 },
+        { _id: "5", name: "Cheap Tour 5", price: 399, ratingsAverage: 4.4 },
       ];
 
       const mockQuery = {
@@ -636,9 +636,9 @@ describe("Tour Routes", () => {
         .get("/api/v1/tours/top-5-cheap")
         .expect(200);
 
-      expect(mockQuery.sort).toHaveBeenCalledWith("-ratingAverage price");
+      expect(mockQuery.sort).toHaveBeenCalledWith("-ratingsAverage price");
       expect(mockQuery.select).toHaveBeenCalledWith(
-        "name price ratingAverage summary difficulty",
+        "name price ratingsAverage summary difficulty",
       );
       expect(mockQuery.skip).toHaveBeenCalledWith(0);
       expect(mockQuery.limit).toHaveBeenCalledWith(5);
@@ -653,8 +653,8 @@ describe("Tour Routes", () => {
 
     it("should handle top-5-cheap with custom fields (middleware overrides)", async () => {
       const mockTours = [
-        { name: "Cheap Tour 1", price: 199, ratingAverage: 4.8 },
-        { name: "Cheap Tour 2", price: 249, ratingAverage: 4.7 },
+        { name: "Cheap Tour 1", price: 199, ratingsAverage: 4.8 },
+        { name: "Cheap Tour 2", price: 249, ratingsAverage: 4.7 },
       ];
 
       const mockQuery = {
@@ -668,12 +668,12 @@ describe("Tour Routes", () => {
       mockTourModel.find.mockReturnValue(mockQuery as any);
 
       const response = await request(app)
-        .get("/api/v1/tours/top-5-cheap?fields=name,price,ratingAverage")
+        .get("/api/v1/tours/top-5-cheap?fields=name,price,ratingsAverage")
         .expect(200);
 
-      expect(mockQuery.sort).toHaveBeenCalledWith("-ratingAverage price");
+      expect(mockQuery.sort).toHaveBeenCalledWith("-ratingsAverage price");
       expect(mockQuery.select).toHaveBeenCalledWith(
-        "name price ratingAverage summary difficulty",
+        "name price ratingsAverage summary difficulty",
       );
       expect(mockQuery.skip).toHaveBeenCalledWith(0);
       expect(mockQuery.limit).toHaveBeenCalledWith(5);
@@ -692,7 +692,7 @@ describe("Tour Routes", () => {
           _id: "1",
           name: "Easy Cheap Tour",
           price: 199,
-          ratingAverage: 4.8,
+          ratingsAverage: 4.8,
           difficulty: "easy",
         },
       ];
@@ -712,9 +712,9 @@ describe("Tour Routes", () => {
         .expect(200);
 
       expect(mockQuery.where).toHaveBeenCalledWith({ difficulty: "easy" });
-      expect(mockQuery.sort).toHaveBeenCalledWith("-ratingAverage price");
+      expect(mockQuery.sort).toHaveBeenCalledWith("-ratingsAverage price");
       expect(mockQuery.select).toHaveBeenCalledWith(
-        "name price ratingAverage summary difficulty",
+        "name price ratingsAverage summary difficulty",
       );
       expect(mockQuery.skip).toHaveBeenCalledWith(0);
       expect(mockQuery.limit).toHaveBeenCalledWith(5);
@@ -729,7 +729,7 @@ describe("Tour Routes", () => {
 
     it("should override any limit parameter with 5", async () => {
       const mockTours = [
-        { _id: "1", name: "Cheap Tour 1", price: 199, ratingAverage: 4.8 },
+        { _id: "1", name: "Cheap Tour 1", price: 199, ratingsAverage: 4.8 },
       ];
 
       const mockQuery = {
@@ -746,9 +746,9 @@ describe("Tour Routes", () => {
         .get("/api/v1/tours/top-5-cheap?limit=100")
         .expect(200);
 
-      expect(mockQuery.sort).toHaveBeenCalledWith("-ratingAverage price");
+      expect(mockQuery.sort).toHaveBeenCalledWith("-ratingsAverage price");
       expect(mockQuery.select).toHaveBeenCalledWith(
-        "name price ratingAverage summary difficulty",
+        "name price ratingsAverage summary difficulty",
       );
       expect(mockQuery.skip).toHaveBeenCalledWith(0);
       expect(mockQuery.limit).toHaveBeenCalledWith(5);
@@ -763,7 +763,7 @@ describe("Tour Routes", () => {
 
     it("should override any sort parameter with rating and price sort", async () => {
       const mockTours = [
-        { _id: "1", name: "Cheap Tour 1", price: 199, ratingAverage: 4.8 },
+        { _id: "1", name: "Cheap Tour 1", price: 199, ratingsAverage: 4.8 },
       ];
 
       const mockQuery = {
@@ -780,9 +780,9 @@ describe("Tour Routes", () => {
         .get("/api/v1/tours/top-5-cheap?sort=name")
         .expect(200);
 
-      expect(mockQuery.sort).toHaveBeenCalledWith("-ratingAverage price");
+      expect(mockQuery.sort).toHaveBeenCalledWith("-ratingsAverage price");
       expect(mockQuery.select).toHaveBeenCalledWith(
-        "name price ratingAverage summary difficulty",
+        "name price ratingsAverage summary difficulty",
       );
       expect(mockQuery.skip).toHaveBeenCalledWith(0);
       expect(mockQuery.limit).toHaveBeenCalledWith(5);
@@ -851,7 +851,7 @@ describe("Tour Routes", () => {
             _id: { $toUpper: "$difficulty" },
             num: { $sum: 1 },
             numRatings: { $sum: "$ratingQuantity" },
-            avgRating: { $avg: "$ratingAverage" },
+            avgRating: { $avg: "$ratingsAverage" },
             avgPrice: { $avg: "$price" },
             minPrice: { $min: "$price" },
             maxPrice: { $max: "$price" },
