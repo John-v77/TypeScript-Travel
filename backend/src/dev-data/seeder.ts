@@ -1,9 +1,9 @@
 import fs from "fs";
 import dotenv from "dotenv";
-
 import { database } from "../database";
 import { TourModel } from "../models/tourModel";
-import { deleteTourPackage } from "../controllers/tourController";
+import { UserModel } from "../models/userModel";
+import { ReviewModel } from "../models/reviewModel";
 
 dotenv.config({ path: "./config.env" });
 
@@ -24,8 +24,34 @@ interface TourJSONData {
   startDates?: string[];
 }
 
+interface UserJSONData {
+  _id: string;
+  name: string;
+  email: string;
+  role: string;
+  password: string;
+  passwordConfirm?: string;
+  photo?: string;
+  active?: boolean;
+}
+
+interface ReviewJSONData {
+  _id: string;
+  review: string;
+  rating: number;
+  tour: string;
+  user: string;
+}
+
+// Read JSON files
 const tours: TourJSONData[] = JSON.parse(
-  fs.readFileSync(`${__dirname}/data/tours-simple.json`, "utf-8"),
+  fs.readFileSync(`${__dirname}/data/tours.json`, "utf-8"),
+);
+const users: UserJSONData[] = JSON.parse(
+  fs.readFileSync(`${__dirname}/data/users.json`, "utf-8"),
+);
+const reviews: ReviewJSONData[] = JSON.parse(
+  fs.readFileSync(`${__dirname}/data/reviews.json`, "utf-8"),
 );
 
 const mapTourData = (tourData: TourJSONData) => ({
@@ -33,7 +59,7 @@ const mapTourData = (tourData: TourJSONData) => ({
   duration: tourData.duration,
   maxGroupSize: tourData.maxGroupSize.toString(),
   difficulty: tourData.difficulty,
-  ratingAverage: tourData.ratingsAverage,
+  ratingsAverate: tourData.ratingsAverage,
   ratingQuantity: tourData.ratingsQuantity,
   price: tourData.price,
   priceDiscount: tourData.priceDiscount,
@@ -44,30 +70,37 @@ const mapTourData = (tourData: TourJSONData) => ({
   startDates: tourData.startDates?.map((date) => new Date(date)),
 });
 
+// Import data into DB
 const importData = async (): Promise<void> => {
   try {
     await database.connect();
 
     const mappedTours = tours.map(mapTourData);
     await TourModel.create(mappedTours);
+    await UserModel.create(users, { validateBeforeSave: false });
+    await ReviewModel.create(reviews);
 
-    console.log("Data successfully loaded!");
+    console.log("✅ Data successfully loaded!");
   } catch (err) {
-    console.log("Error importing data:", err);
+    console.log("❌ Error importing data:", err);
   } finally {
     await database.disconnect();
     process.exit();
   }
 };
 
+// Delete all data from DB
 const deleteData = async (): Promise<void> => {
-  console.log("deleting");
   try {
     await database.connect();
+
     await TourModel.deleteMany();
-    console.log("Data successfully deleted!");
+    await ReviewModel.deleteMany();
+    await UserModel.deleteMany();
+
+    console.log("🗑️  Data successfully deleted!");
   } catch (err) {
-    console.log("Error deleting data:", err);
+    console.log("❌ Error deleting data:", err);
   } finally {
     await database.disconnect();
     process.exit();
@@ -75,11 +108,19 @@ const deleteData = async (): Promise<void> => {
 };
 
 if (process.argv.includes("--import")) {
+  console.log("📥 Importing data...");
   importData();
 } else if (process.argv.includes("--del")) {
+  console.log("🗑️  Deleting all data...");
   deleteData();
 } else {
-  console.log("Usage:");
-  console.log("--import to import data");
-  console.log("--del to delete all data");
+  console.log("📚 Data Seeder Usage:");
+  console.log(
+    "  npm run seed --import  - Import sample data (tours, users, reviews)",
+  );
+  console.log("  npm run seed --del     - Delete all data from database");
+  console.log("");
+  console.log("Examples:");
+  console.log("  node dist/dev-data/seeder.js --import");
+  console.log("  node dist/dev-data/seeder.js --del");
 }
