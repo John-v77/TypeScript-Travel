@@ -117,10 +117,16 @@ const TourSchema = new Schema<Tour>(
   },
 );
 
+TourSchema.index({ price: 1, ratingsAverage: -1 });
+TourSchema.index({ slug: 1 });
+
+// Virtual fields - cannot query agains them.
 TourSchema.virtual("durationWeeks").get(function () {
   return this.duration / 7;
 });
 
+// Important!
+// DOCUMENT MIDDLEWARE: runs before .save() and .create()
 TourSchema.pre("save", function (next) {
   this.slug = slugify(this.name, { lower: true });
   next();
