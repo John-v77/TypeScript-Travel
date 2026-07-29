@@ -1,4 +1,5 @@
 import { Schema, model, Model, Document, Query } from "mongoose";
+import { TourModel } from "./tourModel";
 
 export interface Review extends Document {
   review: string;
@@ -77,15 +78,11 @@ ReviewSchema.statics.calcAverageRatings = async function (tourId: string) {
   ]);
 
   if (stats.length > 0) {
-    // Import here to avoid circular dependency
-    const { TourModel } = await import("./tourModel.ts");
     await TourModel.findByIdAndUpdate(tourId, {
       ratingQuantity: stats[0].nRating,
       ratingAverate: stats[0].avgRating,
     });
   } else {
-    // Import here to avoid circular dependency
-    const { TourModel } = await import("./tourModel.ts");
     await TourModel.findByIdAndUpdate(tourId, {
       ratingQuantity: 0,
       ratingsAverage: 4.5,

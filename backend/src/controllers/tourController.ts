@@ -3,6 +3,7 @@ import { TourModel } from "../models/tourModel";
 
 import catchAsync from "../utils/catchAsync";
 import handlerFactory from "../utils/handlerFactory";
+import AppError from "../utils/appError";
 
 const aliasTopTours = (
   req: Request,
@@ -11,7 +12,7 @@ const aliasTopTours = (
 ): void => {
   try {
     req.query.limit = "5";
-    req.query.sort = "-ratingsAverage,price";
+    req.query.sort = "-ratingsAverage,-price";
     req.query.fields = "name,price,ratingsAverage,summary,difficulty";
     next();
   } catch (err) {
@@ -32,7 +33,7 @@ interface TourStats {
   maxPrice: number;
 }
 
-const getTourStats = catchAsync(
+const getToursStats = catchAsync(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const stats: TourStats[] = await TourModel.aggregate([
       {
@@ -100,6 +101,39 @@ const getMonthlyPlan = catchAsync(
   },
 );
 
+const getToursWithin = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  const { distance, latlng, unit } = req.params;
+  const [lat, lng] = (latlng as string).split(",");
+
+  const radius =
+    unit === "mi" ? Number(distance) / 3963.2 : Number(distance) / 6378.1;
+
+  if (!lat || !lng) {
+    return next(
+      new AppError(
+        "Please provide latitude and longitude in the format lat, lng.",
+        400,
+      ),
+    );
+  }
+
+  const tours = await TourModel.find({
+    startLocation: {
+      $geoWithin: { $centerSphere: [[Number(lng), Number(lat)], radius] },
+    },
+  });
+
+  res.status(200).json({
+    status: "success",
+    results: tours.length,
+    data: { data: tours },
+  });
+};
+
 const createTour = handlerFactory.createOne(TourModel);
 const deleteTourPackage = handlerFactory.deleteOne(TourModel);
 const updateTourPackage = handlerFactory.updateOne(TourModel);
@@ -116,6 +150,7 @@ export default {
   createTour,
   updateTourPackage,
   deleteTourPackage,
-  getTourStats,
+  getToursStats,
   getMonthlyPlan,
+  getToursWithin,
 };

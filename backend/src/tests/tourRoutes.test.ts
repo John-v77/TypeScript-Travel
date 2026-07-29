@@ -1556,4 +1556,88 @@ describe("Tour Routes", () => {
       spy.mockRestore();
     });
   });
+
+  describe("GET /api/v1/tours-within/:distance/center/:latlng/unit/:unit", () => {
+    it("should get tours within specified distance", async () => {
+      const mockTours = [
+        {
+          _id: "1",
+          name: "Tour 1",
+          startLocation: { coordinates: [-122.4194, 37.7749] },
+        },
+        {
+          _id: "2",
+          name: "Tour 2",
+          startLocation: { coordinates: [-122.4094, 37.7849] },
+        },
+      ];
+
+      mockTourModel.find.mockResolvedValue(mockTours as any);
+
+      const response = await request(app)
+        .get("/api/v1/tours-within/100/center/37.7749,-122.4194/unit/mi")
+        .expect(200);
+
+      expect(response.body.status).toBe("success");
+      expect(response.body.results).toBe(2);
+      expect(response.body.data.data).toEqual(mockTours);
+      expect(mockTourModel.find).toHaveBeenCalledWith({
+        startLocation: {
+          $geoWithin: { $centerSphere: [[-122.4194, 37.7749], 100 / 3963.2] },
+        },
+      });
+    });
+
+    it("should calculate radius correctly for kilometers", async () => {
+      mockTourModel.find.mockResolvedValue([]);
+
+      await request(app)
+        .get("/api/v1/tours-within/100/center/37.7749,-122.4194/unit/km")
+        .expect(200);
+
+      expect(mockTourModel.find).toHaveBeenCalledWith({
+        startLocation: {
+          $geoWithin: { $centerSphere: [[-122.4194, 37.7749], 100 / 6378.1] },
+        },
+      });
+    });
+
+    it("should return 400 error for missing latitude", async () => {
+      const response = await request(app)
+        .get("/api/v1/tours-within/100/center/,-122.4194/unit/mi")
+        .expect(400);
+
+      expect(response.body.message).toBe(
+        "Please provide latitude and longitude in the format lat,lng.",
+      );
+    });
+
+    it("should return 400 error for missing longitude", async () => {
+      const response = await request(app)
+        .get("/api/v1/tours-within/100/center/37.7749,/unit/mi")
+        .expect(400);
+
+      expect(response.body.message).toBe(
+        "Please provide latitude and longitude in the format lat,lng.",
+      );
+    });
+
+    it("should return 400 error for invalid lat,lng format", async () => {
+      const response = await request(app)
+        .get("/api/v1/tours-within/100/center/invalid/unit/mi")
+        .expect(400);
+
+      expect(response.body.message).toBe(
+        "Please provide latitude and longitude in the format lat,lng.",
+      );
+    });
+
+    it("should handle database errors", async () => {
+      mockTourModel.find.mockRejectedValue(new Error("Database error"));
+
+      await request(app)
+        .get("/api/v1/tours-within/100/center/37.7749,-122.4194/unit/mi")
+        .expect(500);
+    });
+  });
 });
