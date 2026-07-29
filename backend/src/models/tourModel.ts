@@ -22,6 +22,12 @@ export interface Tour extends Document {
   secretTour?: boolean;
   durationWeeks?: number;
   guides?: string[];
+  startLocation?: {
+    type: string;
+    coordinates: number[];
+    address?: string;
+    description?: string;
+  };
 }
 
 // Creates the Mongoose schema using generics
@@ -111,6 +117,16 @@ const TourSchema = new Schema<Tour>(
         ref: "User",
       },
     ],
+    startLocation: {
+      type: {
+        type: String,
+        default: "Point",
+        enum: ["Point"],
+      },
+      coordinates: [Number],
+      address: String,
+      description: String,
+    },
   },
   {
     toJSON: { virtuals: true },
@@ -120,6 +136,7 @@ const TourSchema = new Schema<Tour>(
 
 TourSchema.index({ price: 1, ratingsAverage: -1 });
 TourSchema.index({ slug: 1 });
+TourSchema.index({ startLocation: "2dsphere" });
 
 // Virtual fields - cannot query agains them.
 TourSchema.virtual("durationWeeks").get(function () {
@@ -155,8 +172,11 @@ TourSchema.post(/^find/, function (docs, next) {
 });
 
 TourSchema.pre("aggregate", function (next) {
-  (this as any).pipeline().unshift({ $match: { secretTour: { $ne: true } } });
-  console.log((this as any).pipeline());
+  const firstStage = (this as any).pipeline()?.[0];
+  if (!firstStage?.$geoNear) {
+    (this as any).pipeline().unshift({ $match: { secretTour: { $ne: true } } });
+    console.log((this as any).pipeline());
+  }
   next();
 });
 

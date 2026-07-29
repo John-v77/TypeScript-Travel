@@ -134,6 +134,50 @@ const getToursWithin = async (
   });
 };
 
+const getDistances = catchAsync(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const { latlng, unit } = req.params;
+    const [lat, lng] = (latlng as string).split(",");
+
+    const multiplier = unit === "mi" ? 0.000621371 : 0.001;
+
+    if (!lat || !lng) {
+      return next(
+        new AppError(
+          "Please provide latitude and longitude in the format lat, lng.",
+          400,
+        ),
+      );
+    }
+
+    const distances = await TourModel.aggregate([
+      {
+        // need to be first on aggretation
+        // & it needs an index (TourSchema.index({ startLocation: 2dsphere" });)
+        $geoNear: {
+          near: {
+            type: "Point",
+            coordinates: [Number(lng), Number(lat)],
+          },
+          distanceField: "distance",
+          distanceMultiplier: multiplier,
+        },
+      },
+      {
+        $project: {
+          distance: 1,
+          name: 1,
+        },
+      },
+    ]);
+
+    res.status(200).json({
+      status: "success",
+      data: { data: distances },
+    });
+  },
+);
+
 const createTour = handlerFactory.createOne(TourModel);
 const deleteTourPackage = handlerFactory.deleteOne(TourModel);
 const updateTourPackage = handlerFactory.updateOne(TourModel);
@@ -153,4 +197,5 @@ export default {
   getToursStats,
   getMonthlyPlan,
   getToursWithin,
+  getDistances,
 };

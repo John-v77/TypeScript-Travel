@@ -7,6 +7,7 @@ import tourController from "../controllers/tourController";
 
 jest.mock("../models/tourModel");
 jest.mock("../controllers/authController", () => ({
+  __esModule: true,
   ...jest.requireActual("../controllers/authController"),
   protect: jest.fn((req: any, res: any, next: any) => {
     req.user = { id: "user123", role: "admin" };
@@ -26,6 +27,7 @@ jest.mock("../controllers/authController", () => ({
   }),
 }));
 jest.mock("../controllers/tourController", () => ({
+  __esModule: true,
   ...jest.requireActual("../controllers/tourController"),
   deleteTourPackage: jest.fn(),
 }));
@@ -1638,6 +1640,141 @@ describe("Tour Routes", () => {
       await request(app)
         .get("/api/v1/tours-within/100/center/37.7749,-122.4194/unit/mi")
         .expect(500);
+    });
+  });
+
+  describe("GET /api/v1/tours/distances/:latlng/unit/:unit", () => {
+    it("should get distances to all tours in miles", async () => {
+      const mockDistances = [
+        { _id: "1", name: "Tour 1", distance: 12.34 },
+        { _id: "2", name: "Tour 2", distance: 45.67 },
+      ];
+
+      mockTourModel.aggregate.mockResolvedValue(mockDistances);
+
+      const response = await request(app)
+        .get("/api/v1/tours/distances/34.111745,-118.113491/unit/mi")
+        .expect(200);
+
+      expect(mockTourModel.aggregate).toHaveBeenCalledWith([
+        {
+          $geoNear: {
+            near: {
+              type: "Point",
+              coordinates: [-118.113491, 34.111745],
+            },
+            distanceField: "distance",
+            distanceMultiplier: 0.000621371,
+          },
+        },
+        {
+          $project: {
+            distance: 1,
+            name: 1,
+          },
+        },
+      ]);
+
+      expect(response.body).toEqual({
+        status: "success",
+        data: {
+          data: mockDistances,
+        },
+      });
+    });
+
+    it("should get distances to all tours in kilometers", async () => {
+      mockTourModel.aggregate.mockResolvedValue([]);
+
+      await request(app)
+        .get("/api/v1/tours/distances/34.111745,-118.113491/unit/km")
+        .expect(200);
+
+      expect(mockTourModel.aggregate).toHaveBeenCalledWith([
+        {
+          $geoNear: {
+            near: {
+              type: "Point",
+              coordinates: [-118.113491, 34.111745],
+            },
+            distanceField: "distance",
+            distanceMultiplier: 0.001,
+          },
+        },
+        {
+          $project: {
+            distance: 1,
+            name: 1,
+          },
+        },
+      ]);
+    });
+
+    it("should default to the km multiplier for any unit other than mi", async () => {
+      mockTourModel.aggregate.mockResolvedValue([]);
+
+      await request(app)
+        .get("/api/v1/tours/distances/34.111745,-118.113491/unit/xyz")
+        .expect(200);
+
+      const calledPipeline = mockTourModel.aggregate.mock.calls[0][0] as any[];
+      expect(calledPipeline[0].$geoNear.distanceMultiplier).toBe(0.001);
+    });
+
+    it("should return 400 error for missing latitude", async () => {
+      const response = await request(app)
+        .get("/api/v1/tours/distances/,-118.113491/unit/mi")
+        .expect(400);
+
+      expect(response.body.message).toBe(
+        "Please provide latitude and longitude in the format lat, lng.",
+      );
+    });
+
+    it("should return 400 error for missing longitude", async () => {
+      const response = await request(app)
+        .get("/api/v1/tours/distances/34.111745,/unit/mi")
+        .expect(400);
+
+      expect(response.body.message).toBe(
+        "Please provide latitude and longitude in the format lat, lng.",
+      );
+    });
+
+    it("should return 400 error for invalid lat,lng format", async () => {
+      const response = await request(app)
+        .get("/api/v1/tours/distances/invalid/unit/mi")
+        .expect(400);
+
+      expect(response.body.message).toBe(
+        "Please provide latitude and longitude in the format lat, lng.",
+      );
+    });
+
+    it("should handle empty results", async () => {
+      mockTourModel.aggregate.mockResolvedValue([]);
+
+      const response = await request(app)
+        .get("/api/v1/tours/distances/34.111745,-118.113491/unit/mi")
+        .expect(200);
+
+      expect(response.body).toEqual({
+        status: "success",
+        data: { data: [] },
+      });
+    });
+
+    it("should handle database/aggregation errors", async () => {
+      mockTourModel.aggregate.mockRejectedValue(new Error("Aggregation error"));
+
+      const response = await request(app)
+        .get("/api/v1/tours/distances/34.111745,-118.113491/unit/mi")
+        .expect(500);
+
+      expect(response.body).toEqual({
+        status: "error",
+        message: "Aggregation error",
+      });
     });
   });
 });
