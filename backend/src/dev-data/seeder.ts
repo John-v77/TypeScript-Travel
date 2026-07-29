@@ -8,7 +8,7 @@ import { ReviewModel } from "../models/reviewModel";
 dotenv.config({ path: "./config.env" });
 
 interface TourJSONData {
-  id: number;
+  _id: string;
   name: string;
   duration: number;
   maxGroupSize: number;
@@ -22,6 +22,13 @@ interface TourJSONData {
   imageCover: string;
   images?: string[];
   startDates?: string[];
+  guides?: string[];
+  startLocation?: {
+    type: string;
+    coordinates: number[];
+    address?: string;
+    description?: string;
+  };
 }
 
 interface UserJSONData {
@@ -59,7 +66,7 @@ const mapTourData = (tourData: TourJSONData) => ({
   duration: tourData.duration,
   maxGroupSize: tourData.maxGroupSize.toString(),
   difficulty: tourData.difficulty,
-  ratingsAverate: tourData.ratingsAverage,
+  ratingsAverage: tourData.ratingsAverage,
   ratingQuantity: tourData.ratingsQuantity,
   price: tourData.price,
   priceDiscount: tourData.priceDiscount,
@@ -68,6 +75,8 @@ const mapTourData = (tourData: TourJSONData) => ({
   imageCover: tourData.imageCover,
   images: tourData.images,
   startDates: tourData.startDates?.map((date) => new Date(date)),
+  guides: tourData.guides,
+  startLocation: tourData.startLocation,
 });
 
 // Import data into DB
@@ -75,9 +84,9 @@ const importData = async (): Promise<void> => {
   try {
     await database.connect();
 
-    const mappedTours = tours.map(mapTourData);
-    await TourModel.create(mappedTours);
-    await UserModel.create(users, { validateBeforeSave: false });
+    // const mappedTours = tours.map(mapTourData);
+    // await TourModel.create(mappedTours);
+    // await UserModel.create(users, { validateBeforeSave: false });
     await ReviewModel.create(reviews);
 
     console.log("✅ Data successfully loaded!");
