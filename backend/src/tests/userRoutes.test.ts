@@ -4,6 +4,7 @@ import { UserModel } from "../models/userModel";
 import authController from "../controllers/authController";
 import crypto from "crypto";
 import sendEmail from "../utils/email";
+import sharp from "sharp";
 
 jest.mock("../models/userModel");
 jest.mock("../controllers/authController", () => {
@@ -19,9 +20,19 @@ jest.mock("../controllers/authController", () => {
 });
 jest.mock("../utils/email");
 
+const mockSharpInstance = {
+  resize: jest.fn().mockReturnThis(),
+  toFormat: jest.fn().mockReturnThis(),
+  jpeg: jest.fn().mockReturnThis(),
+  toFile: jest.fn().mockResolvedValue(undefined),
+};
+
+jest.mock("sharp", () => jest.fn(() => mockSharpInstance));
+
 const mockUserModel = UserModel as jest.Mocked<typeof UserModel>;
 const mockAuthController = authController as jest.Mocked<typeof authController>;
 const mockSendEmail = sendEmail as jest.MockedFunction<typeof sendEmail>;
+const mockSharp = sharp as unknown as jest.Mock;
 
 // Set JWT environment variables for tests
 process.env.JWT_SECRET = "test-jwt-secret-key-for-user-routes";
@@ -942,6 +953,126 @@ describe("User Routes", () => {
       );
 
       expect(response.body.data.user.email).toBe("newemail@example.com");
+    });
+
+    describe("Photo upload", () => {
+      it("uploads, resizes to a 500x500 jpeg, and persists the filename on the user", async () => {
+        mockUserModel.findByIdAndUpdate.mockImplementation((id, update: any) =>
+          Promise.resolve({ _id: id, ...update }) as any,
+        );
+
+        const response = await request(app)
+          .patch("/api/v1/users/updateMe")
+          .set("Authorization", "Bearer valid-jwt-token")
+          .field("name", "John Doe")
+          .attach("photo", Buffer.from("fake-image-content"), {
+            filename: "avatar.jpg",
+            contentType: "image/jpeg",
+          })
+          .expect(200);
+
+        const filenamePattern = /^user-user123-\d+\.jpeg$/;
+
+        expect(mockSharp).toHaveBeenCalledTimes(1);
+        expect(mockSharpInstance.resize).toHaveBeenCalledWith(500, 500);
+        expect(mockSharpInstance.toFormat).toHaveBeenCalledWith("jpeg");
+        expect(mockSharpInstance.jpeg).toHaveBeenCalledWith({ quality: 90 });
+        expect(mockSharpInstance.toFile).toHaveBeenCalledWith(
+          expect.stringMatching(
+            /^public\/img\/users\/user-user123-\d+\.jpeg$/,
+          ),
+        );
+
+        expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
+          "user123",
+          expect.objectContaining({
+            name: "John Doe",
+            photo: expect.stringMatching(filenamePattern),
+          }),
+          { new: true, runValidators: true },
+        );
+
+        expect(response.body.data.user.photo).toEqual(
+          expect.stringMatching(filenamePattern),
+        );
+      });
+
+      it("rejects non-image uploads with 400 and never touches sharp or the database", async () => {
+        const response = await request(app)
+          .patch("/api/v1/users/updateMe")
+          .set("Authorization", "Bearer valid-jwt-token")
+          .attach("photo", Buffer.from("just plain text"), {
+            filename: "notes.txt",
+            contentType: "text/plain",
+          })
+          .expect(400);
+
+        expect(response.body.status).toBe("fail");
+        expect(response.body.message).toBe(
+          "Not an image! Please upload only images.",
+        );
+        expect(mockSharp).not.toHaveBeenCalled();
+        expect(mockUserModel.findByIdAndUpdate).not.toHaveBeenCalled();
+      });
+
+      it("skips resizing entirely when no photo is uploaded", async () => {
+        mockUserModel.findByIdAndUpdate.mockResolvedValue({
+          _id: "user123",
+          name: "Updated Name",
+        });
+
+        await request(app)
+          .patch("/api/v1/users/updateMe")
+          .set("Authorization", "Bearer valid-jwt-token")
+          .send({ name: "Updated Name" })
+          .expect(200);
+
+        expect(mockSharp).not.toHaveBeenCalled();
+        expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
+          "user123",
+          { name: "Updated Name" },
+          { new: true, runValidators: true },
+        );
+      });
+
+      it("propagates a resize failure as a 500 error without updating the user", async () => {
+        mockSharpInstance.toFile.mockRejectedValueOnce(new Error("Disk full"));
+
+        const response = await request(app)
+          .patch("/api/v1/users/updateMe")
+          .set("Authorization", "Bearer valid-jwt-token")
+          .attach("photo", Buffer.from("fake-image-content"), {
+            filename: "avatar.jpg",
+            contentType: "image/jpeg",
+          })
+          .expect(500);
+
+        expect(response.body.status).toBe("error");
+        expect(response.body.message).toBe("Disk full");
+        expect(mockUserModel.findByIdAndUpdate).not.toHaveBeenCalled();
+      });
+
+      it("requires authentication before accepting an upload", async () => {
+        mockAuthController.protect.mockImplementation(
+          (req: any, res: any, next: any) => {
+            res.status(401).json({
+              status: "fail",
+              message: "You are not logged in! Please log in to get access.",
+            });
+          },
+        );
+
+        const response = await request(app)
+          .patch("/api/v1/users/updateMe")
+          .attach("photo", Buffer.from("fake-image-content"), {
+            filename: "avatar.jpg",
+            contentType: "image/jpeg",
+          })
+          .expect(401);
+
+        expect(response.body.message).toContain("You are not logged in");
+        expect(mockSharp).not.toHaveBeenCalled();
+      });
     });
   });
 

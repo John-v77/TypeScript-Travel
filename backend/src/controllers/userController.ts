@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { User, UserModel } from "../models/userModel";
+import multer, { FileFilterCallback } from "multer";
+import sharp from "sharp";
 import { APIFeatures } from "../utils/apiFeatures";
 import catchAsync from "../utils/catchAsync";
 import AppError from "../utils/appError";
@@ -9,6 +11,47 @@ import handlerFactory from "../utils/handlerFactory";
 interface AuthenticatedRequest extends Request {
   user?: User;
 }
+
+const multerStorage = multer.memoryStorage();
+
+const multerFilter = (
+  req: Request,
+  file: Express.Multer.File,
+  cb: FileFilterCallback,
+): void => {
+  if (file.mimetype.startsWith("image")) {
+    cb(null, true);
+  } else {
+    cb(new AppError("Not an image! Please upload only images.", 400));
+  }
+};
+
+const upload = multer({
+  storage: multerStorage,
+  fileFilter: multerFilter,
+});
+
+const uploadUserPhoto = upload.single("photo");
+
+const resizeUserPhoto = catchAsync(
+  async (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    if (!req.file) return next();
+
+    req.file.filename = `user-${req.user!.id}-${Date.now()}.jpeg`;
+
+    await sharp(req.file.buffer)
+      .resize(500, 500)
+      .toFormat("jpeg")
+      .jpeg({ quality: 90 })
+      .toFile(`public/img/users/${req.file.filename}`);
+
+    next();
+  },
+);
 
 const getAllUsers = handlerFactory.getAll(UserModel);
 const getUserById = handlerFactory.getOne(UserModel);
@@ -34,6 +77,7 @@ const updateUser = catchAsync(
 
     // Filters out unwanted fields names that are not allowed to be updated
     const filteredBody = filterObj(req.body, "name", "email");
+    if (req.file) filteredBody.photo = req.file.filename;
 
     const updateUser = await UserModel.findByIdAndUpdate(
       req.user!.id,
@@ -84,4 +128,6 @@ export default {
   deleteUser,
   deleteMe,
   getMe,
+  uploadUserPhoto,
+  resizeUserPhoto,
 };

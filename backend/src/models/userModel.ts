@@ -35,7 +35,6 @@ const userSchema = new Schema<User>({
     lowercase: true,
     validate: [validator.isEmail, "Please provide a valid email"],
   },
-  photo: String,
   password: {
     type: String,
     required: [true, "Please provide a password"],
@@ -59,6 +58,10 @@ const userSchema = new Schema<User>({
   active: {
     type: Boolean,
     default: true,
+  },
+  photo: {
+    type: String,
+    default: "default.jpg",
   },
   role: {
     type: String,

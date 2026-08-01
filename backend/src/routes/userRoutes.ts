@@ -19,7 +19,12 @@ router.use(authController.protect);
 router.get("/me", userController.getMe, userController.getUserById);
 
 router.patch("/updateMyPassword", authController.updatePassword);
-router.patch("/updateMe", userController.updateUser);
+router.patch(
+  "/updateMe",
+  userController.uploadUserPhoto,
+  userController.resizeUserPhoto,
+  userController.updateUser,
+);
 router.delete("/deleteMe", userController.deleteMe);
 
 // Admin only CRUD routes
