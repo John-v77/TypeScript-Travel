@@ -65,8 +65,11 @@ export class APIFeatures<T> {
 
   // Pagination
   paginate(): this {
-    const page: number = parseInt(this.queryString.page as string) || 1;
-    const limitNo: number = parseInt(this.queryString.limit as string) || 20;
+    const parsedPage = parseInt(this.queryString.page as string);
+    const parsedLimit = parseInt(this.queryString.limit as string);
+
+    const page: number = parsedPage > 0 ? parsedPage : 1;
+    const limitNo: number = parsedLimit > 0 ? parsedLimit : 20;
     const skipNo: number = (page - 1) * limitNo;
 
     this.query = this.query.skip(skipNo).limit(limitNo);

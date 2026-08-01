@@ -24,7 +24,7 @@ const getAll = <T extends Document>(Model: Model<T>) =>
       res.status(200).json({
         status: "success",
         results: docs.length,
-        data: { data: docs },
+        data: docs,
       });
     },
   );
@@ -42,7 +42,7 @@ const getOne = <T extends Document>(Model: Model<T>, popOptions?: any) =>
 
       res.status(200).json({
         status: "success",
-        data: { data: doc },
+        data: doc,
       });
     },
   );
@@ -61,9 +61,7 @@ const updateOne = <T extends Document>(Model: Model<T>) =>
 
       res.status(200).json({
         status: "success",
-        data: {
-          data: doc,
-        },
+        data: doc,
       });
     },
   );
@@ -75,9 +73,7 @@ const createOne = <T extends Document>(Model: Model<T>) =>
 
       res.status(201).json({
         status: "success",
-        data: {
-          data: newEntryDoc,
-        },
+        data: newEntryDoc,
       });
     },
   );
