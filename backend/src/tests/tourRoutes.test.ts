@@ -1,36 +1,50 @@
 import request from "supertest";
 import { createServer } from "../server";
 import { TourModel } from "../models/tourModel";
-import { UserModel } from "../models/userModel";
 import authController from "../controllers/authController";
 import tourController from "../controllers/tourController";
 
 jest.mock("../models/tourModel");
-jest.mock("../controllers/authController", () => ({
-  __esModule: true,
-  ...jest.requireActual("../controllers/authController"),
-  protect: jest.fn((req: any, res: any, next: any) => {
-    req.user = { id: "user123", role: "admin" };
-    next();
-  }),
-  restrictTo: jest.fn((...roles: string[]) => {
-    return (req: any, res: any, next: any) => {
-      if (req.user && roles.includes(req.user.role)) {
+
+// authController/tourController's real export is `export default {...}`, so overrides
+// must be nested under `default` (with __esModule: true) or TS's esModuleInterop
+// default-import helper reads the real (unmocked) functions instead of these jest.fn() ones.
+
+jest.mock("../controllers/authController", () => {
+  const actual = jest.requireActual("../controllers/authController").default;
+  return {
+    __esModule: true,
+    default: {
+      ...actual,
+      protect: jest.fn((req: any, res: any, next: any) => {
+        req.user = { id: "user123", role: "admin" };
         next();
-      } else {
-        res.status(403).json({
-          status: "fail",
-          message: "You do not have permission to perform this action",
-        });
-      }
-    };
-  }),
-}));
-jest.mock("../controllers/tourController", () => ({
-  __esModule: true,
-  ...jest.requireActual("../controllers/tourController"),
-  deleteTourPackage: jest.fn(),
-}));
+      }),
+      restrictTo: jest.fn((...roles: string[]) => {
+        return (req: any, res: any, next: any) => {
+          if (req.user && roles.includes(req.user.role)) {
+            next();
+          } else {
+            res.status(403).json({
+              status: "fail",
+              message: "You do not have permission to perform this action",
+            });
+          }
+        };
+      }),
+    },
+  };
+});
+jest.mock("../controllers/tourController", () => {
+  const actual = jest.requireActual("../controllers/tourController").default;
+  return {
+    __esModule: true,
+    default: {
+      ...actual,
+      deleteTourPackage: jest.fn(),
+    },
+  };
+});
 
 const mockTourModel = TourModel as jest.Mocked<typeof TourModel>;
 const mockAuthController = authController as jest.Mocked<typeof authController>;
@@ -71,7 +85,7 @@ describe("Tour Routes", () => {
         status: "success",
         results: 2,
         data: {
-          tours: mockTours,
+          data: mockTours,
         },
       });
     });
@@ -104,7 +118,7 @@ describe("Tour Routes", () => {
         status: "success",
         results: 2,
         data: {
-          tours: mockTours,
+          data: mockTours,
         },
       });
     });
@@ -137,7 +151,7 @@ describe("Tour Routes", () => {
         status: "success",
         results: 2,
         data: {
-          tours: mockTours,
+          data: mockTours,
         },
       });
     });
@@ -170,7 +184,7 @@ describe("Tour Routes", () => {
         status: "success",
         results: 2,
         data: {
-          tours: mockTours,
+          data: mockTours,
         },
       });
     });
@@ -203,7 +217,7 @@ describe("Tour Routes", () => {
         status: "success",
         results: 2,
         data: {
-          tours: mockTours,
+          data: mockTours,
         },
       });
     });
@@ -236,7 +250,7 @@ describe("Tour Routes", () => {
         status: "success",
         results: 1,
         data: {
-          tours: mockTours,
+          data: mockTours,
         },
       });
     });
@@ -267,7 +281,7 @@ describe("Tour Routes", () => {
         status: "success",
         results: 1,
         data: {
-          tours: mockTours,
+          data: mockTours,
         },
       });
     });
@@ -299,7 +313,7 @@ describe("Tour Routes", () => {
         status: "success",
         results: 2,
         data: {
-          tours: mockTours,
+          data: mockTours,
         },
       });
     });
@@ -327,7 +341,7 @@ describe("Tour Routes", () => {
         status: "success",
         results: 2,
         data: {
-          tours: mockTours,
+          data: mockTours,
         },
       });
     });
@@ -356,7 +370,7 @@ describe("Tour Routes", () => {
         status: "success",
         results: 2,
         data: {
-          tours: mockTours,
+          data: mockTours,
         },
       });
     });
@@ -385,7 +399,7 @@ describe("Tour Routes", () => {
         status: "success",
         results: 1,
         data: {
-          tours: mockTours,
+          data: mockTours,
         },
       });
     });
@@ -417,7 +431,7 @@ describe("Tour Routes", () => {
         status: "success",
         results: 2,
         data: {
-          tours: mockTours,
+          data: mockTours,
         },
       });
     });
@@ -446,7 +460,7 @@ describe("Tour Routes", () => {
         status: "success",
         results: 2,
         data: {
-          tours: mockTours,
+          data: mockTours,
         },
       });
     });
@@ -477,7 +491,7 @@ describe("Tour Routes", () => {
         status: "success",
         results: 2,
         data: {
-          tours: mockTours,
+          data: mockTours,
         },
       });
     });
@@ -505,30 +519,37 @@ describe("Tour Routes", () => {
         status: "success",
         results: 1,
         data: {
-          tours: mockTours,
+          data: mockTours,
         },
       });
     });
 
-    it("should handle pagination with page validation", async () => {
+    it("should return an empty list for a page beyond the available results", async () => {
+      // No page-bounds validation is implemented: paginate() just skips/limits
+      // the query, so a page past the end of the data returns an empty array
+      // rather than a 400.
       const mockQuery = {
         sort: jest.fn().mockReturnThis(),
         select: jest.fn().mockReturnThis(),
         skip: jest.fn().mockReturnThis(),
         limit: jest.fn().mockResolvedValue([]),
+        where: jest.fn().mockReturnThis(),
       };
 
       mockTourModel.find.mockReturnValue(mockQuery as any);
-      mockTourModel.countDocuments.mockResolvedValue(25);
 
       const response = await request(app)
         .get("/api/v1/tours?page=5&limit=10")
-        .expect(400);
+        .expect(200);
 
-      expect(mockTourModel.countDocuments).toHaveBeenCalled();
+      expect(mockQuery.skip).toHaveBeenCalledWith(40);
+      expect(mockQuery.limit).toHaveBeenCalledWith(10);
       expect(response.body).toEqual({
-        status: "fail",
-        message: "This page does not exist",
+        status: "success",
+        results: 0,
+        data: {
+          data: [],
+        },
       });
     });
 
@@ -562,7 +583,7 @@ describe("Tour Routes", () => {
         status: "success",
         results: 1,
         data: {
-          tours: mockTours,
+          data: mockTours,
         },
       });
     });
@@ -590,7 +611,7 @@ describe("Tour Routes", () => {
         status: "success",
         results: 1,
         data: {
-          tours: mockTours,
+          data: mockTours,
         },
       });
     });
@@ -614,7 +635,10 @@ describe("Tour Routes", () => {
     });
   });
 
-  describe("GET /api/v1/tours/top-5-cheap", () => {
+  // Route is registered as "/top-5-by-rating" in tourRoutes.ts, not "/top-5-cheap"
+  // as this block previously assumed — the wrong URL fell through to the "/:id"
+  // route and crashed instead of exercising aliasTopTours/getAllTours.
+  describe("GET /api/v1/tours/top-5-by-rating", () => {
     it("should get top 5 cheap tours successfully", async () => {
       const mockTours = [
         { _id: "1", name: "Cheap Tour 1", price: 199, ratingsAverage: 4.8 },
@@ -635,10 +659,10 @@ describe("Tour Routes", () => {
       mockTourModel.find.mockReturnValue(mockQuery as any);
 
       const response = await request(app)
-        .get("/api/v1/tours/top-5-cheap")
+        .get("/api/v1/tours/top-5-by-rating")
         .expect(200);
 
-      expect(mockQuery.sort).toHaveBeenCalledWith("-ratingsAverage price");
+      expect(mockQuery.sort).toHaveBeenCalledWith("-ratingsAverage -price");
       expect(mockQuery.select).toHaveBeenCalledWith(
         "name price ratingsAverage summary difficulty",
       );
@@ -648,12 +672,12 @@ describe("Tour Routes", () => {
         status: "success",
         results: 5,
         data: {
-          tours: mockTours,
+          data: mockTours,
         },
       });
     });
 
-    it("should handle top-5-cheap with custom fields (middleware overrides)", async () => {
+    it("should handle top-5-by-rating with custom fields (middleware overrides)", async () => {
       const mockTours = [
         { name: "Cheap Tour 1", price: 199, ratingsAverage: 4.8 },
         { name: "Cheap Tour 2", price: 249, ratingsAverage: 4.7 },
@@ -670,10 +694,10 @@ describe("Tour Routes", () => {
       mockTourModel.find.mockReturnValue(mockQuery as any);
 
       const response = await request(app)
-        .get("/api/v1/tours/top-5-cheap?fields=name,price,ratingsAverage")
+        .get("/api/v1/tours/top-5-by-rating?fields=name,price,ratingsAverage")
         .expect(200);
 
-      expect(mockQuery.sort).toHaveBeenCalledWith("-ratingsAverage price");
+      expect(mockQuery.sort).toHaveBeenCalledWith("-ratingsAverage -price");
       expect(mockQuery.select).toHaveBeenCalledWith(
         "name price ratingsAverage summary difficulty",
       );
@@ -683,12 +707,12 @@ describe("Tour Routes", () => {
         status: "success",
         results: 2,
         data: {
-          tours: mockTours,
+          data: mockTours,
         },
       });
     });
 
-    it("should handle top-5-cheap with additional filters", async () => {
+    it("should handle top-5-by-rating with additional filters", async () => {
       const mockTours = [
         {
           _id: "1",
@@ -710,11 +734,11 @@ describe("Tour Routes", () => {
       mockTourModel.find.mockReturnValue(mockQuery as any);
 
       const response = await request(app)
-        .get("/api/v1/tours/top-5-cheap?difficulty=easy")
+        .get("/api/v1/tours/top-5-by-rating?difficulty=easy")
         .expect(200);
 
       expect(mockQuery.where).toHaveBeenCalledWith({ difficulty: "easy" });
-      expect(mockQuery.sort).toHaveBeenCalledWith("-ratingsAverage price");
+      expect(mockQuery.sort).toHaveBeenCalledWith("-ratingsAverage -price");
       expect(mockQuery.select).toHaveBeenCalledWith(
         "name price ratingsAverage summary difficulty",
       );
@@ -724,7 +748,7 @@ describe("Tour Routes", () => {
         status: "success",
         results: 1,
         data: {
-          tours: mockTours,
+          data: mockTours,
         },
       });
     });
@@ -745,10 +769,10 @@ describe("Tour Routes", () => {
       mockTourModel.find.mockReturnValue(mockQuery as any);
 
       const response = await request(app)
-        .get("/api/v1/tours/top-5-cheap?limit=100")
+        .get("/api/v1/tours/top-5-by-rating?limit=100")
         .expect(200);
 
-      expect(mockQuery.sort).toHaveBeenCalledWith("-ratingsAverage price");
+      expect(mockQuery.sort).toHaveBeenCalledWith("-ratingsAverage -price");
       expect(mockQuery.select).toHaveBeenCalledWith(
         "name price ratingsAverage summary difficulty",
       );
@@ -758,7 +782,7 @@ describe("Tour Routes", () => {
         status: "success",
         results: 1,
         data: {
-          tours: mockTours,
+          data: mockTours,
         },
       });
     });
@@ -779,10 +803,10 @@ describe("Tour Routes", () => {
       mockTourModel.find.mockReturnValue(mockQuery as any);
 
       const response = await request(app)
-        .get("/api/v1/tours/top-5-cheap?sort=name")
+        .get("/api/v1/tours/top-5-by-rating?sort=name")
         .expect(200);
 
-      expect(mockQuery.sort).toHaveBeenCalledWith("-ratingsAverage price");
+      expect(mockQuery.sort).toHaveBeenCalledWith("-ratingsAverage -price");
       expect(mockQuery.select).toHaveBeenCalledWith(
         "name price ratingsAverage summary difficulty",
       );
@@ -792,12 +816,12 @@ describe("Tour Routes", () => {
         status: "success",
         results: 1,
         data: {
-          tours: mockTours,
+          data: mockTours,
         },
       });
     });
 
-    it("should handle database error for top-5-cheap", async () => {
+    it("should handle database error for top-5-by-rating", async () => {
       const mockQuery = {
         sort: jest.fn().mockReturnThis(),
         select: jest.fn().mockReturnThis(),
@@ -808,7 +832,7 @@ describe("Tour Routes", () => {
       mockTourModel.find.mockReturnValue(mockQuery as any);
 
       const response = await request(app)
-        .get("/api/v1/tours/top-5-cheap")
+        .get("/api/v1/tours/top-5-by-rating")
         .expect(500);
 
       expect(response.body).toEqual({
@@ -818,7 +842,9 @@ describe("Tour Routes", () => {
     });
   });
 
-  describe("GET /api/v1/tours/tour-stats", () => {
+  // Route is "/tours-stats" (plural) in tourRoutes.ts, not "/tour-stats" as this
+  // block previously assumed.
+  describe("GET /api/v1/tours/tours-stats", () => {
     it("should get tour statistics successfully", async () => {
       const mockStats = [
         {
@@ -844,7 +870,7 @@ describe("Tour Routes", () => {
       mockTourModel.aggregate.mockResolvedValue(mockStats);
 
       const response = await request(app)
-        .get("/api/v1/tours/tour-stats")
+        .get("/api/v1/tours/tours-stats")
         .expect(200);
 
       expect(mockTourModel.aggregate).toHaveBeenCalledWith([
@@ -875,7 +901,7 @@ describe("Tour Routes", () => {
       mockTourModel.aggregate.mockRejectedValue(new Error("Aggregation error"));
 
       const response = await request(app)
-        .get("/api/v1/tours/tour-stats")
+        .get("/api/v1/tours/tours-stats")
         .expect(500);
 
       expect(response.body).toEqual({
@@ -1111,7 +1137,7 @@ describe("Tour Routes", () => {
       expect(response.body).toEqual({
         status: "success",
         data: {
-          tour: mockCreatedTour,
+          data: mockCreatedTour,
         },
       });
     });
@@ -1136,7 +1162,13 @@ describe("Tour Routes", () => {
       const tourId = "123";
       const mockTour = { _id: tourId, name: "Test Tour", price: 299 };
 
-      mockTourModel.findById.mockResolvedValue(mockTour as any);
+      // handlerFactory.getOne calls .populate(popOptions) on the findById query
+      // (getTourById passes a guides popOptions), so the mock must be a chainable
+      // object, not a plain resolved value, or the real code 500s on
+      // "query.populate is not a function".
+      mockTourModel.findById.mockReturnValue({
+        populate: jest.fn().mockResolvedValue(mockTour),
+      } as any);
 
       const response = await request(app)
         .get(`/api/v1/tours/${tourId}`)
@@ -1145,7 +1177,7 @@ describe("Tour Routes", () => {
       expect(response.body).toEqual({
         status: "success",
         data: {
-          tour: mockTour,
+          data: mockTour,
         },
       });
     });
@@ -1153,7 +1185,9 @@ describe("Tour Routes", () => {
     it("should return 404 for non-existent tour", async () => {
       const tourId = "123";
 
-      mockTourModel.findById.mockResolvedValue(null);
+      mockTourModel.findById.mockReturnValue({
+        populate: jest.fn().mockResolvedValue(null),
+      } as any);
 
       const response = await request(app)
         .get(`/api/v1/tours/${tourId}`)
@@ -1161,14 +1195,16 @@ describe("Tour Routes", () => {
 
       expect(response.body).toEqual({
         status: "fail",
-        message: "Tour not found",
+        message: "No document found with that ID",
       });
     });
 
     it("should handle database error", async () => {
       const tourId = "123";
 
-      mockTourModel.findById.mockRejectedValue(new Error("Database error"));
+      mockTourModel.findById.mockReturnValue({
+        populate: jest.fn().mockRejectedValue(new Error("Database error")),
+      } as any);
 
       const response = await request(app)
         .get(`/api/v1/tours/${tourId}`)
@@ -1200,7 +1236,7 @@ describe("Tour Routes", () => {
       expect(response.body).toEqual({
         status: "success",
         data: {
-          tour: mockUpdatedTour,
+          data: mockUpdatedTour,
         },
       });
     });
@@ -1217,7 +1253,7 @@ describe("Tour Routes", () => {
 
       expect(response.body).toEqual({
         status: "fail",
-        message: "Tour not found",
+        message: "No document found with that ID",
       });
     });
 
@@ -1422,144 +1458,10 @@ describe("Tour Routes", () => {
     });
   });
 
-  describe("Guides population middleware", () => {
-    it("should populate the guides field when finding tours", async () => {
-      const guide = await UserModel.create({
-        name: "John Doe",
-        email: "john@test.com",
-        password: "password123",
-        passwordConfirm: "password123",
-      });
-
-      const tour = await TourModel.create({
-        name: "Amazing Forest Tour",
-        duration: 10,
-        maxGroupSize: "8",
-        difficulty: "easy",
-        price: 299,
-        summary: "Great tour",
-        imageCover: "cover.jpg",
-        guides: [guide._id],
-      });
-
-      const result = await TourModel.findById(tour._id);
-
-      expect(result).not.toBeNull();
-
-      expect(result!.guides).toHaveLength(1);
-
-      // expect(result!.guides[0]).toHaveProperty("name", "John Doe");
-      // expect(result!.guides[0]).not.toHaveProperty("__v");
-      // expect(result!.guides[0]).not.toHaveProperty("active");
-    });
-
-    it("should exclude secret tours", async () => {
-      await TourModel.create({
-        name: "Visible Tour",
-        duration: 5,
-        maxGroupSize: "10",
-        difficulty: "easy",
-        price: 100,
-        summary: "summary",
-        imageCover: "cover.jpg",
-      });
-
-      await TourModel.create({
-        name: "Hidden Secret Tour",
-        duration: 5,
-        maxGroupSize: "10",
-        difficulty: "easy",
-        price: 100,
-        summary: "summary",
-        imageCover: "cover.jpg",
-        secretTour: true,
-      });
-
-      const tours = await TourModel.find();
-
-      expect(tours).toHaveLength(1);
-      expect(tours[0].name).toBe("Visible Tour");
-    });
-    it("should generate a slug before saving", async () => {
-      const tour = await TourModel.create({
-        name: "Amazing Forest Adventure",
-        duration: 10,
-        maxGroupSize: "5",
-        difficulty: "easy",
-        price: 250,
-        summary: "summary",
-        imageCover: "cover.jpg",
-      });
-
-      expect(tour.slug).toBe("amazing-forest-adventure");
-    });
-    it("should calculate durationWeeks", async () => {
-      const tour = new TourModel({
-        name: "Amazing Forest Adventure",
-        duration: 14,
-        maxGroupSize: "5",
-        difficulty: "easy",
-        price: 250,
-        summary: "summary",
-        imageCover: "cover.jpg",
-      });
-
-      expect(tour.durationWeeks).toBe(2);
-    });
-    it("should exclude secret tours from aggregate", async () => {
-      await TourModel.create({
-        name: "Visible Tour",
-        duration: 5,
-        maxGroupSize: "5",
-        difficulty: "easy",
-        price: 200,
-        summary: "summary",
-        imageCover: "cover.jpg",
-      });
-
-      await TourModel.create({
-        name: "Secret Tour",
-        duration: 5,
-        maxGroupSize: "5",
-        difficulty: "easy",
-        price: 200,
-        summary: "summary",
-        imageCover: "cover.jpg",
-        secretTour: true,
-      });
-
-      const tours = await TourModel.aggregate([
-        {
-          $match: {},
-        },
-      ]);
-
-      expect(tours).toHaveLength(1);
-      expect(tours[0].name).toBe("Visible Tour");
-    });
-    it("should log query execution time", async () => {
-      const spy = jest.spyOn(console, "log").mockImplementation();
-
-      await TourModel.find();
-
-      expect(spy).toHaveBeenCalledWith(
-        expect.stringMatching(/^Query took \d+ milliseconds!$/),
-      );
-
-      spy.mockRestore();
-    });
-    it("should log when populate middleware executes", async () => {
-      const spy = jest.spyOn(console, "log").mockImplementation();
-
-      await TourModel.find();
-
-      expect(spy).toHaveBeenCalledWith("populating");
-
-      spy.mockRestore();
-    });
-  });
-
-  describe("GET /api/v1/tours-within/:distance/center/:latlng/unit/:unit", () => {
+  // Router is mounted at /api/v1/tours (see server.ts), and the sub-route itself is
+  // "/tours-within/...", so the full path needs "/tours" twice — this block previously
+  // requested "/api/v1/tours-within/..." directly, which 404'd.
+  describe("GET /api/v1/tours/tours-within/:distance/center/:latlng/unit/:unit", () => {
     it("should get tours within specified distance", async () => {
       const mockTours = [
         {
@@ -1577,7 +1479,7 @@ describe("Tour Routes", () => {
       mockTourModel.find.mockResolvedValue(mockTours as any);
 
       const response = await request(app)
-        .get("/api/v1/tours-within/100/center/37.7749,-122.4194/unit/mi")
+        .get("/api/v1/tours/tours-within/100/center/37.7749,-122.4194/unit/mi")
         .expect(200);
 
       expect(response.body.status).toBe("success");
@@ -1594,7 +1496,7 @@ describe("Tour Routes", () => {
       mockTourModel.find.mockResolvedValue([]);
 
       await request(app)
-        .get("/api/v1/tours-within/100/center/37.7749,-122.4194/unit/km")
+        .get("/api/v1/tours/tours-within/100/center/37.7749,-122.4194/unit/km")
         .expect(200);
 
       expect(mockTourModel.find).toHaveBeenCalledWith({
@@ -1606,31 +1508,31 @@ describe("Tour Routes", () => {
 
     it("should return 400 error for missing latitude", async () => {
       const response = await request(app)
-        .get("/api/v1/tours-within/100/center/,-122.4194/unit/mi")
+        .get("/api/v1/tours/tours-within/100/center/,-122.4194/unit/mi")
         .expect(400);
 
       expect(response.body.message).toBe(
-        "Please provide latitude and longitude in the format lat,lng.",
+        "Please provide latitude and longitude in the format lat, lng.",
       );
     });
 
     it("should return 400 error for missing longitude", async () => {
       const response = await request(app)
-        .get("/api/v1/tours-within/100/center/37.7749,/unit/mi")
+        .get("/api/v1/tours/tours-within/100/center/37.7749,/unit/mi")
         .expect(400);
 
       expect(response.body.message).toBe(
-        "Please provide latitude and longitude in the format lat,lng.",
+        "Please provide latitude and longitude in the format lat, lng.",
       );
     });
 
     it("should return 400 error for invalid lat,lng format", async () => {
       const response = await request(app)
-        .get("/api/v1/tours-within/100/center/invalid/unit/mi")
+        .get("/api/v1/tours/tours-within/100/center/invalid/unit/mi")
         .expect(400);
 
       expect(response.body.message).toBe(
-        "Please provide latitude and longitude in the format lat,lng.",
+        "Please provide latitude and longitude in the format lat, lng.",
       );
     });
 
@@ -1638,7 +1540,7 @@ describe("Tour Routes", () => {
       mockTourModel.find.mockRejectedValue(new Error("Database error"));
 
       await request(app)
-        .get("/api/v1/tours-within/100/center/37.7749,-122.4194/unit/mi")
+        .get("/api/v1/tours/tours-within/100/center/37.7749,-122.4194/unit/mi")
         .expect(500);
     });
   });

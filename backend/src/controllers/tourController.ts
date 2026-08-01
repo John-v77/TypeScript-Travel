@@ -101,38 +101,36 @@ const getMonthlyPlan = catchAsync(
   },
 );
 
-const getToursWithin = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> => {
-  const { distance, latlng, unit } = req.params;
-  const [lat, lng] = (latlng as string).split(",");
+const getToursWithin = catchAsync(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const { distance, latlng, unit } = req.params;
+    const [lat, lng] = (latlng as string).split(",");
 
-  const radius =
-    unit === "mi" ? Number(distance) / 3963.2 : Number(distance) / 6378.1;
+    const radius =
+      unit === "mi" ? Number(distance) / 3963.2 : Number(distance) / 6378.1;
 
-  if (!lat || !lng) {
-    return next(
-      new AppError(
-        "Please provide latitude and longitude in the format lat, lng.",
-        400,
-      ),
-    );
-  }
+    if (!lat || !lng) {
+      return next(
+        new AppError(
+          "Please provide latitude and longitude in the format lat, lng.",
+          400,
+        ),
+      );
+    }
 
-  const tours = await TourModel.find({
-    startLocation: {
-      $geoWithin: { $centerSphere: [[Number(lng), Number(lat)], radius] },
-    },
-  });
+    const tours = await TourModel.find({
+      startLocation: {
+        $geoWithin: { $centerSphere: [[Number(lng), Number(lat)], radius] },
+      },
+    });
 
-  res.status(200).json({
-    status: "success",
-    results: tours.length,
-    data: { data: tours },
-  });
-};
+    res.status(200).json({
+      status: "success",
+      results: tours.length,
+      data: { data: tours },
+    });
+  },
+);
 
 const getDistances = catchAsync(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {

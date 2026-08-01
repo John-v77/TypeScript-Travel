@@ -44,10 +44,12 @@ router
   .route("/:id")
   .get(tourController.getTourById)
   .patch(
+    authController.protect,
     authController.restrictTo("admin", "lead-guide"),
     tourController.updateTourPackage,
   )
   .delete(
+    authController.protect,
     authController.restrictTo("admin", "lead-guide"),
     tourController.deleteTourPackage,
   );
