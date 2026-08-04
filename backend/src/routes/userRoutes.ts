@@ -2,6 +2,7 @@ import express from "express";
 
 import userController from "../controllers/userController";
 import authController from "../controllers/authController";
+import bookingController from "../controllers/bookingController";
 import { LoginLimiter } from "../middleware/rateLimiter";
 
 const router = express.Router();
@@ -18,12 +19,15 @@ router.use(authController.protect);
 // Protected routes
 router.get("/me", userController.getMe, userController.getUserById);
 
+// Nested route: get all bookings for the current user
+router.get("/my-bookings", bookingController.getMyBookings);
+
 router.patch("/updateMyPassword", authController.updatePassword);
 router.patch(
   "/updateMe",
   userController.uploadUserPhoto,
   userController.resizeUserPhoto,
-  userController.updateUser,
+  userController.updateUser
 );
 router.delete("/deleteMe", userController.deleteMe);
 

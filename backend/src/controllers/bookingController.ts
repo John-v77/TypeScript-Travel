@@ -64,6 +64,22 @@ export const getCheckoutSession = catchAsync(
   }
 );
 
+export const getMyBookings = catchAsync(
+  async (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    const bookings = await BookingModel.find({ user: req.user?.id });
+
+    res.status(200).json({
+      status: "success",
+      results: bookings.length,
+      data: bookings,
+    });
+  }
+);
+
 export const createBooking = factory.createOne(BookingModel);
 export const getBooking = factory.getOne(BookingModel);
 export const getAllBookings = factory.getAll(BookingModel);
@@ -72,6 +88,7 @@ export const deleteBooking = factory.deleteOne(BookingModel);
 
 export default {
   getCheckoutSession,
+  getMyBookings,
   createBooking,
   getBooking,
   getAllBookings,
