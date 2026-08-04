@@ -5,8 +5,7 @@ import catchAsync from "../utils/catchAsync";
 import { promisify } from "util";
 import crypto from "crypto";
 import AppError from "../utils/appError";
-import { filterObj } from "../utils";
-import sendEmail from "../utils/email";
+import sendEmail from "../utils/email/email";
 
 interface AuthenticatedRequest extends Request {
   user?: User;
@@ -25,7 +24,7 @@ const signToken = (id: string): string => {
 const createSendToken = (
   user: User,
   statusCode: number,
-  res: Response,
+  res: Response
 ): void => {
   const token = signToken((user._id as any).toString());
 
@@ -54,7 +53,7 @@ const createSendToken = (
 
 const signup = catchAsync(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const { name, email, password, passwordConfirm, photo, role } = req.body;
+    const { name, email, password, passwordConfirm, photo } = req.body;
 
     const newUser: User = await UserModel.create({
       name,
@@ -62,11 +61,13 @@ const signup = catchAsync(
       password,
       passwordConfirm,
       photo,
-      role,
     });
 
+    const url = `${req.protocol}://${req.get("host")}/me`;
+    await new sendEmail(newUser, url).sendWelcome();
+
     createSendToken(newUser, 201, res);
-  },
+  }
 );
 
 const login = catchAsync(
@@ -84,14 +85,14 @@ const login = catchAsync(
     }
 
     createSendToken(user, 200, res);
-  },
+  }
 );
 
 const protect = catchAsync(
   async (
     req: AuthenticatedRequest,
     res: Response,
-    next: NextFunction,
+    next: NextFunction
   ): Promise<void> => {
     // 1) Get token and check if it exists
     let token: string | undefined;
@@ -109,14 +110,14 @@ const protect = catchAsync(
     // 2) Verify token
     const jwtVerify = promisify(jwt.verify) as (
       token: string,
-      secret: string,
+      secret: string
     ) => Promise<JwtPayload>;
     const decoded = await jwtVerify(token, process.env.JWT_SECRET!);
     // 3) Check if user still exists
     const freshUser = await UserModel.findById(decoded.id);
     if (!freshUser) {
       return next(
-        new AppError("The user belonging to this token no longer exists.", 401),
+        new AppError("The user belonging to this token no longer exists.", 401)
       );
     }
     // 4) Check if user changed password after the token was issued
@@ -124,21 +125,21 @@ const protect = catchAsync(
       return next(
         new AppError(
           "User recently changed password! Please log in again.",
-          401,
-        ),
+          401
+        )
       );
     }
     // Grant access to protected route
     req.user = freshUser;
     next();
-  },
+  }
 );
 
 const restrictTo = (...roles: string[]) => {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     if (!roles.includes(req.user!.role)) {
       return next(
-        new AppError("You do not have permission to perform this action", 403),
+        new AppError("You do not have permission to perform this action", 403)
       );
     }
     next();
@@ -164,15 +165,15 @@ const forgotPassword = catchAsync(
     const message = `Forgot your password? Submit a PATCH request with your password and confirm to: ${resetURL}.\nIf you didn't forget your password, please ignore this email!`;
 
     try {
-      await sendEmail({
-        email: user.email,
-        subject: "Your password reset token - valid for 10 min",
-        message,
-      });
+      const resetURL = `${req.protocol}://${req.get(
+        "host"
+      )}/api/v1/users/resetPassword/${resetToken}`;
+
+      await new sendEmail(user, resetURL).sendPasswordReset();
 
       res.status(200).json({
         status: "success",
-        message: "Token send to email!",
+        message: "Token sent to email!",
       });
     } catch (err) {
       user.passwordResetToken = undefined;
@@ -181,11 +182,11 @@ const forgotPassword = catchAsync(
       return next(
         new AppError(
           "There was an error sending the email. Try again later!",
-          500,
-        ),
+          500
+        )
       );
     }
-  },
+  }
 );
 
 const resetPassword = catchAsync(
@@ -216,14 +217,14 @@ const resetPassword = catchAsync(
     // 3) Update changePasswordAt property for the user(done in middleware)*
     // 4) Log the user in, send JWT
     createSendToken(user, 200, res);
-  },
+  }
 );
 
 const updatePassword = catchAsync(
   async (
     req: AuthenticatedRequest,
     res: Response,
-    next: NextFunction,
+    next: NextFunction
   ): Promise<void> => {
     // 1) Get user from collection
     const user = await UserModel.findById(req.user!._id).select("+password");
@@ -241,7 +242,7 @@ const updatePassword = catchAsync(
 
     // 4) Log user in, send JWT
     createSendToken(user!, 200, res);
-  },
+  }
 );
 
 export default {

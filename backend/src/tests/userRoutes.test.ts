@@ -3,7 +3,7 @@ import { createServer } from "../server";
 import { UserModel } from "../models/userModel";
 import authController from "../controllers/authController";
 import crypto from "crypto";
-import sendEmail from "../utils/email";
+import Email from "../utils/email/email";
 import sharp from "sharp";
 
 jest.mock("../models/userModel");
@@ -18,7 +18,7 @@ jest.mock("../controllers/authController", () => {
     },
   };
 });
-jest.mock("../utils/email");
+jest.mock("../utils/email/email");
 
 const mockSharpInstance = {
   resize: jest.fn().mockReturnThis(),
@@ -31,7 +31,7 @@ jest.mock("sharp", () => jest.fn(() => mockSharpInstance));
 
 const mockUserModel = UserModel as jest.Mocked<typeof UserModel>;
 const mockAuthController = authController as jest.Mocked<typeof authController>;
-const mockSendEmail = sendEmail as jest.MockedFunction<typeof sendEmail>;
+const mockEmail = Email as jest.MockedClass<typeof Email>;
 const mockSharp = sharp as unknown as jest.Mock;
 
 // Set JWT environment variables for tests
@@ -41,9 +41,17 @@ process.env.JWT_COOKIE_EXPIRES_IN = "7";
 
 describe("User Routes", () => {
   const app = createServer();
+  const mockSendWelcome = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockEmail.mockImplementation(
+      () =>
+        ({
+          sendWelcome: mockSendWelcome.mockResolvedValue(undefined),
+          sendPasswordReset: jest.fn().mockResolvedValue(undefined),
+        }) as any
+    );
   });
 
   describe("POST /api/v1/users/signup", () => {
@@ -129,7 +137,7 @@ describe("User Routes", () => {
 
       const cookieArray = Array.isArray(cookies) ? cookies : [cookies];
       const jwtCookie = cookieArray.find((cookie: string) =>
-        cookie.startsWith("jwt="),
+        cookie.startsWith("jwt=")
       );
       expect(jwtCookie).toBeDefined();
 
@@ -168,7 +176,7 @@ describe("User Routes", () => {
       const cookies = response.headers["set-cookie"];
       const cookieArray = Array.isArray(cookies) ? cookies : [cookies];
       const jwtCookie = cookieArray.find((cookie: string) =>
-        cookie.startsWith("jwt="),
+        cookie.startsWith("jwt=")
       );
       expect(jwtCookie).toContain("Secure");
 
@@ -216,7 +224,7 @@ describe("User Routes", () => {
       };
 
       mockUserModel.create.mockRejectedValue(
-        new Error("Invalid input data. User name is required"),
+        new Error("Invalid input data. User name is required")
       );
 
       const response = await request(app)
@@ -226,7 +234,7 @@ describe("User Routes", () => {
 
       expect(response.body.status).toBe("error");
       expect(response.body.message).toBe(
-        "Invalid input data. User name is required",
+        "Invalid input data. User name is required"
       );
     });
 
@@ -671,7 +679,7 @@ describe("User Routes", () => {
         (req: any, res: any, next: any) => {
           req.user = { id: "user123" };
           next();
-        },
+        }
       );
     });
 
@@ -702,7 +710,7 @@ describe("User Routes", () => {
             status: "fail",
             message: "You are not logged in! Please log in to get access.",
           });
-        },
+        }
       );
 
       const response = await request(app)
@@ -715,7 +723,7 @@ describe("User Routes", () => {
 
     it("should handle database errors gracefully", async () => {
       mockUserModel.findByIdAndUpdate.mockRejectedValue(
-        new Error("Database connection failed"),
+        new Error("Database connection failed")
       );
 
       const response = await request(app)
@@ -748,7 +756,7 @@ describe("User Routes", () => {
         (req: any, res: any, next: any) => {
           req.user = { id: "user123" };
           next();
-        },
+        }
       );
     });
 
@@ -775,7 +783,7 @@ describe("User Routes", () => {
       expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
         "user123",
         { name: "Updated Name", email: "updated@example.com" },
-        { new: true, runValidators: true },
+        { new: true, runValidators: true }
       );
 
       expect(response.body).toEqual({
@@ -800,7 +808,7 @@ describe("User Routes", () => {
 
       expect(response.body.status).toBe("fail");
       expect(response.body.message).toBe(
-        "This route is not for password updates. Please use reset password feature.",
+        "This route is not for password updates. Please use reset password feature."
       );
     });
 
@@ -818,7 +826,7 @@ describe("User Routes", () => {
 
       expect(response.body.status).toBe("fail");
       expect(response.body.message).toBe(
-        "This route is not for password updates. Please use reset password feature.",
+        "This route is not for password updates. Please use reset password feature."
       );
     });
 
@@ -848,7 +856,7 @@ describe("User Routes", () => {
       expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
         "user123",
         { name: "Updated Name", email: "updated@example.com" },
-        { new: true, runValidators: true },
+        { new: true, runValidators: true }
       );
 
       expect(response.body).toEqual({
@@ -867,7 +875,7 @@ describe("User Routes", () => {
             status: "fail",
             message: "You are not logged in! Please log in to get access.",
           });
-        },
+        }
       );
 
       const response = await request(app)
@@ -886,7 +894,7 @@ describe("User Routes", () => {
       };
 
       mockUserModel.findByIdAndUpdate.mockRejectedValue(
-        new Error("Database connection failed"),
+        new Error("Database connection failed")
       );
 
       const response = await request(app)
@@ -921,7 +929,7 @@ describe("User Routes", () => {
       expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
         "user123",
         { name: "Only Name Updated" },
-        { new: true, runValidators: true },
+        { new: true, runValidators: true }
       );
 
       expect(response.body.data.user.name).toBe("Only Name Updated");
@@ -949,7 +957,7 @@ describe("User Routes", () => {
       expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
         "user123",
         { email: "newemail@example.com" },
-        { new: true, runValidators: true },
+        { new: true, runValidators: true }
       );
 
       expect(response.body.data.user.email).toBe("newemail@example.com");
@@ -957,8 +965,8 @@ describe("User Routes", () => {
 
     describe("Photo upload", () => {
       it("uploads, resizes to a 500x500 jpeg, and persists the filename on the user", async () => {
-        mockUserModel.findByIdAndUpdate.mockImplementation((id, update: any) =>
-          Promise.resolve({ _id: id, ...update }) as any,
+        mockUserModel.findByIdAndUpdate.mockImplementation(
+          (id, update: any) => Promise.resolve({ _id: id, ...update }) as any
         );
 
         const response = await request(app)
@@ -978,9 +986,7 @@ describe("User Routes", () => {
         expect(mockSharpInstance.toFormat).toHaveBeenCalledWith("jpeg");
         expect(mockSharpInstance.jpeg).toHaveBeenCalledWith({ quality: 90 });
         expect(mockSharpInstance.toFile).toHaveBeenCalledWith(
-          expect.stringMatching(
-            /^public\/img\/users\/user-user123-\d+\.jpeg$/,
-          ),
+          expect.stringMatching(/^public\/img\/users\/user-user123-\d+\.jpeg$/)
         );
 
         expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
@@ -989,11 +995,11 @@ describe("User Routes", () => {
             name: "John Doe",
             photo: expect.stringMatching(filenamePattern),
           }),
-          { new: true, runValidators: true },
+          { new: true, runValidators: true }
         );
 
         expect(response.body.data.user.photo).toEqual(
-          expect.stringMatching(filenamePattern),
+          expect.stringMatching(filenamePattern)
         );
       });
 
@@ -1009,7 +1015,7 @@ describe("User Routes", () => {
 
         expect(response.body.status).toBe("fail");
         expect(response.body.message).toBe(
-          "Not an image! Please upload only images.",
+          "Not an image! Please upload only images."
         );
         expect(mockSharp).not.toHaveBeenCalled();
         expect(mockUserModel.findByIdAndUpdate).not.toHaveBeenCalled();
@@ -1031,7 +1037,7 @@ describe("User Routes", () => {
         expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
           "user123",
           { name: "Updated Name" },
-          { new: true, runValidators: true },
+          { new: true, runValidators: true }
         );
       });
 
@@ -1059,7 +1065,7 @@ describe("User Routes", () => {
               status: "fail",
               message: "You are not logged in! Please log in to get access.",
             });
-          },
+          }
         );
 
         const response = await request(app)
@@ -1191,7 +1197,7 @@ describe("User Routes", () => {
         (req: any, res: any, next: any) => {
           req.user = { _id: "user123" };
           next();
-        },
+        }
       );
     });
 
@@ -1237,7 +1243,7 @@ describe("User Routes", () => {
       // Verify current password check
       expect(mockUser.correctPassword).toHaveBeenCalledWith(
         "currentPassword123",
-        "hashedCurrentPassword",
+        "hashedCurrentPassword"
       );
 
       // Verify new password was set (captured before createSendToken clears it)
@@ -1281,7 +1287,7 @@ describe("User Routes", () => {
       expect(response.body.message).toBe("Your current password is wrong.");
       expect(mockUser.correctPassword).toHaveBeenCalledWith(
         "wrongCurrentPassword",
-        "hashedCurrentPassword",
+        "hashedCurrentPassword"
       );
     });
 
@@ -1293,7 +1299,7 @@ describe("User Routes", () => {
             status: "fail",
             message: "You are not logged in! Please log in to get access.",
           });
-        },
+        }
       );
 
       const response = await request(app)
@@ -1390,8 +1396,18 @@ describe("User Routes", () => {
   });
 
   describe("POST /api/v1/users/forgotPassword - forgotPassword", () => {
+    const mockSendPasswordReset = jest.fn();
+
     beforeEach(() => {
-      mockSendEmail.mockClear();
+      jest.clearAllMocks();
+      mockSendPasswordReset.mockResolvedValue(undefined);
+      mockEmail.mockImplementation(
+        () =>
+          ({
+            sendWelcome: jest.fn().mockResolvedValue(undefined),
+            sendPasswordReset: mockSendPasswordReset,
+          }) as any
+      );
     });
 
     it("should send password reset email successfully", async () => {
@@ -1407,36 +1423,22 @@ describe("User Routes", () => {
       } as any;
 
       mockUserModel.findOne.mockResolvedValue(mockUser);
-      mockSendEmail.mockResolvedValue(undefined);
 
       const response = await request(app)
         .post("/api/v1/users/forgotPassword")
         .send({ email })
         .expect(200);
 
-      // Verify user lookup
       expect(mockUserModel.findOne).toHaveBeenCalledWith({ email });
-
-      // Verify reset token generation
       expect(mockUser.createPasswordResetToken).toHaveBeenCalled();
       expect(mockUser.save).toHaveBeenCalledWith({ validateBeforeSave: false });
-
-      // Verify email sending
-      expect(mockSendEmail).toHaveBeenCalledWith({
-        email: "user@example.com",
-        subject: "Your password reset token - valid for 10 min",
-        message: expect.stringContaining("Forgot your password?"),
-      });
-
-      expect(mockSendEmail).toHaveBeenCalledWith({
-        email: "user@example.com",
-        subject: "Your password reset token - valid for 10 min",
-        message: expect.stringContaining(resetToken),
-      });
-
-      // Verify response
+      expect(mockEmail).toHaveBeenCalledWith(
+        mockUser,
+        expect.stringContaining(resetToken)
+      );
+      expect(mockSendPasswordReset).toHaveBeenCalled();
       expect(response.body.status).toBe("success");
-      expect(response.body.message).toBe("Token send to email!");
+      expect(response.body.message).toBe("Token sent to email!");
     });
 
     it("should return 404 for non-existent email", async () => {
@@ -1451,9 +1453,9 @@ describe("User Routes", () => {
 
       expect(response.body.status).toBe("fail");
       expect(response.body.message).toBe(
-        "There is no user with email address.",
+        "There is no user with email address."
       );
-      expect(mockSendEmail).not.toHaveBeenCalled();
+      expect(mockEmail).not.toHaveBeenCalled();
     });
 
     it("should handle missing email field", async () => {
@@ -1464,7 +1466,7 @@ describe("User Routes", () => {
 
       expect(response.body.status).toBe("fail");
       expect(response.body.message).toBe(
-        "There is no user with email address.",
+        "There is no user with email address."
       );
     });
 
@@ -1475,6 +1477,7 @@ describe("User Routes", () => {
       const mockUser = {
         _id: "user123",
         email: "user@example.com",
+        name: "Test User",
         passwordResetToken: "hashed-token",
         passwordResetExpires: new Date(Date.now() + 10 * 60 * 1000),
         createPasswordResetToken: jest.fn().mockReturnValue(resetToken),
@@ -1482,21 +1485,19 @@ describe("User Routes", () => {
       } as any;
 
       mockUserModel.findOne.mockResolvedValue(mockUser);
-      mockSendEmail.mockRejectedValue(new Error("SMTP server error"));
+      mockSendPasswordReset.mockRejectedValue(new Error("SMTP server error"));
 
       const response = await request(app)
         .post("/api/v1/users/forgotPassword")
         .send({ email })
         .expect(500);
 
-      // Verify cleanup happened
       expect(mockUser.passwordResetToken).toBeUndefined();
       expect(mockUser.passwordResetExpires).toBeUndefined();
       expect(mockUser.save).toHaveBeenCalledWith({ validateBeforeSave: false });
-
       expect(response.body.status).toBe("error");
       expect(response.body.message).toBe(
-        "There was an error sending the email. Try again later!",
+        "There was an error sending the email. Try again later!"
       );
     });
 
@@ -1507,22 +1508,23 @@ describe("User Routes", () => {
       const mockUser = {
         _id: "user123",
         email: "user@example.com",
+        name: "Test User",
         createPasswordResetToken: jest.fn().mockReturnValue(resetToken),
         save: jest.fn().mockResolvedValue(true),
       } as any;
 
       mockUserModel.findOne.mockResolvedValue(mockUser);
-      mockSendEmail.mockResolvedValue(undefined);
 
       await request(app)
         .post("/api/v1/users/forgotPassword")
         .send({ email })
         .expect(200);
 
-      // Verify the reset URL format in the email message
-      const emailCallArgs = mockSendEmail.mock.calls[0][0];
-      expect(emailCallArgs.message).toMatch(
-        /http:\/\/127\.0\.0\.1:\d+\/api\/v1\/users\/resetPassword\/abcd1234resettoken/,
+      expect(mockEmail).toHaveBeenCalledWith(
+        mockUser,
+        expect.stringMatching(
+          /http:\/\/127\.0\.0\.1:\d+\/api\/v1\/users\/resetPassword\/abcd1234resettoken/
+        )
       );
     });
 
@@ -1530,7 +1532,7 @@ describe("User Routes", () => {
       const email = "user@example.com";
 
       mockUserModel.findOne.mockRejectedValue(
-        new Error("Database connection failed"),
+        new Error("Database connection failed")
       );
 
       const response = await request(app)
@@ -1540,7 +1542,7 @@ describe("User Routes", () => {
 
       expect(response.body.status).toBe("error");
       expect(response.body.message).toBe("Database connection failed");
-      expect(mockSendEmail).not.toHaveBeenCalled();
+      expect(mockEmail).not.toHaveBeenCalled();
     });
 
     it("should handle database errors when saving reset token", async () => {
@@ -1550,6 +1552,7 @@ describe("User Routes", () => {
       const mockUser = {
         _id: "user123",
         email: "user@example.com",
+        name: "Test User",
         createPasswordResetToken: jest.fn().mockReturnValue(resetToken),
         save: jest.fn().mockRejectedValue(new Error("Database save failed")),
       } as any;
@@ -1563,35 +1566,33 @@ describe("User Routes", () => {
 
       expect(response.body.status).toBe("error");
       expect(response.body.message).toBe("Database save failed");
-      expect(mockSendEmail).not.toHaveBeenCalled();
+      expect(mockEmail).not.toHaveBeenCalled();
     });
 
-    it("should include correct email message content", async () => {
+    it("should call Email class with user and reset URL", async () => {
       const email = "user@example.com";
       const resetToken = "abcd1234resettoken";
 
       const mockUser = {
         _id: "user123",
         email: "user@example.com",
+        name: "Test User",
         createPasswordResetToken: jest.fn().mockReturnValue(resetToken),
         save: jest.fn().mockResolvedValue(true),
       } as any;
 
       mockUserModel.findOne.mockResolvedValue(mockUser);
-      mockSendEmail.mockResolvedValue(undefined);
 
       await request(app)
         .post("/api/v1/users/forgotPassword")
         .send({ email })
         .expect(200);
 
-      const emailCallArgs = mockSendEmail.mock.calls[0][0];
-      expect(emailCallArgs.message).toContain("Forgot your password?");
-      expect(emailCallArgs.message).toContain("Submit a PATCH request");
-      expect(emailCallArgs.message).toContain("password and confirm");
-      expect(emailCallArgs.message).toContain(
-        "If you didn't forget your password, please ignore this email!",
+      expect(mockEmail).toHaveBeenCalledWith(
+        mockUser,
+        expect.stringContaining(resetToken)
       );
+      expect(mockSendPasswordReset).toHaveBeenCalled();
     });
   });
 });

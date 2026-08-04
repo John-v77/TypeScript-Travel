@@ -13,14 +13,14 @@ class Database implements DatabaseConnection {
 
   constructor() {
     const dbPassword = process.env.DATABASE_PASSWORD;
-    const dbUrl = process.env.DATABASE;
+    const dbUrl = process.env.DATABASE_3;
     const localDB = process.env.DATABASE_LOCAL;
 
     if (process.argv.includes("--local")) {
       console.log("####### Local Database #######");
       if (!localDB) {
         throw new Error(
-          "Local Database configuration missing. Check enviroment localdb variables",
+          "Local Database configuration missing. Check enviroment localdb variables"
         );
       }
       this.connectionString = localDB;
@@ -28,7 +28,7 @@ class Database implements DatabaseConnection {
     } else {
       if (!dbUrl || !dbPassword) {
         throw new Error(
-          "Database configuration missing. Check DATABASE and DATABASE_PASSWORD environment variables.",
+          "Database configuration missing. Check DATABASE and DATABASE_PASSWORD environment variables."
         );
       }
 
