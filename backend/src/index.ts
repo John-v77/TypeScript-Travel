@@ -1,9 +1,9 @@
 import dotenv from "dotenv";
+dotenv.config({ path: "./.env" }); // Load environment variables from .env file
+
 import { createServer } from "./server";
 import { database } from "./database";
 import { Server } from "http";
-
-dotenv.config({ path: "./.env" });
 
 async function startServer(): Promise<void> {
   try {
