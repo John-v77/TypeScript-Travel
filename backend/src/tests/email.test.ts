@@ -137,7 +137,7 @@ describe('Email Class', () => {
       await email.send(template, subject);
 
       expect(mockPug.renderFile).toHaveBeenCalledWith(
-        expect.stringContaining('/views/email/welcome.pug'),
+        expect.stringContaining('/email/welcome'),
         {
           firstName: 'John',
           url: testUrl,
@@ -163,7 +163,7 @@ describe('Email Class', () => {
       await email.send('passwordReset', 'Reset your password');
 
       expect(mockPug.renderFile).toHaveBeenCalledWith(
-        expect.stringContaining('/views/email/passwordReset.pug'),
+        expect.stringContaining('/email/passwordReset'),
         expect.any(Object)
       );
     });
@@ -199,7 +199,7 @@ describe('Email Class', () => {
       await email.sendWelcome();
 
       expect(sendSpy).toHaveBeenCalledWith(
-        'welcome',
+        'welcome-email.pug',
         'Welcome to the Natours Family!'
       );
     });
@@ -210,7 +210,7 @@ describe('Email Class', () => {
       await email.sendWelcome();
 
       expect(mockPug.renderFile).toHaveBeenCalledWith(
-        expect.stringContaining('/views/email/welcome.pug'),
+        expect.stringContaining('/email/welcome-email.pug'),
         expect.objectContaining({
           firstName: 'John',
           url: testUrl,
@@ -235,7 +235,7 @@ describe('Email Class', () => {
       await email.sendPasswordReset();
 
       expect(sendSpy).toHaveBeenCalledWith(
-        'passwordReset',
+        'password-reset.pug',
         'Your password reset token (valid for only 10 minutes)'
       );
     });
@@ -246,7 +246,7 @@ describe('Email Class', () => {
       await email.sendPasswordReset();
 
       expect(mockPug.renderFile).toHaveBeenCalledWith(
-        expect.stringContaining('/views/email/passwordReset.pug'),
+        expect.stringContaining('/email/password-reset.pug'),
         expect.objectContaining({
           firstName: 'John',
           url: testUrl,
