@@ -19,7 +19,7 @@ router.use(authController.protect);
 // Protected routes
 router.get("/me", userController.getMe, userController.getUserById);
 
-// Nested route: get all bookings for the current user
+// Get all bookings for the current user
 router.get("/my-bookings", bookingController.getMyBookings);
 
 router.patch("/updateMyPassword", authController.updatePassword);
@@ -44,5 +44,8 @@ router
   .get(userController.getUserById)
   .patch(userController.updateUser)
   .delete(userController.deleteUser);
+
+// Nested route: get all bookings for a specific user (admin only)
+router.get("/user-bookings/:userId/bookings", bookingController.getAllBookings);
 
 export default router;
