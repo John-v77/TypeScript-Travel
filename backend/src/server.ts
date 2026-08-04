@@ -8,6 +8,7 @@ import ExpressMongoSanitize from "express-mongo-sanitize";
 import tourRouter from "./routes/tourRoutes";
 import userRouter from "./routes/userRoutes";
 import reviewRouter from "./routes/reviewRoutes";
+import bookingRouter from "./routes/bookingRoutes";
 import AppError from "./utils/appError";
 import globalErrorHandler from "./utils/errorController";
 import { globalLimiter } from "./middleware/rateLimiter";
@@ -34,7 +35,7 @@ export const createServer = () => {
         },
       },
       crossOriginEmbedderPolicy: false,
-    }),
+    })
   );
 
   // Development loggin
@@ -62,7 +63,7 @@ export const createServer = () => {
       ExpressMongoSanitize({
         replaceWith: "_",
         onSanitize: () => {}, // Silent sanitization for tests
-      }),
+      })
     );
   }
 
@@ -76,7 +77,7 @@ export const createServer = () => {
         "difficulty",
         "price",
       ],
-    }),
+    })
   );
 
   // Serve static files
@@ -87,6 +88,7 @@ export const createServer = () => {
   app.use("/api/v1/tours", tourRouter);
   app.use("/api/v1/users", userRouter);
   app.use("/api/v1/reviews", reviewRouter);
+  app.use("/api/v1/bookings", bookingRouter);
 
   app.get("/health", (req, res) => {
     res.json({ ok: true });
