@@ -1,7 +1,9 @@
 import { Request, Response, NextFunction } from "express";
 import Stripe from "stripe";
 import { TourModel } from "../models/tourModel";
+import { BookingModel } from "../models/bookingModel";
 import catchAsync from "../utils/catchAsync";
+import factory from "../utils/handlerFactory";
 
 const getStripe = () => {
   if (!process.env.STRIPE_SECRET_KEY) {
@@ -16,7 +18,7 @@ interface AuthenticatedRequest extends Request {
   user?: any;
 }
 
-const getCheckoutSession = catchAsync(
+export const getCheckoutSession = catchAsync(
   async (
     req: AuthenticatedRequest,
     res: Response,
@@ -62,6 +64,17 @@ const getCheckoutSession = catchAsync(
   }
 );
 
+export const createBooking = factory.createOne(BookingModel);
+export const getBooking = factory.getOne(BookingModel);
+export const getAllBookings = factory.getAll(BookingModel);
+export const updateBooking = factory.updateOne(BookingModel);
+export const deleteBooking = factory.deleteOne(BookingModel);
+
 export default {
   getCheckoutSession,
+  createBooking,
+  getBooking,
+  getAllBookings,
+  updateBooking,
+  deleteBooking,
 };

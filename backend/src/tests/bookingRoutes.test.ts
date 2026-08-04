@@ -1,11 +1,9 @@
 import request from "supertest";
 import { BookingModel } from "../models/bookingModel";
 import { TourModel } from "../models/tourModel";
-import { UserModel } from "../models/userModel";
 import authController from "../controllers/authController";
 
 const mockCheckoutSessionsCreate = jest.fn();
-const mockWebhooksConstructEvent = jest.fn();
 
 jest.mock("stripe", () => {
   return jest.fn().mockImplementation(() => ({
@@ -14,19 +12,14 @@ jest.mock("stripe", () => {
         create: mockCheckoutSessionsCreate,
       },
     },
-    webhooks: {
-      constructEvent: mockWebhooksConstructEvent,
-    },
   }));
 });
 
 jest.mock("../models/bookingModel");
 jest.mock("../models/tourModel");
-jest.mock("../models/userModel");
 
 const mockBookingModel = BookingModel as jest.Mocked<typeof BookingModel>;
 const mockTourModel = TourModel as jest.Mocked<typeof TourModel>;
-const mockUserModel = UserModel as jest.Mocked<typeof UserModel>;
 
 jest.mock("../controllers/authController", () => {
   const actual = jest.requireActual("../controllers/authController");
@@ -232,6 +225,142 @@ describe("Booking Routes", () => {
 
       expect(response.body.status).toBe("error");
       expect(response.body.message).toBe("Stripe API error");
+    });
+  });
+
+  describe("GET /api/v1/bookings", () => {
+    it("should get all bookings for admin", async () => {
+      const mockBookings = [
+        {
+          _id: "booking1",
+          tour: "tour1",
+          user: "user1",
+          price: 497,
+          createdAt: new Date(),
+        },
+        {
+          _id: "booking2",
+          tour: "tour2",
+          user: "user2",
+          price: 997,
+          createdAt: new Date(),
+        },
+      ];
+
+      const mockQuery = {
+        sort: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue(mockBookings),
+      };
+
+      mockBookingModel.find.mockReturnValue(mockQuery as any);
+
+      const response = await request(app).get("/api/v1/bookings").expect(200);
+
+      expect(response.body.status).toBe("success");
+      expect(response.body.results).toBe(2);
+      expect(response.body.data).toHaveLength(2);
+    });
+  });
+
+  describe("POST /api/v1/bookings", () => {
+    it("should create a booking manually for admin", async () => {
+      const bookingData = {
+        tour: "507f1f77bcf86cd799439011",
+        user: "507f1f77bcf86cd799439012",
+        price: 497,
+      };
+
+      const mockBooking = {
+        _id: "booking123",
+        ...bookingData,
+        createdAt: new Date(),
+        paid: true,
+      };
+
+      mockBookingModel.create.mockResolvedValue(mockBooking as any);
+
+      const response = await request(app)
+        .post("/api/v1/bookings")
+        .send(bookingData)
+        .expect(201);
+
+      expect(response.body.status).toBe("success");
+      expect(response.body.data.tour).toBe(bookingData.tour);
+      expect(response.body.data.user).toBe(bookingData.user);
+      expect(response.body.data.price).toBe(bookingData.price);
+    });
+  });
+
+  describe("GET /api/v1/bookings/:id", () => {
+    it("should get a single booking by id", async () => {
+      const bookingId = "booking123";
+      const mockBooking = {
+        _id: bookingId,
+        tour: "tour1",
+        user: "user1",
+        price: 497,
+        createdAt: new Date(),
+      };
+
+      mockBookingModel.findById.mockResolvedValue(mockBooking as any);
+
+      const response = await request(app)
+        .get(`/api/v1/bookings/${bookingId}`)
+        .expect(200);
+
+      expect(response.body.status).toBe("success");
+      expect(response.body.data._id).toBe(bookingId);
+    });
+
+    it("should return 404 if booking not found", async () => {
+      mockBookingModel.findById.mockResolvedValue(null);
+
+      const response = await request(app)
+        .get("/api/v1/bookings/nonexistent123")
+        .expect(404);
+
+      expect(response.body.status).toBe("fail");
+    });
+  });
+
+  describe("PATCH /api/v1/bookings/:id", () => {
+    it("should update a booking", async () => {
+      const bookingId = "booking123";
+      const updateData = { price: 597 };
+      const mockUpdatedBooking = {
+        _id: bookingId,
+        tour: "tour1",
+        user: "user1",
+        price: 597,
+        createdAt: new Date(),
+      };
+
+      mockBookingModel.findByIdAndUpdate.mockResolvedValue(
+        mockUpdatedBooking as any
+      );
+
+      const response = await request(app)
+        .patch(`/api/v1/bookings/${bookingId}`)
+        .send(updateData)
+        .expect(200);
+
+      expect(response.body.status).toBe("success");
+      expect(response.body.data.price).toBe(597);
+    });
+  });
+
+  describe("DELETE /api/v1/bookings/:id", () => {
+    it("should delete a booking", async () => {
+      const bookingId = "booking123";
+      mockBookingModel.findByIdAndDelete.mockResolvedValue({} as any);
+
+      await request(app).delete(`/api/v1/bookings/${bookingId}`).expect(204);
+
+      expect(mockBookingModel.findByIdAndDelete).toHaveBeenCalledWith(
+        bookingId
+      );
     });
   });
 });
