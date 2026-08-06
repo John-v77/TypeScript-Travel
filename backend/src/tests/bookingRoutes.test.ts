@@ -62,11 +62,11 @@ describe("Booking Routes", () => {
           name: "Test User",
         };
         next();
-      }
+      },
     );
 
     mockAuthController.restrictTo.mockImplementation(
-      () => (req: any, res: any, next: any) => next()
+      () => (req: any, res: any, next: any) => next(),
     );
   });
 
@@ -103,7 +103,7 @@ describe("Booking Routes", () => {
           payment_method_types: ["card"],
           customer_email: "test@example.com",
           client_reference_id: tourId,
-        })
+        }),
       );
       expect(response.body.status).toBe("success");
       expect(response.body.session).toBeDefined();
@@ -134,7 +134,7 @@ describe("Booking Routes", () => {
         expect.objectContaining({
           success_url: expect.stringContaining("/my-tours?alert=booking"),
           cancel_url: expect.stringContaining(`/tour/${mockTour.slug}`),
-        })
+        }),
       );
     });
 
@@ -173,7 +173,7 @@ describe("Booking Routes", () => {
               quantity: 1,
             }),
           ]),
-        })
+        }),
       );
     });
 
@@ -195,7 +195,7 @@ describe("Booking Routes", () => {
             status: "fail",
             message: "You are not logged in!",
           });
-        }
+        },
       );
 
       await request(app)
@@ -216,7 +216,7 @@ describe("Booking Routes", () => {
 
       mockTourModel.findById.mockResolvedValue(mockTour as any);
       mockCheckoutSessionsCreate.mockRejectedValue(
-        new Error("Stripe API error")
+        new Error("Stripe API error"),
       );
 
       const response = await request(app)
@@ -287,7 +287,7 @@ describe("Booking Routes", () => {
         .expect(201);
 
       expect(response.body.status).toBe("success");
-      expect(response.body.data.tour).toBe(bookingData.tour);
+      expect(response.body.data).toBe(bookingData.tour);
       expect(response.body.data.user).toBe(bookingData.user);
       expect(response.body.data.price).toBe(bookingData.price);
     });
@@ -338,7 +338,7 @@ describe("Booking Routes", () => {
       };
 
       mockBookingModel.findByIdAndUpdate.mockResolvedValue(
-        mockUpdatedBooking as any
+        mockUpdatedBooking as any,
       );
 
       const response = await request(app)
@@ -359,7 +359,7 @@ describe("Booking Routes", () => {
       await request(app).delete(`/api/v1/bookings/${bookingId}`).expect(204);
 
       expect(mockBookingModel.findByIdAndDelete).toHaveBeenCalledWith(
-        bookingId
+        bookingId,
       );
     });
   });

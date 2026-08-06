@@ -4,11 +4,23 @@ import { ReviewModel } from "../models/reviewModel";
 import authController from "../controllers/authController";
 
 jest.mock("../models/reviewModel");
-jest.mock("../controllers/authController", () => ({
-  ...jest.requireActual("../controllers/authController"),
-  protect: jest.fn(),
-  restrictTo: jest.fn(),
-}));
+jest.mock("../controllers/authController", () => {
+  const actual = jest.requireActual("../controllers/authController").default;
+  return {
+    __esModule: true,
+    default: {
+      ...actual,
+      protect: jest.fn(),
+      // restrictTo("role") is called once at route-registration time (when
+      // reviewRoutes.ts is first required), before any beforeEach runs, so
+      // it needs a real pass-through implementation here — a bare jest.fn()
+      // returns undefined and crashes Route.post() with "callback function
+      // ... [object Undefined]". Tests below still override it per-scenario
+      // via mockImplementation.
+      restrictTo: jest.fn(() => (req: any, res: any, next: any) => next()),
+    },
+  };
+});
 
 const mockReviewModel = ReviewModel as jest.Mocked<typeof ReviewModel>;
 const mockAuthController = authController as jest.Mocked<typeof authController>;
