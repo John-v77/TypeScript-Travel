@@ -26,10 +26,42 @@ export const getCheckoutSession = catchAsync(
   ): Promise<void> => {
     if (!stripe) stripe = getStripe();
 
+    const { selectedDate } = req.body;
+
+    if (!selectedDate) {
+      res.status(400).json({
+        status: "fail",
+        message: "Please select a tour date",
+      });
+      return;
+    }
+
     const tour = await TourModel.findById(req.params.tourId);
 
     if (!tour) {
       throw new Error("Tour not found");
+    }
+
+    const maxGroupSize = Number(tour.maxGroupSize);
+
+    const tourDate = tour.startDates?.find(
+      (d) => new Date(d.date).getTime() === new Date(selectedDate).getTime()
+    );
+
+    if (!tourDate) {
+      res.status(400).json({
+        status: "fail",
+        message: "Selected date is not available for this tour",
+      });
+      return;
+    }
+
+    if (tourDate.soldOut || tourDate.participants >= maxGroupSize) {
+      res.status(400).json({
+        status: "fail",
+        message: "This tour date is sold out",
+      });
+      return;
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -55,6 +87,9 @@ export const getCheckoutSession = catchAsync(
         },
       ],
       mode: "payment",
+      metadata: {
+        selectedDate: new Date(selectedDate).toISOString(),
+      },
     });
 
     res.status(200).json({
