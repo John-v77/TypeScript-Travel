@@ -6,6 +6,7 @@ export interface Booking extends Document {
   price: number;
   createdAt: Date;
   paid: boolean;
+  selectedDate: Date;
 }
 
 const bookingSchema = new Schema<Booking>({
@@ -30,6 +31,10 @@ const bookingSchema = new Schema<Booking>({
   paid: {
     type: Boolean,
     default: true,
+  },
+  selectedDate: {
+    type: Date,
+    required: [true, 'Booking must have a selected tour date.'],
   },
 });
 

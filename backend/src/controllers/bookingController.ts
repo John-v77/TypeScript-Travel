@@ -80,7 +80,86 @@ export const getMyBookings = catchAsync(
   }
 );
 
-export const createBooking = factory.createOne(BookingModel);
+export const createBooking = catchAsync(
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const { tour, user, price, selectedDate } = req.body;
+
+    if (!selectedDate) {
+      res.status(400).json({
+        status: "fail",
+        message: "Please select a tour date",
+      });
+      return;
+    }
+
+    const tourDoc = await TourModel.findById(tour);
+
+    if (!tourDoc) {
+      res.status(404).json({
+        status: "fail",
+        message: "Tour not found",
+      });
+      return;
+    }
+
+    const maxGroupSize = Number(tourDoc.maxGroupSize);
+
+    const tourDate = tourDoc.startDates?.find(
+      (d) => new Date(d.date).getTime() === new Date(selectedDate).getTime()
+    );
+
+    if (!tourDate) {
+      res.status(400).json({
+        status: "fail",
+        message: "Selected date is not available for this tour",
+      });
+      return;
+    }
+
+    if (tourDate.soldOut || tourDate.participants >= maxGroupSize) {
+      res.status(400).json({
+        status: "fail",
+        message: "This tour date is sold out",
+      });
+      return;
+    }
+
+    const updatedTour = await TourModel.findOneAndUpdate(
+      {
+        _id: tour,
+        "startDates.date": new Date(selectedDate),
+        "startDates.participants": { $lt: maxGroupSize },
+      },
+      {
+        $inc: { "startDates.$.participants": 1 },
+        $set: {
+          "startDates.$.soldOut": tourDate.participants + 1 >= maxGroupSize,
+        },
+      },
+      { new: true }
+    );
+
+    if (!updatedTour) {
+      res.status(400).json({
+        status: "fail",
+        message: "Unable to book tour, please try again",
+      });
+      return;
+    }
+
+    const booking = await BookingModel.create({
+      tour,
+      user,
+      price,
+      selectedDate: new Date(selectedDate),
+    });
+
+    res.status(201).json({
+      status: "success",
+      data: booking,
+    });
+  }
+);
 export const getBooking = factory.getOne(BookingModel);
 export const getAllBookings = factory.getAll(BookingModel);
 export const updateBooking = factory.updateOne(BookingModel);
