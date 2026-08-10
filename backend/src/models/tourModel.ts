@@ -3,6 +3,12 @@ import slugify from "slugify";
 import validator from "validator";
 
 // Defines a TypeScript interface for type safety
+export interface TourDate {
+  date: Date;
+  participants: number;
+  soldOut: boolean;
+}
+
 export interface Tour extends Document {
   name: string;
   slug?: string;
@@ -18,7 +24,7 @@ export interface Tour extends Document {
   imageCover: string;
   images?: string[];
   createdAt?: Date;
-  startDates?: Date[];
+  startDates?: TourDate[];
   secretTour?: boolean;
   durationWeeks?: number;
   guides?: string[];
@@ -105,7 +111,22 @@ const TourSchema = new Schema<Tour>(
       default: Date.now,
       select: false,
     },
-    startDates: [Date],
+    startDates: [
+      {
+        date: {
+          type: Date,
+          required: true,
+        },
+        participants: {
+          type: Number,
+          default: 0,
+        },
+        soldOut: {
+          type: Boolean,
+          default: false,
+        },
+      },
+    ],
     secretTour: {
       type: Boolean,
       default: false,
