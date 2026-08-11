@@ -1,154 +1,47 @@
-import { act, screen } from "@testing-library/react"
+import { screen, within } from "@testing-library/react"
 import { App } from "./App"
 import { renderWithProviders } from "./utils/test-utils"
 
 test("App should have correct initial render", () => {
   renderWithProviders(<App />)
 
-  const countLabel = screen.getByLabelText<HTMLLabelElement>("Count")
-
-  const incrementValueInput = screen.getByLabelText<HTMLInputElement>(
-    "Set increment amount",
-  )
-
-  // The app should be rendered correctly
-  expect(screen.getByText(/learn/i)).toBeInTheDocument()
-
-  // Initial state: count should be 0, incrementValue should be 2
-  expect(countLabel).toHaveTextContent("0")
-  expect(incrementValueInput).toHaveValue(2)
+  // Check that the Natours app is rendered correctly
+  expect(screen.getByRole("link", { name: "Natours" })).toBeInTheDocument()
+  expect(screen.getByText(/Outdoors/)).toBeInTheDocument()
+  expect(screen.getByText("is where life happens")).toBeInTheDocument()
 })
 
-test("Increment value and Decrement value should work as expected", async () => {
-  const { user } = renderWithProviders(<App />)
+test("Navigation links are present", () => {
+  renderWithProviders(<App />)
 
-  const countLabel = screen.getByLabelText<HTMLLabelElement>("Count")
-
-  const incrementValueButton =
-    screen.getByLabelText<HTMLButtonElement>("Increment value")
-
-  const decrementValueButton =
-    screen.getByLabelText<HTMLButtonElement>("Decrement value")
-
-  // Click on "+" => Count should be 1
-  await user.click(incrementValueButton)
-  expect(countLabel).toHaveTextContent("1")
-
-  // Click on "-" => Count should be 0
-  await user.click(decrementValueButton)
-  expect(countLabel).toHaveTextContent("0")
+  // Footer also has a "Contact" link, so scope to the nav bar
+  const nav = within(screen.getByRole("navigation"))
+  expect(nav.getByRole("link", { name: "Tours" })).toBeInTheDocument()
+  expect(nav.getByRole("link", { name: "About" })).toBeInTheDocument()
+  expect(nav.getByRole("link", { name: "Contact" })).toBeInTheDocument()
+  expect(nav.getByRole("link", { name: "Sign In" })).toBeInTheDocument()
 })
 
-test("Add Amount should work as expected", async () => {
-  const { user } = renderWithProviders(<App />)
+test("Footer is rendered", () => {
+  renderWithProviders(<App />)
 
-  const countLabel = screen.getByLabelText<HTMLLabelElement>("Count")
-
-  const incrementValueInput = screen.getByLabelText<HTMLInputElement>(
-    "Set increment amount",
-  )
-
-  const addAmountButton = screen.getByText<HTMLButtonElement>("Add Amount")
-
-  // "Add Amount" button is clicked => Count should be 2
-  await user.click(addAmountButton)
-  expect(countLabel).toHaveTextContent("2")
-
-  // incrementValue is 2, click on "Add Amount" => Count should be 4
-  await user.clear(incrementValueInput)
-  await user.type(incrementValueInput, "2")
-  await user.click(addAmountButton)
-  expect(countLabel).toHaveTextContent("4")
-
-  // [Negative number] incrementValue is -1, click on "Add Amount" => Count should be 3
-  await user.clear(incrementValueInput)
-  await user.type(incrementValueInput, "-1")
-  await user.click(addAmountButton)
-  expect(countLabel).toHaveTextContent("3")
+  // Check footer content
+  expect(
+    screen.getByText("Unforgettable tours for adventurous people"),
+  ).toBeInTheDocument()
+  expect(screen.getByText("Company")).toBeInTheDocument()
+  expect(screen.getByText("Support")).toBeInTheDocument()
+  expect(screen.getByText("Follow Us")).toBeInTheDocument()
 })
 
-it("Add Async should work as expected", async () => {
-  vi.useFakeTimers({ shouldAdvanceTime: true })
+test("Home page content is displayed", () => {
+  renderWithProviders(<App />)
 
-  const { user } = renderWithProviders(<App />)
-
-  const addAsyncButton = screen.getByText<HTMLButtonElement>("Add Async")
-
-  const countLabel = screen.getByLabelText<HTMLLabelElement>("Count")
-
-  const incrementValueInput = screen.getByLabelText<HTMLInputElement>(
-    "Set increment amount",
-  )
-
-  await user.click(addAsyncButton)
-
-  await act(async () => {
-    await vi.advanceTimersByTimeAsync(500)
-  })
-
-  // "Add Async" button is clicked => Count should be 2
-  expect(countLabel).toHaveTextContent("2")
-
-  await user.clear(incrementValueInput)
-  await user.type(incrementValueInput, "2")
-
-  await user.click(addAsyncButton)
-  await act(async () => {
-    await vi.advanceTimersByTimeAsync(500)
-  })
-
-  // incrementValue is 2, click on "Add Async" => Count should be 4
-  expect(countLabel).toHaveTextContent("4")
-
-  await user.clear(incrementValueInput)
-  await user.type(incrementValueInput, "-1")
-  await user.click(addAsyncButton)
-
-  await act(async () => {
-    await vi.advanceTimersByTimeAsync(500)
-  })
-
-  // [Negative number] incrementValue is -1, click on "Add Async" => Count should be 3
-  expect(countLabel).toHaveTextContent("3")
-
-  vi.useRealTimers()
-})
-
-test("Add If Odd should work as expected", async () => {
-  const { user } = renderWithProviders(<App />)
-
-  const countLabel = screen.getByLabelText<HTMLLabelElement>("Count")
-
-  const addIfOddButton = screen.getByText<HTMLButtonElement>("Add If Odd")
-
-  const incrementValueInput = screen.getByLabelText<HTMLInputElement>(
-    "Set increment amount",
-  )
-
-  const incrementValueButton =
-    screen.getByLabelText<HTMLButtonElement>("Increment value")
-
-  // "Add If Odd" button is clicked => Count should stay 0
-  await user.click(addIfOddButton)
-  expect(countLabel).toHaveTextContent("0")
-
-  // Click on "+" => Count should be updated to 1
-  await user.click(incrementValueButton)
-  expect(countLabel).toHaveTextContent("1")
-
-  // "Add If Odd" button is clicked => Count should be updated to 3
-  await user.click(addIfOddButton)
-  expect(countLabel).toHaveTextContent("3")
-
-  // incrementValue is 1, click on "Add If Odd" => Count should be updated to 4
-  await user.clear(incrementValueInput)
-  await user.type(incrementValueInput, "1")
-  await user.click(addIfOddButton)
-  expect(countLabel).toHaveTextContent("4")
-
-  // click on "Add If Odd" => Count should stay 4
-  await user.clear(incrementValueInput)
-  await user.type(incrementValueInput, "-1")
-  await user.click(addIfOddButton)
-  expect(countLabel).toHaveTextContent("4")
+  // Check main call-to-action
+  expect(
+    screen.getByRole("link", { name: "Discover our tours" }),
+  ).toBeInTheDocument()
+  expect(
+    screen.getByText("Exciting tours for adventurous people"),
+  ).toBeInTheDocument()
 })
