@@ -1,16 +1,18 @@
-import { Route, Routes } from "react-router-dom"
-import "./App.css"
-import Navbar from "./components/Navbar/navbar.component"
-import Home from "./routes/Home/home.page"
-import Footer from "./components/Footer/footer.component"
+import { Route, Routes } from "react-router-dom";
+import "./App.css";
+import Navbar from "./components/Navbar/navbar.component";
+import Home from "./routes/Home/home.page";
+import Footer from "./components/Footer/footer.component";
+import ToursPage from "./routes/Tours/tours.component";
 
 export const App = () => (
   <div className="App">
     <Routes>
       <Route path="/" element={<Navbar />}>
         <Route index element={<Home />} />
+        <Route path="tours" element={<ToursPage />} />
       </Route>
     </Routes>
     <Footer />
   </div>
-)
+);
