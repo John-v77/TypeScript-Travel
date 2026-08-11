@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
-import Tours from "./tours.component";
+import Tours from "./tours.page";
 
 // Test wrapper with router
 const renderWithRouter = (component: React.ReactNode) => {
