@@ -1,6 +1,5 @@
-import React from "react"
-import "./navbar.css"
-import { Link, Outlet } from "react-router-dom"
+import "./navbar.css";
+import { Link, Outlet } from "react-router-dom";
 
 function Navbar() {
   return (
@@ -28,7 +27,7 @@ function Navbar() {
       </nav>
       <Outlet />
     </>
-  )
+  );
 }
 
-export default Navbar
+export default Navbar;
