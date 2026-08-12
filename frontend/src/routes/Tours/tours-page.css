@@ -1,17 +1,3 @@
-/* Main container styles */
-.main {
-  background-color: #f7f7f7;
-  padding: 8rem 6rem;
-  flex: 1;
-  position: relative;
-}
-
-@media only screen and (max-width: 50em) {
-  .main {
-    padding: 3rem 3rem;
-  }
-}
-
 /* Card container - tours grid */
 .card-container {
   max-width: 120rem;

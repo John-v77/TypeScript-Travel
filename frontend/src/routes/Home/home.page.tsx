@@ -1,16 +1,16 @@
-import React from "react"
-import "./home.css"
-import { Link } from "react-router-dom"
+import React from "react";
+import "./home.css";
+import { Link } from "react-router-dom";
 
 type TourCard = {
-  id: number
-  title: string
-  imageUrl: string
-  duration: string
-  difficulty: string
-  price: number
-  route: string
-}
+  id: number;
+  title: string;
+  imageUrl: string;
+  duration: string;
+  difficulty: string;
+  price: number;
+  route: string;
+};
 
 const featuredTours: TourCard[] = [
   {
@@ -43,7 +43,7 @@ const featuredTours: TourCard[] = [
     price: 897,
     route: "/tours/snow-adventurer",
   },
-]
+];
 
 function Home() {
   return (
@@ -105,7 +105,7 @@ function Home() {
 
       {/* Featured Tours */}
       <section className="tours-section">
-        <div className="container">
+        <div className="page-container">
           <h2 className="section-title center">Most popular tours</h2>
           <div className="tours-grid">
             {featuredTours.map(tour => (
@@ -152,7 +152,7 @@ function Home() {
         </div>
       </section>
     </div>
-  )
+  );
 }
 
-export default Home
+export default Home;

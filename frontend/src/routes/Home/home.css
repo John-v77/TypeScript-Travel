@@ -4,8 +4,8 @@
   background-image:
     linear-gradient(
       to right bottom,
-      rgba(85, 197, 122, 0.8),
-      rgba(40, 180, 133, 0.8)
+      rgba(85, 197, 122, 0.2),
+      rgba(40, 180, 133, 0.2)
     ),
     url("https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200");
   background-size: cover;
@@ -13,7 +13,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  clip-path: polygon(0 0, 100% 0, 100% 75vh, 0 100%);
+  clip-path: polygon(0 0, 100% 0, 100% 85vh, 0 100%);
 }
 
 .hero-content {
@@ -41,7 +41,7 @@
 /* About Section */
 .about-section {
   background-color: #f7f7f7;
-  padding: 25rem 0;
+  padding: 25rem 10rem;
   margin-top: -20vh;
 }
 
@@ -111,7 +111,7 @@
 }
 
 .about-image:hover {
-  outline: 1.5rem solid #55c57a;
+  outline: 5px solid #55c57a;
   transform: scale(1.05) translateY(-0.5rem);
   box-shadow: 0 2.5rem 4rem rgba(0, 0, 0, 0.5);
   z-index: 20;

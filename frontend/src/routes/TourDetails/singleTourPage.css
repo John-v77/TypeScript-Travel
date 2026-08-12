@@ -1,10 +1,3 @@
-/* Main container */
-.main {
-  background-color: #f7f7f7;
-  flex: 1;
-  position: relative;
-}
-
 /* CSS Variables */
 :root {
   --section-rotate: 9vw;
@@ -36,9 +29,9 @@
 .header__hero-overlay {
   position: absolute;
   width: 100%;
-  height: 100%;
+  height: 3%;
   background-image: linear-gradient(to right bottom, #7dd56f, #28b487);
-  opacity: 0.3;
+  opacity: 0.7;
 }
 
 .heading-box {
@@ -212,7 +205,7 @@
   );
   margin-top: calc(0px - var(--section-rotate));
   position: relative;
-  z-index: 1000;
+  z-index: 90;
 }
 
 .picture-box__img {
@@ -253,7 +246,7 @@
   margin-top: calc(0px - var(--section-rotate));
   padding: calc(5rem + var(--section-rotate)) 0;
   position: relative;
-  z-index: 1000;
+  z-index: 90;
   background: linear-gradient(to right bottom, #7dd56f, #28b487);
   clip-path: polygon(
     0 var(--section-rotate),

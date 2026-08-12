@@ -25,3 +25,23 @@ body {
   display: flex;
   flex-direction: column;
 }
+
+/* Root classes */
+
+.main {
+  background-color: #f7f7f7;
+  padding: 4rem 6rem;
+  flex: 1;
+  position: relative;
+}
+
+@media only screen and (max-width: 50em) {
+  .main {
+    padding: 3rem 3rem;
+  }
+}
+
+.page-container {
+  max-width: 120rem;
+  margin: 0 auto;
+}
