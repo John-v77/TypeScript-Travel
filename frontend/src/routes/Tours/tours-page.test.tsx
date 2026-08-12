@@ -1,34 +1,29 @@
 import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
-import { BrowserRouter } from "react-router-dom";
+import { screen } from "@testing-library/react";
+import { renderWithProviders } from "../../utils/test-utils";
 import Tours from "./tours.page";
-
-// Test wrapper with router
-const renderWithRouter = (component: React.ReactNode) => {
-  return render(<BrowserRouter>{component}</BrowserRouter>);
-};
 
 describe("Tours Component", () => {
   it("renders loading state initially", () => {
-    renderWithRouter(<Tours />);
+    renderWithProviders(<Tours />);
     expect(screen.getByText("Loading tours...")).toBeInTheDocument();
   });
 
   it("renders without crashing", () => {
     expect(() => {
-      renderWithRouter(<Tours />);
+      renderWithProviders(<Tours />);
     }).not.toThrow();
   });
 
   it("has main element with correct class", () => {
-    renderWithRouter(<Tours />);
+    renderWithProviders(<Tours />);
     const main = document.querySelector("main");
     expect(main).toBeInTheDocument();
     expect(main).toHaveClass("main");
   });
 
   it("displays loading message in main container", () => {
-    renderWithRouter(<Tours />);
+    renderWithProviders(<Tours />);
     const loadingText = screen.getByText("Loading tours...");
     expect(loadingText).toBeInTheDocument();
 
@@ -38,7 +33,7 @@ describe("Tours Component", () => {
   });
 
   it("component structure is accessible", () => {
-    renderWithRouter(<Tours />);
+    renderWithProviders(<Tours />);
 
     // Check for semantic HTML
     const main = screen.getByRole("main");
@@ -46,7 +41,7 @@ describe("Tours Component", () => {
   });
 
   it("loading state has proper accessibility", () => {
-    renderWithRouter(<Tours />);
+    renderWithProviders(<Tours />);
 
     // Loading text should be visible to screen readers
     const loadingText = screen.getByText("Loading tours...");
