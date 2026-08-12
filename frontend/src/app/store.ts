@@ -3,10 +3,11 @@ import { combineSlices, configureStore } from "@reduxjs/toolkit";
 import { setupListeners } from "@reduxjs/toolkit/query";
 import { toursApiSlice } from "../features/tours/toursApiSlice";
 import { authApiSlice } from "../features/authSlice/authApiSlice";
+import { authStorageSlice } from "../features/authSlice/authStorageSlice";
 
 // `combineSlices` automatically combines the reducers using
 // their `reducerPath`s, therefore we no longer need to call `combineReducers`.
-const rootReducer = combineSlices(toursApiSlice, authApiSlice);
+const rootReducer = combineSlices(toursApiSlice, authApiSlice, authStorageSlice);
 // Infer the `RootState` type from the root reducer
 export type RootState = ReturnType<typeof rootReducer>;
 
