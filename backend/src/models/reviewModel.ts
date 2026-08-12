@@ -50,7 +50,7 @@ const ReviewSchema = new Schema(
 );
 
 // Compound index to ensure one review per user per tour
-ReviewSchema.index({ Tour: 1, user: 1 }, { unique: true });
+ReviewSchema.index({ tour: 1, user: 1 }, { unique: true });
 
 // Populates middleware for all find operations
 ReviewSchema.pre(/^find/, function (this: Query<any, Review>, next) {
