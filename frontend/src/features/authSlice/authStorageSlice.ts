@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { User } from "./authApiSlice";
+import type { User } from "./authApiSlice";
 
 interface AuthState {
   user: User | null;
@@ -38,6 +38,15 @@ const clearLocalStorage = () => {
 const isTokenExpired = (expiresAt: number | null): boolean => {
   if (!expiresAt) return true;
   return Date.now() > expiresAt;
+};
+
+const clearAuthState = (state: AuthState) => {
+  clearLocalStorage();
+
+  state.user = null;
+  state.token = null;
+  state.isAuthenticated = false;
+  state.expiresAt = null;
 };
 
 const loadFromLocalStorage = (): AuthState => {
@@ -96,13 +105,12 @@ export const authStorageSlice = createSlice({
 
     checkTokenExpiry: state => {
       if (state.expiresAt && isTokenExpired(state.expiresAt)) {
-        clearLocalStorage();
-
-        state.user = null;
-        state.token = null;
-        state.isAuthenticated = false;
-        state.expiresAt = null;
+        clearAuthState(state);
       }
+    },
+
+    logout: state => {
+      clearAuthState(state);
     },
 
     refreshToken: (
@@ -121,7 +129,7 @@ export const authStorageSlice = createSlice({
   },
 });
 
-export const { loginSuccess, checkTokenExpiry, refreshToken } =
+export const { loginSuccess, checkTokenExpiry, refreshToken, logout } =
   authStorageSlice.actions;
 
 export const selectAuth = (state: { authStorage: AuthState }) =>

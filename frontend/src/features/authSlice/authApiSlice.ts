@@ -1,4 +1,5 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { logout as clearAuthStorage } from "./authStorageSlice";
 
 export interface User {
   _id: string;
@@ -34,6 +35,7 @@ export const authApiSlice = createApi({
   baseQuery: fetchBaseQuery({ baseUrl: "http://127.0.0.1:3000/api/v1/" }),
   tagTypes: ["Auth"],
   endpoints: builder => ({
+    // Login
     login: builder.mutation<AuthResponse, LoginCredentials>({
       query: credentials => ({
         url: "users/login",
@@ -42,7 +44,15 @@ export const authApiSlice = createApi({
       }),
       invalidatesTags: [{ type: "Auth", id: "LIST" }],
     }),
+    // Logout
+    logout: builder.mutation<void, void>({
+      queryFn: async (_arg, { dispatch }) => {
+        dispatch(clearAuthStorage());
+        return { data: undefined };
+      },
+      invalidatesTags: [{ type: "Auth", id: "LIST" }],
+    }),
   }),
 });
 
-export const { useLoginMutation } = authApiSlice;
+export const { useLoginMutation, useLogoutMutation } = authApiSlice;

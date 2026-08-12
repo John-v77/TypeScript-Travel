@@ -4,6 +4,7 @@ import authStorageReducer, {
   loginSuccess,
   checkTokenExpiry,
   refreshToken,
+  logout,
   selectUser,
   selectToken,
   selectIsAuthenticated,
@@ -102,6 +103,33 @@ describe('authStorageSlice reducer', () => {
 
       expect(selectToken(state)).toBe('new-token')
       expect(localStorage.getItem('token')).toBe('new-token')
+    })
+  })
+
+  describe('logout', () => {
+    it('clears auth state and localStorage', () => {
+      const store = createTestStore()
+      store.dispatch(loginSuccess({ user: mockUser, token: 'jwt-token' }))
+
+      store.dispatch(logout())
+      const state = store.getState()
+
+      expect(selectIsAuthenticated(state)).toBe(false)
+      expect(selectUser(state)).toBeNull()
+      expect(selectToken(state)).toBeNull()
+      expect(localStorage.getItem('token')).toBeNull()
+      expect(localStorage.getItem('user')).toBeNull()
+      expect(localStorage.getItem('tokenExpiresAt')).toBeNull()
+    })
+
+    it('is a no-op when already logged out', () => {
+      const store = createTestStore()
+
+      store.dispatch(logout())
+      const state = store.getState()
+
+      expect(selectIsAuthenticated(state)).toBe(false)
+      expect(selectUser(state)).toBeNull()
     })
   })
 })

@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { configureStore } from '@reduxjs/toolkit'
 import { authApiSlice, AuthResponse, LoginCredentials } from './authApiSlice'
+import authStorageReducer, {
+  loginSuccess,
+  selectIsAuthenticated,
+} from './authStorageSlice'
 
 // fetchBaseQuery reads the body via response.text() (then JSON.parse's it itself),
 // and calls response.clone() to read the raw text alongside the parsed result.
@@ -54,6 +58,57 @@ describe('authApiSlice configuration', () => {
   it('exports the useLoginMutation hook', () => {
     expect(authApiSlice.useLoginMutation).toBeDefined()
     expect(typeof authApiSlice.useLoginMutation).toBe('function')
+  })
+
+  it('defines the logout endpoint', () => {
+    expect(authApiSlice.endpoints.logout).toBeDefined()
+    expect(authApiSlice.endpoints.logout.name).toBe('logout')
+  })
+
+  it('exports the useLogoutMutation hook', () => {
+    expect(authApiSlice.useLogoutMutation).toBeDefined()
+    expect(typeof authApiSlice.useLogoutMutation).toBe('function')
+  })
+})
+
+describe('authApiSlice logout', () => {
+  const mockUser = {
+    _id: '1',
+    name: 'Jane Doe',
+    email: 'jane@example.com',
+    role: 'user',
+    active: true,
+  }
+
+  const createCombinedStore = () =>
+    configureStore({
+      reducer: {
+        [authApiSlice.reducerPath]: authApiSlice.reducer,
+        authStorage: authStorageReducer,
+      },
+      middleware: getDefaultMiddleware =>
+        getDefaultMiddleware().concat(authApiSlice.middleware),
+    })
+
+  it('clears the authStorage auth state', async () => {
+    const store = createCombinedStore()
+    store.dispatch(loginSuccess({ user: mockUser, token: 'jwt-token' }))
+    expect(selectIsAuthenticated(store.getState())).toBe(true)
+
+    await store.dispatch(authApiSlice.endpoints.logout.initiate())
+
+    expect(selectIsAuthenticated(store.getState())).toBe(false)
+  })
+
+  it('clears localStorage', async () => {
+    const store = createCombinedStore()
+    store.dispatch(loginSuccess({ user: mockUser, token: 'jwt-token' }))
+
+    await store.dispatch(authApiSlice.endpoints.logout.initiate())
+
+    expect(localStorage.getItem('token')).toBeNull()
+    expect(localStorage.getItem('user')).toBeNull()
+    expect(localStorage.getItem('tokenExpiresAt')).toBeNull()
   })
 })
 
