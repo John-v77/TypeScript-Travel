@@ -3,8 +3,13 @@ import "./login.page.css";
 
 import React from "react";
 import { useLoginMutation } from "../../features/authSlice/authApiSlice";
+import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { loginSuccess } from "../../features/authSlice/authStorageSlice";
 
 const Login = () => {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [login, { isLoading, error, isSuccess, data }] = useLoginMutation();
 
@@ -20,8 +25,14 @@ const Login = () => {
 
     try {
       const result = await login(formData).unwrap();
-      console.log("User logged in", result.data.user);
-      console.log("Token saved:", result.token);
+      dispatch(
+        loginSuccess({
+          user: result.data.user,
+          token: result.token,
+          expiresInHours: 1,
+        }),
+      );
+      navigate("/");
     } catch (err: any) {
       console.error("Login error:", err);
     }

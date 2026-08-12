@@ -2,7 +2,17 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { screen, fireEvent, waitFor } from "@testing-library/react";
 import { renderWithProviders } from "../../utils/test-utils";
 import * as authApiSlice from "../../features/authSlice/authApiSlice";
+import { selectUser, selectToken } from "../../features/authSlice/authStorageSlice";
 import Login from "./login.page";
+
+const mockNavigate = vi.fn();
+vi.mock("react-router-dom", async () => {
+  const actual =
+    await vi.importActual<typeof import("react-router-dom")>(
+      "react-router-dom",
+    );
+  return { ...actual, useNavigate: () => mockNavigate };
+});
 
 const useLoginMutationSpy = vi.spyOn(authApiSlice, "useLoginMutation");
 const mockLoginTrigger = vi.fn();
@@ -35,10 +45,19 @@ const mockUser = {
   active: true,
 };
 
+const mockAuthResponse: authApiSlice.AuthResponse = {
+  status: "success",
+  token: "mock-token",
+  data: { user: mockUser },
+};
+
 describe("Login Component", () => {
   beforeEach(() => {
+    mockNavigate.mockReset();
     mockLoginTrigger.mockReset();
-    mockLoginTrigger.mockReturnValue({ unwrap: () => Promise.resolve({}) });
+    mockLoginTrigger.mockReturnValue({
+      unwrap: () => Promise.resolve(mockAuthResponse),
+    });
     mockMutationState();
   });
 
@@ -90,6 +109,61 @@ describe("Login Component", () => {
         password: "password123",
       });
     });
+  });
+
+  it("dispatches loginSuccess with the returned user and token on successful submit", async () => {
+    const { store } = renderWithProviders(<Login />);
+
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: "test@example.com" },
+    });
+    fireEvent.change(screen.getByLabelText(/password/i), {
+      target: { value: "password123" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Login" }));
+
+    await waitFor(() => {
+      expect(selectUser(store.getState())).toEqual(mockUser);
+      expect(selectToken(store.getState())).toBe("mock-token");
+    });
+  });
+
+  it("navigates to the home page after a successful login", async () => {
+    renderWithProviders(<Login />);
+
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: "test@example.com" },
+    });
+    fireEvent.change(screen.getByLabelText(/password/i), {
+      target: { value: "password123" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Login" }));
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith("/");
+    });
+  });
+
+  it("does not dispatch loginSuccess or navigate when the login request fails", async () => {
+    mockLoginTrigger.mockReturnValue({
+      unwrap: () => Promise.reject({ status: 401 }),
+    });
+    const { store } = renderWithProviders(<Login />);
+
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: "test@example.com" },
+    });
+    fireEvent.change(screen.getByLabelText(/password/i), {
+      target: { value: "wrong-password" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Login" }));
+
+    await waitFor(() => {
+      expect(mockLoginTrigger).toHaveBeenCalled();
+    });
+
+    expect(selectUser(store.getState())).toBeNull();
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 
   it("shows a loading state while the mutation is in flight", () => {
