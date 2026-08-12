@@ -60,6 +60,42 @@
   color: #fff;
 }
 
+.user-menu {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.user-photo-nav {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #55c57a;
+}
+
+.user-name {
+  color: #333;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.logout-btn {
+  background-color: #e74c3c;
+  color: #fff;
+  border: none;
+  border-radius: 100px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.8rem;
+  transition: all 0.3s;
+}
+
+.logout-btn:hover {
+  background-color: #c0392b;
+}
+
 @media (max-width: 768px) {
   .nav-container {
     padding: 0 1rem;

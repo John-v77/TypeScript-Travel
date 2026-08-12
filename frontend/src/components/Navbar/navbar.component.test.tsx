@@ -1,20 +1,49 @@
 import { describe, it, expect } from "vitest"
-import { render, screen } from "@testing-library/react"
+import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { MemoryRouter } from "react-router-dom"
-import type { ReactNode } from "react"
+import { Provider } from "react-redux"
+import { configureStore } from "@reduxjs/toolkit"
 import Navbar from "./navbar.component"
+import { authApiSlice } from "../../features/authSlice/authApiSlice"
+import authStorageReducer, {
+  loginSuccess,
+  selectUser,
+} from "../../features/authSlice/authStorageSlice"
 
-// Test wrapper with router
-const renderWithRouter = (component: ReactNode, initialEntries = ["/"]) => {
+const mockUser = {
+  _id: "1",
+  name: "Jane Doe",
+  email: "jane@example.com",
+  role: "user",
+  active: true,
+}
+
+const createTestStore = () =>
+  configureStore({
+    reducer: {
+      [authApiSlice.reducerPath]: authApiSlice.reducer,
+      authStorage: authStorageReducer,
+    },
+    middleware: getDefaultMiddleware =>
+      getDefaultMiddleware().concat(authApiSlice.middleware),
+  })
+
+// Test wrapper with router + Redux store; pass a pre-populated store to
+// simulate a logged-in user.
+const renderNavbar = (store = createTestStore(), initialEntries = ["/"]) => {
   return render(
-    <MemoryRouter initialEntries={initialEntries}>{component}</MemoryRouter>,
+    <Provider store={store}>
+      <MemoryRouter initialEntries={initialEntries}>
+        <Navbar />
+      </MemoryRouter>
+    </Provider>,
   )
 }
 
 describe("Navbar Component", () => {
   it("renders the Natours logo", () => {
-    renderWithRouter(<Navbar />)
+    renderNavbar()
 
     const logo = screen.getByText("Natours")
     expect(logo).toBeInTheDocument()
@@ -22,7 +51,7 @@ describe("Navbar Component", () => {
   })
 
   it("renders all navigation links", () => {
-    renderWithRouter(<Navbar />)
+    renderNavbar()
 
     expect(screen.getByText("Tours")).toBeInTheDocument()
     expect(screen.getByText("About")).toBeInTheDocument()
@@ -31,7 +60,7 @@ describe("Navbar Component", () => {
   })
 
   it("has correct href attributes for navigation links", () => {
-    renderWithRouter(<Navbar />)
+    renderNavbar()
 
     const toursLink = screen.getByRole("link", { name: "Tours" })
     const aboutLink = screen.getByRole("link", { name: "About" })
@@ -47,7 +76,7 @@ describe("Navbar Component", () => {
   })
 
   it("applies correct CSS classes to elements", () => {
-    renderWithRouter(<Navbar />)
+    renderNavbar()
 
     const nav = document.querySelector("nav")
     const container = document.querySelector(".nav-container")
@@ -61,14 +90,14 @@ describe("Navbar Component", () => {
   })
 
   it("applies CTA class to Sign In link", () => {
-    renderWithRouter(<Navbar />)
+    renderNavbar()
 
     const signInLink = screen.getByRole("link", { name: "Sign In" })
     expect(signInLink).toHaveClass("nav-link-cta")
   })
 
   it("applies nav-link class to navigation links", () => {
-    renderWithRouter(<Navbar />)
+    renderNavbar()
 
     const toursLink = screen.getByRole("link", { name: "Tours" })
     const aboutLink = screen.getByRole("link", { name: "About" })
@@ -80,9 +109,8 @@ describe("Navbar Component", () => {
   })
 
   it("renders navigation container structure correctly", () => {
-    renderWithRouter(<Navbar />)
+    renderNavbar()
 
-    // Check that nav-container exists and contains both logo and links
     const container = document.querySelector(".nav-container")
     const logo = container?.querySelector(".nav-logo")
     const links = container?.querySelector(".nav-links")
@@ -94,35 +122,31 @@ describe("Navbar Component", () => {
 
   it("supports keyboard navigation", async () => {
     const user = userEvent.setup()
-    renderWithRouter(<Navbar />)
+    renderNavbar()
 
     const logoLink = screen.getByRole("link", { name: "Natours" })
     const toursLink = screen.getByRole("link", { name: "Tours" })
 
-    // Tab to logo link
     await user.tab()
     expect(logoLink).toHaveFocus()
 
-    // Tab to tours link
     await user.tab()
     expect(toursLink).toHaveFocus()
   })
 
   it("renders the Outlet component", () => {
-    renderWithRouter(<Navbar />)
+    renderNavbar()
 
     const nav = document.querySelector("nav")
     expect(nav).toBeInTheDocument()
   })
 
   it("maintains semantic HTML structure", () => {
-    renderWithRouter(<Navbar />)
+    renderNavbar()
 
-    // Check for semantic nav element
     const nav = document.querySelector("nav")
     expect(nav).toBeInTheDocument()
 
-    // Check that all navigation links are actual link elements
     const links = screen.getAllByRole("link")
     expect(links).toHaveLength(5) // Logo + 4 nav links
 
@@ -132,7 +156,7 @@ describe("Navbar Component", () => {
   })
 
   it("has accessible link text", () => {
-    renderWithRouter(<Navbar />)
+    renderNavbar()
 
     expect(screen.getByRole("link", { name: "Natours" })).toBeInTheDocument()
     expect(screen.getByRole("link", { name: "Tours" })).toBeInTheDocument()
@@ -143,7 +167,47 @@ describe("Navbar Component", () => {
 
   it("renders without crashing", () => {
     expect(() => {
-      renderWithRouter(<Navbar />)
+      renderNavbar()
     }).not.toThrow()
+  })
+
+  describe("when logged in", () => {
+    const loggedInStore = () => {
+      const store = createTestStore()
+      store.dispatch(loginSuccess({ user: mockUser, token: "jwt-token" }))
+      return store
+    }
+
+    it("shows a Logout button instead of the Sign In link", () => {
+      renderNavbar(loggedInStore())
+
+      expect(
+        screen.getByRole("button", { name: "Logout" }),
+      ).toBeInTheDocument()
+      expect(screen.queryByText("Sign In")).not.toBeInTheDocument()
+    })
+
+    it("clears the authenticated user when Logout is clicked", async () => {
+      const user = userEvent.setup()
+      const store = loggedInStore()
+      renderNavbar(store)
+
+      await user.click(screen.getByRole("button", { name: "Logout" }))
+
+      await waitFor(() => {
+        expect(selectUser(store.getState())).toBeNull()
+      })
+    })
+
+    it("shows the Sign In link again after logging out", async () => {
+      const user = userEvent.setup()
+      renderNavbar(loggedInStore())
+
+      await user.click(screen.getByRole("button", { name: "Logout" }))
+
+      expect(
+        await screen.findByRole("link", { name: "Sign In" }),
+      ).toBeInTheDocument()
+    })
   })
 })

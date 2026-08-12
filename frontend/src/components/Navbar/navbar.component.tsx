@@ -1,7 +1,17 @@
 import "./navbar.css";
 import { Link, Outlet } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { selectUser } from "../../features/authSlice/authStorageSlice";
+import { useLogoutMutation } from "../../features/authSlice/authApiSlice";
 
 function Navbar() {
+  const user = useSelector(selectUser);
+  const [logout] = useLogoutMutation();
+
+  const handleLogout = () => {
+    logout();
+  };
+
   return (
     <>
       <nav className="navigation">
@@ -19,9 +29,15 @@ function Navbar() {
             <Link to="/contact" className="nav-link">
               Contact
             </Link>
-            <Link to="/auth" className="nav-link nav-link-cta">
-              Sign In
-            </Link>
+            {user ? (
+              <button onClick={handleLogout} className="logout-btn">
+                Logout
+              </button>
+            ) : (
+              <Link to="/auth" className="nav-link nav-link-cta">
+                Sign In
+              </Link>
+            )}
           </div>
         </div>
       </nav>
