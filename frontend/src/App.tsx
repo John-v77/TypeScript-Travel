@@ -10,7 +10,8 @@ import AuthGuard from "./components/AuthGuard/auth-guard.component";
 
 export const App = () => (
   <div className="App">
-    <AuthGuard>
+    <h1 className="text-3xl font-bold text-red-600">Hello Tailwind</h1>
+    {/* <AuthGuard>
       <Routes>
         <Route path="/" element={<Navbar />}>
           <Route index element={<Home />} />
@@ -20,6 +21,6 @@ export const App = () => (
         </Route>
       </Routes>
       <Footer />
-    </AuthGuard>
+    </AuthGuard> */}
   </div>
 );
