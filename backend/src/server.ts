@@ -27,7 +27,7 @@ export const createServer = () => {
           scriptSrc: ["'self'"],
           styleSrc: ["'self'", "'unsafe-inline'"],
           imgSrc: ["'self'", "data:", "https:"],
-          connectSrc: ["'self"],
+          connectSrc: ["'self'"],
           fontSrc: ["'self'"],
           objectSrc: ["'none'"],
           mediaSrc: ["'self'"],
@@ -83,7 +83,10 @@ export const createServer = () => {
   // Serve static files
   app.use(express.static(path.join(__dirname, "..", "public")));
 
-  app.use(cors());
+  app.use(cors({origin: [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173"
+  ]}));
 
   app.use("/api/v1/tours", tourRouter);
   app.use("/api/v1/users", userRouter);
