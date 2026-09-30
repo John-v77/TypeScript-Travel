@@ -190,3 +190,6 @@ Thumbs.db
 # === Project Specific ===
 # Backup directory for refactored files
 backup/
+# pnpm lock / workspace files
+pnpm-lock.yaml
+pnpm-workspace.yaml
