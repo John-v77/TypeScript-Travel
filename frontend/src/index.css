@@ -40,6 +40,9 @@
   html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Always reserve the scrollbar's width, so short and long pages are the
+       same width and the centred layout doesn't shift between them. */
+    scrollbar-gutter: stable;
   }
 
 }

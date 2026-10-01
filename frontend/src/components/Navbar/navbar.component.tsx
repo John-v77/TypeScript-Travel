@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, NavLink, Outlet } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { selectUser } from "../../features/authSlice/authStorageSlice";
 import { selectTheme, toggleTheme } from "../../features/theme/themeSlice";
@@ -8,6 +8,8 @@ import {
   iconButtonClass,
   linkBase,
   mobileLinkBase,
+  overlayIconButtonClass,
+  overlayLinkBase,
 } from "./navbar.styles";
 
 const navLinks = [
@@ -19,20 +21,52 @@ const navLinks = [
   { to: "/feedback", label: "Feedback" },
 ];
 
+const overlayRoutes = ["/"];
+const overlayScrollLimit = 40;
+
 const Navbar = () => {
   const dispatch = useAppDispatch();
   const user = useAppSelector(selectUser);
   const theme = useAppSelector(selectTheme);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const { pathname } = useLocation();
+
+  // Transparent only at the top of an overlay page, and never while the
+  // mobile menu is open, so the menu always sits on a solid bar.
+  const overlayRoute = overlayRoutes.includes(pathname);
+  const overlay = overlayRoute && !scrolled && !menuOpen;
+
+  useEffect(() => {
+    if (!overlayRoute) return;
+
+    const onScroll = () => {
+      setScrolled(window.scrollY > overlayScrollLimit);
+    };
+
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, [overlayRoute]);
 
   const closeMenu = () => {
     setMenuOpen(false);
   };
 
-  const linkClass = ({ isActive }: { isActive: boolean }) =>
-    isActive
+  const linkClass = ({ isActive }: { isActive: boolean }) => {
+    if (overlay) {
+      return isActive
+        ? `${overlayLinkBase} text-white underline decoration-2 underline-offset-8`
+        : `${overlayLinkBase} text-white/85`;
+    }
+    return isActive
       ? `${linkBase} text-w_primary-600 dark:text-w_primary-400`
       : `${linkBase} text-gray-700 dark:text-gray-300`;
+  };
+
+  const iconClass = overlay ? overlayIconButtonClass : iconButtonClass;
 
   const mobileLinkClass = ({ isActive }: { isActive: boolean }) =>
     isActive
@@ -62,11 +96,21 @@ const Navbar = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/95 shadow-sm backdrop-blur-sm dark:border-gray-800 dark:bg-gray-950/95">
+      <header
+        className={`sticky top-0 z-50 border-b transition duration-300 ${
+          overlay
+            ? "border-transparent bg-transparent"
+            : "border-gray-200 bg-white/95 shadow-sm backdrop-blur-sm dark:border-gray-800 dark:bg-gray-950/95"
+        }`}
+      >
         <nav className="mx-auto flex min-h-[72px] w-full max-w-page items-center justify-between gap-6 px-4 py-4 md:px-8">
           <Link
             to="/"
-            className="shrink-0 font-sans text-3xl leading-10 font-bold tracking-tight text-w_primary-600 transition-colors hover:text-w_primary-700 dark:hover:text-w_primary-400"
+            className={`shrink-0 font-sans text-3xl leading-10 font-bold tracking-tight transition-colors duration-300 ${
+              overlay
+                ? "text-white text-shadow-md hover:text-w_primary-600"
+                : "text-w_primary-600 hover:text-w_primary-700 dark:hover:text-w_primary-400"
+            }`}
             onClick={closeMenu}
           >
             Voyara
@@ -88,7 +132,7 @@ const Navbar = () => {
           <div className="flex shrink-0 items-center gap-3">
             <button
               type="button"
-              className={iconButtonClass}
+              className={iconClass}
               onClick={() => dispatch(toggleTheme())}
               aria-label={
                 theme === "dark"
@@ -111,7 +155,7 @@ const Navbar = () => {
             {/* TODO: item-count badge once the cart slice exists. */}
             <Link
               to="/cart"
-              className={iconButtonClass}
+              className={iconClass}
               aria-label="Cart"
               onClick={closeMenu}
             >
@@ -126,7 +170,7 @@ const Navbar = () => {
 
             <button
               type="button"
-              className={`${iconButtonClass} md:hidden`}
+              className={`${iconClass} md:hidden`}
               onClick={() => {
                 setMenuOpen(open => !open);
               }}
