@@ -1,16 +1,38 @@
 @import "tailwindcss";
 
+/* --------------------------------------------------------------------------
+   Dark mode
 
-body {
-  margin: 0;
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu",
-    "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+   The theme lives in Redux (src/features/theme/themeSlice.ts). App.tsx puts
+   it on its root <div> as `data-theme`, and `dark:` keys off that attribute
+   instead of Tailwind's default `prefers-color-scheme`.
+   -------------------------------------------------------------------------- */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@theme {
+  --color-w_primary-50: #f0fdf4;
+  --color-w_primary-100: #dcfce7;
+  --color-w_primary-400: #4ade80;
+  --color-w_primary-500: #22c55e;
+  --color-w_primary-600: #16a34a;
+  --color-w_primary-700: #15803d;
+  --color-w_primary-900: #14532d;
+
+
+  --font-sans: Inter, system-ui, sans-serif;
+  --font-serif: Georgia, Cambria, "Times New Roman", Times, serif;
+
+
+
+   /* 73.5rem (1176px): 80% of a 13" MacBook Air's 1470px logical viewport,  */
+  --container-page: 73.5rem;
 }
 
-code {
-  font-family:
-    source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
 }
