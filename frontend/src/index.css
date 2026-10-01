@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 
 /* --------------------------------------------------------------------------
@@ -26,8 +27,14 @@
 
    /* 73.5rem (1176px): 80% of a 13" MacBook Air's 1470px logical viewport,  */
   --container-page: 73.5rem;
-}
 
+
+  --breakpoint-*: initial;
+  --breakpoint-sm: 40rem; /*  640px - large phones */
+  --breakpoint-md: 48rem; /*  768px - tablets */
+  --breakpoint-lg: 64rem; /* 1024px - laptops */
+  --breakpoint-xl: 80rem; /* 1280px - desktops */
+}
 
 @layer base {
   html {

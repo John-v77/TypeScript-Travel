@@ -18,8 +18,7 @@ export const App = () => {
       data-theme={theme}
       className="min-h-screen bg-white text-gray-900 dark:bg-gray-950 dark:text-white"
     >
-      <h1 className="text-3xl font-bold text-w_primary-600">Hello Tailwind</h1>
-      {/* <AuthGuard>
+      <AuthGuard>
         <Routes>
           <Route path="/" element={<Navbar />}>
             <Route index element={<Home />} />
@@ -29,7 +28,7 @@ export const App = () => {
           </Route>
         </Routes>
         <Footer />
-      </AuthGuard> */}
+      </AuthGuard>
     </div>
   );
 };
