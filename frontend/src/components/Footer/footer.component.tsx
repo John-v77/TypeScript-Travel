@@ -5,7 +5,7 @@ function Footer() {
     <footer className="footer">
       <div className="footer-container">
         <div className="footer-logo-section">
-          <div className="footer-logo">Natours</div>
+          <div className="footer-logo">Voyara</div>
           <p className="footer-description">
             Unforgettable tours for adventurous people
           </p>
@@ -69,7 +69,7 @@ function Footer() {
       </div>
 
       <div className="footer-bottom">
-        <p>&copy; {new Date().getFullYear()} Natours. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} Voyara. All rights reserved.</p>
       </div>
     </footer>
   )
