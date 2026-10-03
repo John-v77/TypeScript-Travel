@@ -44,6 +44,11 @@ export type Tour = {
   slug?: string;
 };
 
+interface TourResponse {
+  status: string;
+  data: Tour;
+}
+
 interface ToursResponse {
   status: string;
   results: number;
@@ -61,7 +66,12 @@ export const toursApiSlice = createApi({
         Object.values(response.data),
       providesTags: [{ type: "Tours", id: "LIST" }],
     }),
+    getTourById: builder.query<Tour, string>({
+      query: id => `tours/${id}`,
+      transformResponse: (response: TourResponse) => response.data,
+      providesTags: (_result, _error, id) => [{ type: "Tours", id }],
+    }),
   }),
 });
 
-export const { useGetAllToursQuery } = toursApiSlice;
+export const { useGetAllToursQuery, useGetTourByIdQuery } = toursApiSlice;

@@ -23,7 +23,7 @@ export const App = () => {
           <Route path="/" element={<Navbar />}>
             <Route index element={<Home />} />
             <Route path="tours" element={<ToursPage />} />
-            <Route path="tour/:slug" element={<TourDetails />} />
+            <Route path="tour/:id" element={<TourDetails />} />
             <Route path="auth" element={<Login />} />
           </Route>
         </Routes>
