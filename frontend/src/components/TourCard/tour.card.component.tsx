@@ -1,12 +1,16 @@
 import { Link } from "react-router-dom";
 import type { Tour } from "../../features/tours/toursApiSlice";
 import { formatPrice, formatRating } from "../../features/tours/tour-helpers";
+import { useFavorites } from "../../features/favorites/useFavorites";
 
 type TourCardProps = {
   tour: Tour;
 };
 
 const TourCard = ({ tour }: TourCardProps) => {
+  const { signedIn, isFavorite, toggle } = useFavorites();
+  const saved = isFavorite(tour.id);
+
   return (
     <Link
       to={`/tour/${tour.id}`}
@@ -38,16 +42,44 @@ const TourCard = ({ tour }: TourCardProps) => {
       </div>
 
       <div className="p-5">
-        <div className="min-w-0">
-          <h3 className="font-bold text-gray-900 transition-colors group-hover:text-w_primary-600 dark:text-white dark:group-hover:text-w_primary-400">
-            {tour.name}
-          </h3>
-          <p className="mt-1 flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
-            <svg className="size-4 shrink-0 fill-current">
-              <use href="/img/icons.svg#icon-map-pin" />
-            </svg>
-            {tour.startLocation.description}
-          </p>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="font-bold text-gray-900 transition-colors group-hover:text-w_primary-600 dark:text-white dark:group-hover:text-w_primary-400">
+              {tour.name}
+            </h3>
+            <p className="mt-1 flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
+              <svg className="size-4 shrink-0 fill-current">
+                <use href="/img/icons.svg#icon-map-pin" />
+              </svg>
+              {tour.startLocation.description}
+            </p>
+          </div>
+
+          {signedIn && (
+            <button
+              type="button"
+              onClick={event => {
+                event.preventDefault();
+                event.stopPropagation();
+                toggle(tour.id);
+              }}
+              aria-pressed={saved}
+              aria-label={
+                saved
+                  ? `Remove ${tour.name} from favourites`
+                  : `Save ${tour.name} to favourites`
+              }
+              className={`-m-1.5 shrink-0 rounded-full p-1.5 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                saved
+                  ? "text-w_primary-600 dark:text-w_primary-400"
+                  : "text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+              }`}
+            >
+              <svg className="size-6 fill-current">
+                <use href="/img/icons.svg#icon-heart" />
+              </svg>
+            </button>
+          )}
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-gray-100 pt-4 dark:border-gray-700">

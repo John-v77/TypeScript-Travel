@@ -5,6 +5,7 @@ import { toursApiSlice } from "../features/tours/toursApiSlice";
 import { authApiSlice } from "../features/authSlice/authApiSlice";
 import { authStorageSlice } from "../features/authSlice/authStorageSlice";
 import { themeSlice } from "../features/theme/themeSlice";
+import { favoritesApiSlice } from "../features/favorites/favoritesApiSlice";
 
 // `combineSlices` automatically combines the reducers using
 // their `reducerPath`s, therefore we no longer need to call `combineReducers`.
@@ -13,6 +14,7 @@ const rootReducer = combineSlices(
   authApiSlice,
   authStorageSlice,
   themeSlice,
+  favoritesApiSlice,
 );
 // Infer the `RootState` type from the root reducer
 export type RootState = ReturnType<typeof rootReducer>;
@@ -28,6 +30,7 @@ export const makeStore = (preloadedState?: Partial<RootState>) => {
       return getDefaultMiddleware().concat(
         toursApiSlice.middleware,
         authApiSlice.middleware,
+        favoritesApiSlice.middleware,
       );
     },
     preloadedState,
