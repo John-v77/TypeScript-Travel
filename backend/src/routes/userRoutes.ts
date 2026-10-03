@@ -3,6 +3,7 @@ import express from "express";
 import userController from "../controllers/userController";
 import authController from "../controllers/authController";
 import bookingController from "../controllers/bookingController";
+import favoriteController from "../controllers/favoriteController";
 import { LoginLimiter } from "../middleware/rateLimiter";
 
 const router = express.Router();
@@ -21,6 +22,17 @@ router.get("/me", userController.getMe, userController.getUserById);
 
 // Get all bookings for the current user
 router.get("/my-bookings", bookingController.getMyBookings);
+
+// Favourites
+router
+  .route("/my-favorites")
+  .get(favoriteController.setMyFilter, favoriteController.getAllFavorites)
+  .post(favoriteController.setMyFavorite, favoriteController.createFavorite);
+router.delete(
+  "/my-favorites/:id",
+  favoriteController.checkFavoriteOwner,
+  favoriteController.deleteFavorite,
+);
 
 router.patch("/updateMyPassword", authController.updatePassword);
 router.patch(
