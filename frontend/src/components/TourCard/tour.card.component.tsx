@@ -1,88 +1,98 @@
-import React from "react";
-import { Tour } from "../../features/tours/toursApiSlice";
-import "./tour-card.component.css";
+import { Link } from "react-router-dom";
+import type { Tour } from "../../features/tours/toursApiSlice";
+import { formatPrice, formatRating } from "../../features/tours/tour-helpers";
 
-interface TourCardProps {
+type TourCardProps = {
   tour: Tour;
-}
+};
 
-const TourCard: React.FC<TourCardProps> = ({ tour }) => {
-  console.log("Rendering TourCard for tour:", tour);
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleString("en-us", { month: "long", year: "numeric" });
-  };
-
+const TourCard = ({ tour }: TourCardProps) => {
   return (
-    <div key={tour._id} className="card">
-      <div className="card__header">
-        <div className="card__picture">
-          <div className="card__picture-overlay">&nbsp;</div>
-          <img
-            className="card__picture-img"
-            src={`/img/tours/${tour.imageCover}`}
-            alt={tour.name}
-          />
-        </div>
-        <h3 className="heading-tertirary">
-          <span>{tour.name}</span>
-        </h3>
-      </div>
+    <Link
+      to={`/tour/${tour.id}`}
+      className="group block overflow-hidden rounded-2xl bg-white shadow-md transition-shadow hover:shadow-xl dark:bg-gray-800"
+    >
+      <div className="relative aspect-4/3 overflow-hidden">
+        <img
+          src={`/img/tours/${tour.imageCover}`}
+          alt={tour.name}
+          loading="lazy"
+          className="size-full object-cover"
+        />
 
-      <div className="card__details">
-        <h4 className="card__sub-heading">
-          {tour.difficulty} {tour.duration}-day tour
-        </h4>
-        <p className="card__text">{tour.summary}</p>
-
-        <div className="card__data">
-          <svg className="card__icon">
-            <use xlinkHref="/img/icons.svg#icon-map-pin"></use>
-          </svg>
-          <span>{tour.startLocation.description}</span>
-        </div>
-
-        <div className="card__data">
-          <svg className="card__icon">
-            <use xlinkHref="/img/icons.svg#icon-calendar"></use>
-          </svg>
-          <span>{formatDate(tour.startDates[0])}</span>
-        </div>
-
-        <div className="card__data">
-          <svg className="card__icon">
-            <use xlinkHref="/img/icons.svg#icon-flag"></use>
-          </svg>
-        </div>
-
-        <div className="card__data">
-          <svg className="card__icon">
-            <use xlinkHref="/img/icons.svg#icon-user"></use>
-          </svg>
-          <span>{tour.maxGroupSize} people</span>
-        </div>
-      </div>
-
-      <div className="card__footer">
-        <p>
-          <span className="card__footer-value">${tour.price}</span>
-          <span className="card__footer-text"> per person</span>
-        </p>
-        <p className="card__ratings">
-          <span className="card__footer-value">
-            {parseFloat(tour.ratingsAverage.toString()).toFixed(1)}
+        <div className="absolute top-4 left-4 flex flex-wrap gap-2">
+          <span className="inline-block rounded-full bg-w_primary-600 px-3 py-1 text-xs font-semibold text-white capitalize">
+            {tour.difficulty}
           </span>
-          <span className="card__footer-text">
-            {" "}
-            rating ({tour.ratingsQuantity})
+          <span className="inline-block rounded-full bg-gray-900 px-3 py-1 text-xs font-semibold text-white">
+            {tour.duration}-day
           </span>
-        </p>
-        <a className="btn btn--green btn--small" href={`/tour/${tour.slug}`}>
-          Details
-        </a>
+        </div>
+
+        {/* Stays light in dark mode - it sits on the photograph, not the card. */}
+        <div className="absolute bottom-4 left-4">
+          <span className="inline-block rounded-lg bg-white/95 px-3 py-1.5 text-base font-bold text-gray-900 shadow-lg backdrop-blur-sm">
+            {formatPrice(tour.price)}
+          </span>
+        </div>
       </div>
-    </div>
+
+      <div className="p-5">
+        <div className="min-w-0">
+          <h3 className="font-bold text-gray-900 transition-colors group-hover:text-w_primary-600 dark:text-white dark:group-hover:text-w_primary-400">
+            {tour.name}
+          </h3>
+          <p className="mt-1 flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
+            <svg className="size-4 shrink-0 fill-current">
+              <use href="/img/icons.svg#icon-map-pin" />
+            </svg>
+            {tour.startLocation.description}
+          </p>
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-gray-100 pt-4 dark:border-gray-700">
+          <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
+            <svg className="size-4 shrink-0 fill-current">
+              <use href="/img/icons.svg#icon-clock" />
+            </svg>
+            <span>{tour.duration} days</span>
+          </div>
+          <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
+            <svg className="size-4 shrink-0 fill-current">
+              <use href="/img/icons.svg#icon-users" />
+            </svg>
+            <span>{tour.maxGroupSize} people</span>
+          </div>
+          <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
+            <svg className="size-4 shrink-0 fill-current">
+              <use href="/img/icons.svg#icon-star" />
+            </svg>
+            <span>
+              {formatRating(tour.ratingsAverage)} ({tour.ratingsQuantity ?? 0})
+            </span>
+          </div>
+        </div>
+
+        <p className="mt-4 text-sm text-gray-600 italic dark:text-gray-400">
+          {tour.summary}
+        </p>
+
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 pt-4 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+          <span className="flex items-center gap-1.5">
+            <svg className="size-4 shrink-0 fill-current">
+              <use href="/img/icons.svg#icon-calendar" />
+            </svg>
+            {tour.startDates[0]
+              ? new Date(tour.startDates[0].date).toLocaleString("en-us", {
+                  month: "long",
+                  year: "numeric",
+                })
+              : "Dates to be announced"}
+          </span>
+          <span>per person</span>
+        </div>
+      </div>
+    </Link>
   );
 };
 
