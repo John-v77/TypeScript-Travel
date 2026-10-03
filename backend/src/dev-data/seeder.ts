@@ -67,7 +67,7 @@ const mapTourData = (tourData: TourJSONData) => ({
   maxGroupSize: tourData.maxGroupSize.toString(),
   difficulty: tourData.difficulty,
   ratingsAverage: tourData.ratingsAverage,
-  ratingQuantity: tourData.ratingsQuantity,
+  ratingsQuantity: tourData.ratingsQuantity,
   price: tourData.price,
   priceDiscount: tourData.priceDiscount,
   summary: tourData.summary,

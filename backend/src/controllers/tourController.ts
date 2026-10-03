@@ -110,7 +110,7 @@ const getToursStats = catchAsync(
         $group: {
           _id: { $toUpper: "$difficulty" },
           num: { $sum: 1 },
-          numRatings: { $sum: "$ratingQuantity" },
+          numRatings: { $sum: "$ratingsQuantity" },
           avgRating: { $avg: "$ratingsAverage" },
           avgPrice: { $avg: "$price" },
           minPrice: { $min: "$price" },

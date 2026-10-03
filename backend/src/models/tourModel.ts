@@ -16,7 +16,7 @@ export interface Tour extends Document {
   maxGroupSize: string;
   difficulty: string;
   ratingsAverage?: number;
-  ratingQuantity?: number;
+  ratingsQuantity?: number;
   price: number;
   priceDiscount?: number;
   summary: string;
@@ -72,7 +72,7 @@ const TourSchema = new Schema<Tour>(
       max: [5, "Rating must be below 5.0"],
       set: (val: number): number => Math.round(val * 100) / 100,
     },
-    ratingQuantity: {
+    ratingsQuantity: {
       type: Number,
       default: 0,
     },
