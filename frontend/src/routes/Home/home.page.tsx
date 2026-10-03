@@ -73,7 +73,7 @@ const Home = () => {
               className="grid sm:grid-cols-2 lg:grid-cols-4"
             >
               {featured.map(tour => (
-                <HomeTourCard key={tour._id} tour={tour} />
+                <HomeTourCard key={tour.id} tour={tour} />
               ))}
             </ul>
           ) : (
@@ -204,7 +204,7 @@ const Home = () => {
           {popular.length > 0 && (
             <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
               {popular.map(tour => (
-                <TourCard key={tour._id} tour={tour} />
+                <TourCard key={tour.id} tour={tour} />
               ))}
             </div>
           )}
