@@ -1,44 +1,53 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react"
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 type Location = {
-  _id: string
-  description: string
-  type: string
-  coordinates: [number, number]
-  day?: number
-}
+  _id: string;
+  description: string;
+  type: string;
+  coordinates: [number, number];
+  day?: number;
+};
 
 type StartLocation = {
-  description: string
-  type: string
-  coordinates: [number, number]
-  address: string
-}
+  description: string;
+  type: string;
+  coordinates: [number, number];
+  address: string;
+};
+
+export type TourStartDate = {
+  _id: string;
+  id: string;
+  date: string;
+  participants: number;
+  soldOut: boolean;
+};
 
 export type Tour = {
-  _id: string
-  name: string
-  duration: number
-  maxGroupSize: number
-  difficulty: string
-  price: number
-  summary: string
-  description: string
-  imageCover: string
-  images: string[]
-  startDates: string[]
-  startLocation: StartLocation
-  locations: Location[]
-  guides: string[]
-  ratingsAverage: number
-  ratingsQuantity: number
-  slug?: string
-}
+  // The backend's toJSON transform renames Mongo's _id to id and strips it.
+  id: string;
+  name: string;
+  duration: number;
+  maxGroupSize: number;
+  difficulty: string;
+  price: number;
+  summary: string;
+  description: string;
+  imageCover: string;
+  images: string[];
+  startDates: TourStartDate[];
+  startLocation: StartLocation;
+  locations?: Location[];
+  guides: string[];
+  ratingsAverage: number;
+  ratingsQuantity?: number;
+  slug?: string;
+};
 
 interface ToursResponse {
-  status: string
-  results: number
-  data: Record<string, Tour>
+  status: string;
+  results: number;
+  data: Record<string, Tour>;
 }
 
 export const toursApiSlice = createApi({
@@ -48,10 +57,11 @@ export const toursApiSlice = createApi({
   endpoints: builder => ({
     getAllTours: builder.query<Tour[], void>({
       query: () => `tours`,
-      transformResponse: (response: ToursResponse) => Object.values(response.data),
+      transformResponse: (response: ToursResponse) =>
+        Object.values(response.data),
       providesTags: [{ type: "Tours", id: "LIST" }],
     }),
   }),
-})
+});
 
-export const { useGetAllToursQuery } = toursApiSlice
+export const { useGetAllToursQuery } = toursApiSlice;

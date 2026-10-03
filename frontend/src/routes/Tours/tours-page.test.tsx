@@ -1,50 +1,165 @@
-import { describe, it, expect } from "vitest";
-import { screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { screen, within } from "@testing-library/react";
 import { renderWithProviders } from "../../utils/test-utils";
-import Tours from "./tours.page";
+import { mockApi, toursListResponse, dataResponse } from "../../utils/test-api";
+import { makeTour } from "../../utils/test-fixtures";
+import ToursPage from "./tours.page";
 
-describe("Tours Component", () => {
-  it("renders loading state initially", () => {
-    renderWithProviders(<Tours />);
-    expect(screen.getByText("Loading tours...")).toBeInTheDocument();
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
+const sea = makeTour({
+  id: "sea",
+  name: "The Sea Explorer",
+  difficulty: "medium",
+  duration: 7,
+  price: 497,
+});
+
+const forest = makeTour({
+  id: "forest",
+  name: "The Forest Hiker",
+  difficulty: "easy",
+  duration: 5,
+  price: 397,
+  startLocation: { ...makeTour().startLocation, description: "Banff, CAN" },
+});
+
+const snow = makeTour({
+  id: "snow",
+  name: "The Snow Adventurer",
+  difficulty: "difficult",
+  duration: 14,
+  price: 2997,
+});
+
+const renderTours = (tours = [sea, forest, snow]) => {
+  mockApi({
+    "tours": toursListResponse(tours),
+    "users/my-favorites": dataResponse([]),
+  });
+  return renderWithProviders(<ToursPage />);
+};
+
+describe("ToursPage", () => {
+  it("lists the tours the API returns", async () => {
+    renderTours();
+
+    expect(await screen.findByText("The Sea Explorer")).toBeInTheDocument();
+    expect(screen.getByText("The Forest Hiker")).toBeInTheDocument();
+    expect(screen.getByText("Showing", { exact: false })).toHaveTextContent(
+      "3",
+    );
   });
 
-  it("renders without crashing", () => {
-    expect(() => {
-      renderWithProviders(<Tours />);
-    }).not.toThrow();
+  it("says so when the tours cannot be loaded", async () => {
+    mockApi({ "users/my-favorites": dataResponse([]) }, { failing: { tours: 500 } });
+
+    renderWithProviders(<ToursPage />);
+
+    expect(await screen.findByText(/could not load tours/i)).toBeInTheDocument();
   });
 
-  it("has main element with correct class", () => {
-    renderWithProviders(<Tours />);
-    const main = document.querySelector("main");
-    expect(main).toBeInTheDocument();
-    expect(main).toHaveClass("main");
+  it("offers only the locations actually present in the data", async () => {
+    renderTours();
+    await screen.findByText("The Sea Explorer");
+
+    const select = screen.getByLabelText("Location");
+    // Miami from two tours, Banff from one - de-duplicated, plus "Any".
+    expect(within(select).getAllByRole("option")).toHaveLength(3);
   });
 
-  it("displays loading message in main container", () => {
-    renderWithProviders(<Tours />);
-    const loadingText = screen.getByText("Loading tours...");
-    expect(loadingText).toBeInTheDocument();
+  describe("filters", () => {
+    it("does not apply until Apply Filters is pressed", async () => {
+      // The grid must not shuffle underneath someone still choosing.
+      const { user } = renderTours();
+      await screen.findByText("The Sea Explorer");
 
-    // Check it's inside main element
-    const main = document.querySelector("main");
-    expect(main).toContainElement(loadingText);
+      await user.selectOptions(screen.getByLabelText("Difficulty"), "easy");
+
+      expect(screen.getByText("The Sea Explorer")).toBeInTheDocument();
+      expect(screen.getByText("The Snow Adventurer")).toBeInTheDocument();
+    });
+
+    it("applies on the button", async () => {
+      const { user } = renderTours();
+      await screen.findByText("The Sea Explorer");
+
+      await user.selectOptions(screen.getByLabelText("Difficulty"), "easy");
+      await user.click(screen.getByRole("button", { name: "Apply Filters" }));
+
+      expect(screen.getByText("The Forest Hiker")).toBeInTheDocument();
+      expect(screen.queryByText("The Sea Explorer")).not.toBeInTheDocument();
+    });
+
+    it("filters by duration bucket", async () => {
+      const { user } = renderTours();
+      await screen.findByText("The Sea Explorer");
+
+      await user.selectOptions(screen.getByLabelText("Duration"), "11+");
+      await user.click(screen.getByRole("button", { name: "Apply Filters" }));
+
+      expect(screen.getByText("The Snow Adventurer")).toBeInTheDocument();
+      expect(screen.queryByText("The Forest Hiker")).not.toBeInTheDocument();
+    });
+
+    it("explains an empty result rather than showing a blank grid", async () => {
+      const { user } = renderTours();
+      await screen.findByText("The Sea Explorer");
+
+      await user.selectOptions(screen.getByLabelText("Difficulty"), "easy");
+      await user.selectOptions(screen.getByLabelText("Duration"), "11+");
+      await user.click(screen.getByRole("button", { name: "Apply Filters" }));
+
+      expect(screen.getByText("No tours found")).toBeInTheDocument();
+    });
   });
 
-  it("component structure is accessible", () => {
-    renderWithProviders(<Tours />);
+  describe("Clear", () => {
+    it("is disabled when there is nothing to clear", async () => {
+      renderTours();
+      await screen.findByText("The Sea Explorer");
 
-    // Check for semantic HTML
-    const main = screen.getByRole("main");
-    expect(main).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Clear" })).toBeDisabled();
+    });
+
+    it("enables on an unapplied change, which is still worth undoing", async () => {
+      const { user } = renderTours();
+      await screen.findByText("The Sea Explorer");
+
+      await user.selectOptions(screen.getByLabelText("Difficulty"), "easy");
+
+      expect(screen.getByRole("button", { name: "Clear" })).toBeEnabled();
+    });
+
+    it("restores the full list and resets the selects", async () => {
+      const { user } = renderTours();
+      await screen.findByText("The Sea Explorer");
+
+      await user.selectOptions(screen.getByLabelText("Difficulty"), "easy");
+      await user.click(screen.getByRole("button", { name: "Apply Filters" }));
+      await user.click(screen.getByRole("button", { name: "Clear" }));
+
+      expect(screen.getByText("The Sea Explorer")).toBeInTheDocument();
+      expect(screen.getByLabelText("Difficulty")).toHaveValue("");
+    });
   });
 
-  it("loading state has proper accessibility", () => {
-    renderWithProviders(<Tours />);
+  describe("sort", () => {
+    it("applies immediately, because it is not a filter", async () => {
+      const { user } = renderTours();
+      await screen.findByText("The Sea Explorer");
 
-    // Loading text should be visible to screen readers
-    const loadingText = screen.getByText("Loading tours...");
-    expect(loadingText).toBeVisible();
+      await user.selectOptions(
+        screen.getByLabelText("Sort tours"),
+        "price-low",
+      );
+
+      const names = screen
+        .getAllByRole("heading", { level: 3 })
+        .map(h => h.textContent);
+      expect(names[0]).toBe("The Forest Hiker");
+    });
   });
 });
