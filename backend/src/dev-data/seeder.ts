@@ -64,7 +64,7 @@ const reviews: ReviewJSONData[] = JSON.parse(
 const mapTourData = (tourData: TourJSONData) => ({
   name: tourData.name,
   duration: tourData.duration,
-  maxGroupSize: tourData.maxGroupSize.toString(),
+  maxGroupSize: tourData.maxGroupSize,
   difficulty: tourData.difficulty,
   ratingsAverage: tourData.ratingsAverage,
   ratingsQuantity: tourData.ratingsQuantity,

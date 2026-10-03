@@ -13,7 +13,7 @@ export interface Tour extends Document {
   name: string;
   slug?: string;
   duration: number;
-  maxGroupSize: string;
+  maxGroupSize: number;
   difficulty: string;
   ratingsAverage?: number;
   ratingsQuantity?: number;
@@ -58,7 +58,7 @@ const TourSchema = new Schema<Tour>(
       required: [true, "A tour must have a duration"],
     },
     maxGroupSize: {
-      type: String,
+      type: Number,
       required: [true, "A tour must have a group size"],
     },
     difficulty: {
