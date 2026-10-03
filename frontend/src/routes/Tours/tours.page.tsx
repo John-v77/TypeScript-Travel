@@ -1,4 +1,4 @@
-import { useMemo, useState, type SubmitEvent } from "react";
+import { useMemo, useState } from "react";
 import { useGetAllToursQuery } from "../../features/tours/toursApiSlice";
 import TourCard from "../../components/TourCard/tour.card.component";
 import {
@@ -33,9 +33,8 @@ const ToursPage = () => {
   const filtering = hasActiveFilters(filters);
 
   /** Reads the four selects into the filter list. */
-  const applyFilters = (event: SubmitEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
+  const applyFilters = (filterForm: HTMLFormElement) => {
+    const form = new FormData(filterForm);
     setFilters({
       location: String(form.get("location") ?? ""),
       difficulty: String(form.get("difficulty") ?? ""),
@@ -56,13 +55,15 @@ const ToursPage = () => {
             Handpicked adventures for people who would rather book a trip than a
             viewing.
           </p>
-
-          {/* Clear is a native reset: the browser puts every select back to
-              "Any", and onReset empties the filter list. The two "Clear
-              filters" buttons further down reach this form via form="…". */}
           <form
             id="tour-filters"
-            onSubmit={applyFilters}
+            onChange={event => {
+              applyFilters(event.currentTarget);
+            }}
+            onSubmit={event => {
+              event.preventDefault();
+              applyFilters(event.currentTarget);
+            }}
             onReset={() => {
               setFilters(noTourFilters);
             }}
