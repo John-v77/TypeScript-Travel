@@ -10,6 +10,7 @@ import userRouter from "./routes/userRoutes";
 import reviewRouter from "./routes/reviewRoutes";
 import bookingRouter from "./routes/bookingRoutes";
 import gearRouter from "./routes/gearRoutes";
+import cartRouter from "./routes/cartRoutes";
 import AppError from "./utils/appError";
 import globalErrorHandler from "./utils/errorController";
 import { globalLimiter } from "./middleware/rateLimiter";
@@ -94,6 +95,7 @@ export const createServer = () => {
   app.use("/api/v1/reviews", reviewRouter);
   app.use("/api/v1/bookings", bookingRouter);
   app.use("/api/v1/gear", gearRouter);
+  app.use("/api/v1/cart", cartRouter);
 
   app.get("/health", (req, res) => {
     res.json({ ok: true });
