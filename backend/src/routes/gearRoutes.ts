@@ -6,6 +6,25 @@ const router = Router();
 
 
 router.get("/", gearController.getAllGear);
+
+router.post(
+  "/checkout-session",
+  authController.protect,
+  gearController.getCheckoutSession,
+);
+router.get("/my-orders", authController.protect, gearController.getMyOrders);
+router.post(
+  "/orders/confirm/:sessionId",
+  authController.protect,
+  gearController.confirmOrder,
+);
+router.get(
+  "/orders",
+  authController.protect,
+  authController.restrictTo("admin"),
+  gearController.getAllOrders,
+);
+
 router.get("/:id", gearController.getGear);
 
 
