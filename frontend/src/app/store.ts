@@ -7,6 +7,7 @@ import { authStorageSlice } from "../features/authSlice/authStorageSlice";
 import { themeSlice } from "../features/theme/themeSlice";
 import { favoritesApiSlice } from "../features/favorites/favoritesApiSlice";
 import { gearApiSlice } from "../features/gear/gearApiSlice";
+import { gearCheckoutApiSlice } from "../features/gear/gearCheckoutApiSlice";
 import {
   cartSlice,
   loadPersistedCart,
@@ -21,12 +22,12 @@ const rootReducer = combineSlices(
   themeSlice,
   favoritesApiSlice,
   gearApiSlice,
+  gearCheckoutApiSlice,
   cartSlice,
   cartApiSlice,
 );
 
 export type RootState = ReturnType<typeof rootReducer>;
-
 
 export const makeStore = (preloadedState?: Partial<RootState>) => {
   const store = configureStore({
@@ -37,12 +38,13 @@ export const makeStore = (preloadedState?: Partial<RootState>) => {
         authApiSlice.middleware,
         favoritesApiSlice.middleware,
         gearApiSlice.middleware,
+        gearCheckoutApiSlice.middleware,
         cartApiSlice.middleware,
       );
     },
     preloadedState,
   });
-   setupListeners(store.dispatch);
+  setupListeners(store.dispatch);
   return store;
 };
 
@@ -51,7 +53,6 @@ export const store = makeStore(persistedCart ? { cart: persistedCart } : {});
 store.subscribe(() => {
   persistCart(store.getState().cart);
 });
-
 
 export type AppStore = typeof store;
 export type AppDispatch = AppStore["dispatch"];
