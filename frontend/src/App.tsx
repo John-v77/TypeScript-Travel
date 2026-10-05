@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import { useAppSelector } from "./app/hooks";
 import { selectTheme } from "./features/theme/themeSlice";
 import Navbar from "./components/Navbar/navbar.component";
@@ -9,6 +9,8 @@ import TourDetails from "./routes/TourDetails/singleTourPage.page";
 import GearPage from "./routes/Gear/gear.page";
 import Login from "./routes/Login/login.page";
 import Register from "./routes/Register/register.page";
+import MyAccount from "./routes/Account/my-account.page";
+import Settings from "./routes/Account/settings.tab";
 import AuthGuard from "./components/AuthGuard/auth-guard.component";
 
 export const App = () => {
@@ -29,7 +31,11 @@ export const App = () => {
             <Route path="gear" element={<GearPage />} />
             <Route path="auth" element={<Login />} />
             <Route path="register" element={<Register />} />
-           
+
+            <Route path="myaccount" element={<MyAccount />}>
+              <Route index element={<Navigate to="settings" replace />} />
+              <Route path="settings" element={<Settings />} />
+            </Route>
           </Route>
         </Routes>
         <Footer />
