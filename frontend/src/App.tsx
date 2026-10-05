@@ -8,6 +8,7 @@ import ToursPage from "./routes/Tours/tours.page";
 import TourDetails from "./routes/TourDetails/singleTourPage.page";
 import GearPage from "./routes/Gear/gear.page";
 import Cart from "./routes/Cart/cart.page";
+import { useCartSync } from "./features/cartSlice/useCart";
 import Login from "./routes/Login/login.page";
 import Register from "./routes/Register/register.page";
 import ForgotPassword from "./routes/ForgotPassword/forgot-password.page";
@@ -21,6 +22,8 @@ import AuthGuard from "./components/AuthGuard/auth-guard.component";
 
 export const App = () => {
   const theme = useAppSelector(selectTheme);
+  // Merges the guest cart into the stored one when someone signs in.
+  useCartSync();
 
   // `data-theme` switches every `dark:` class inside this div.
   return (
