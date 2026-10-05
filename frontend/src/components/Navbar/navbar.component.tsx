@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { logout, selectUser } from "../../features/authSlice/authStorageSlice";
 import { selectTheme, toggleTheme } from "../../features/theme/themeSlice";
+import { selectCartItemCount } from "../../features/cartSlice/cartSlice";
 import {
   ctaClass,
   iconButtonClass,
@@ -28,6 +29,7 @@ const Navbar = () => {
   const dispatch = useAppDispatch();
   const user = useAppSelector(selectUser);
   const theme = useAppSelector(selectTheme);
+  const cartItemCount = useAppSelector(selectCartItemCount);
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { pathname } = useLocation();
@@ -166,16 +168,20 @@ const Navbar = () => {
               )}
             </button>
 
-            {/* TODO: item-count badge once the cart slice exists. */}
             <Link
               to="/cart"
-              className={iconClass}
-              aria-label="Cart"
+              className={`relative ${iconClass}`}
+              aria-label={`Cart, ${String(cartItemCount)} items`}
               onClick={closeMenu}
             >
               <svg className="size-5 fill-current">
                 <use href="/img/icons.svg#icon-shopping-cart" />
               </svg>
+              {cartItemCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full bg-red-600 text-[0.65rem] font-semibold text-white">
+                  {cartItemCount}
+                </span>
+              )}
             </Link>
 
             <div className="hidden md:block">
