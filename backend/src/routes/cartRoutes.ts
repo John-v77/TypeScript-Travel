@@ -11,6 +11,8 @@ router
   .get(cartController.setMyFilter, cartController.getMyCart)
   .post(cartController.setMyCartItem, cartController.addCartItem);
 
+router.delete("/clear-cart", cartController.clearMyCart);
+
 router
   .route("/:id")
   .patch(

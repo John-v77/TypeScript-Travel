@@ -60,6 +60,14 @@ const checkCartItemOwner = catchAsync(
   },
 );
 
+const clearMyCart = catchAsync(
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    await CartItemModel.deleteMany({ user: req.user!.id });
+
+    res.status(204).json({ status: "success", data: null });
+  },
+);
+
 const getMyCart = handlerFactory.getAll(CartItemModel);
 const addCartItem = handlerFactory.createOne(CartItemModel);
 const updateCartItem = handlerFactory.updateOne(CartItemModel);
@@ -74,4 +82,5 @@ export default {
   addCartItem,
   updateCartItem,
   deleteCartItem,
+  clearMyCart,
 };
