@@ -6,6 +6,7 @@ import Home from "./routes/Home/home.page";
 import Footer from "./components/Footer/footer.component";
 import ToursPage from "./routes/Tours/tours.page";
 import TourDetails from "./routes/TourDetails/singleTourPage.page";
+import GearPage from "./routes/Gear/gear.page";
 import Login from "./routes/Login/login.page";
 import AuthGuard from "./components/AuthGuard/auth-guard.component";
 
@@ -24,6 +25,7 @@ export const App = () => {
             <Route index element={<Home />} />
             <Route path="tours" element={<ToursPage />} />
             <Route path="tour/:id" element={<TourDetails />} />
+            <Route path="gear" element={<GearPage />} />
             <Route path="auth" element={<Login />} />
           </Route>
         </Routes>
