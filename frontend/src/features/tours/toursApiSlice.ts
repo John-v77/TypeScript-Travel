@@ -15,6 +15,14 @@ type StartLocation = {
   address: string;
 };
 
+export type TourGuide = {
+  _id: string;
+  name: string;
+  email: string;
+  photo: string;
+  role: string;
+};
+
 export type TourStartDate = {
   _id: string;
   id: string;
@@ -38,7 +46,7 @@ export type Tour = {
   startDates: TourStartDate[];
   startLocation: StartLocation;
   locations?: Location[];
-  guides: string[];
+  guides: TourGuide[];
   ratingsAverage: number;
   ratingsQuantity?: number;
   slug?: string;
