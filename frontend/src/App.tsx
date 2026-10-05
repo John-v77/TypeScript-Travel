@@ -15,6 +15,7 @@ import Settings from "./routes/Account/settings.tab";
 import MyBookings from "./routes/Account/my-bookings.tab";
 import MyFavorites from "./routes/Account/my-favorites.tab";
 import MyReviews from "./routes/Account/my-reviews.tab";
+import Billing from "./routes/Account/billing.tab";
 import AuthGuard from "./components/AuthGuard/auth-guard.component";
 
 export const App = () => {
@@ -42,6 +43,7 @@ export const App = () => {
               <Route path="my-bookings" element={<MyBookings />} />
               <Route path="my-favorites" element={<MyFavorites />} />
               <Route path="my-reviews" element={<MyReviews />} />
+              <Route path="billing" element={<Billing />} />
             </Route>
           </Route>
         </Routes>
