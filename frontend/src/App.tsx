@@ -12,6 +12,7 @@ import Register from "./routes/Register/register.page";
 import ForgotPassword from "./routes/ForgotPassword/forgot-password.page";
 import MyAccount from "./routes/Account/my-account.page";
 import Settings from "./routes/Account/settings.tab";
+import MyBookings from "./routes/Account/my-bookings.tab";
 import MyFavorites from "./routes/Account/my-favorites.tab";
 import AuthGuard from "./components/AuthGuard/auth-guard.component";
 
@@ -37,9 +38,8 @@ export const App = () => {
             <Route path="myaccount" element={<MyAccount />}>
               <Route index element={<Navigate to="my-favorites" replace />} />
               <Route path="settings" element={<Settings />} />
-
+              <Route path="my-bookings" element={<MyBookings />} />
               <Route path="my-favorites" element={<MyFavorites />} />
-
             </Route>
           </Route>
         </Routes>
