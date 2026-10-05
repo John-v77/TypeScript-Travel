@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
-import { selectUser } from "../../features/authSlice/authStorageSlice";
+import { logout, selectUser } from "../../features/authSlice/authStorageSlice";
 import { selectTheme, toggleTheme } from "../../features/theme/themeSlice";
 import {
   ctaClass,
@@ -83,6 +83,20 @@ const Navbar = () => {
             className="size-9 rounded-full object-cover ring-2 ring-w_primary-600"
           />
         </Link>
+        <button
+          type="button"
+          className={
+            overlay
+              ? "rounded-lg border border-white/70 px-3.5 py-2 text-xs font-semibold whitespace-nowrap text-white transition-colors hover:bg-white/15"
+              : "rounded-lg border border-gray-300 px-3.5 py-2 text-xs font-semibold whitespace-nowrap text-gray-600 transition-colors hover:border-w_primary-600 hover:text-w_primary-600 dark:border-gray-600 dark:text-gray-300 dark:hover:border-w_primary-400 dark:hover:text-w_primary-400"
+          }
+          onClick={() => {
+            dispatch(logout());
+            closeMenu();
+          }}
+        >
+          Logout
+        </button>
       </div>
     ) : (
       <Link
