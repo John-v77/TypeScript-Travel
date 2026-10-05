@@ -14,6 +14,7 @@ import MyAccount from "./routes/Account/my-account.page";
 import Settings from "./routes/Account/settings.tab";
 import MyBookings from "./routes/Account/my-bookings.tab";
 import MyFavorites from "./routes/Account/my-favorites.tab";
+import MyReviews from "./routes/Account/my-reviews.tab";
 import AuthGuard from "./components/AuthGuard/auth-guard.component";
 
 export const App = () => {
@@ -36,10 +37,11 @@ export const App = () => {
             <Route path="register" element={<Register />} />
             <Route path="forgot-password" element={<ForgotPassword />} />
             <Route path="myaccount" element={<MyAccount />}>
-              <Route index element={<Navigate to="my-favorites" replace />} />
+              <Route index element={<Navigate to="my-bookings" replace />} />
               <Route path="settings" element={<Settings />} />
               <Route path="my-bookings" element={<MyBookings />} />
               <Route path="my-favorites" element={<MyFavorites />} />
+              <Route path="my-reviews" element={<MyReviews />} />
             </Route>
           </Route>
         </Routes>
