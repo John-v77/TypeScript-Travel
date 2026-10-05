@@ -7,6 +7,7 @@ import { authStorageSlice } from "../features/authSlice/authStorageSlice";
 import { themeSlice } from "../features/theme/themeSlice";
 import { favoritesApiSlice } from "../features/favorites/favoritesApiSlice";
 import { gearApiSlice } from "../features/gear/gearApiSlice";
+import { cartSlice } from "../features/cartSlice/cartSlice";
 
 // `combineSlices` automatically combines the reducers using
 // their `reducerPath`s, therefore we no longer need to call `combineReducers`.
@@ -17,6 +18,7 @@ const rootReducer = combineSlices(
   themeSlice,
   favoritesApiSlice,
   gearApiSlice,
+  cartSlice,
 );
 // Infer the `RootState` type from the root reducer
 export type RootState = ReturnType<typeof rootReducer>;
