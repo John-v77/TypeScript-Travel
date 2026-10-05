@@ -44,6 +44,14 @@ export const authApiSlice = createApi({
       }),
       invalidatesTags: [{ type: "Auth", id: "LIST" }],
     }),
+    // Signup - the backend signs the new account in and returns a token.
+    signup: builder.mutation<AuthResponse, SignupData>({
+      query: data => ({
+        url: "users/signup",
+        method: "POST",
+        body: data,
+      }),
+    }),
     // Logout
     logout: builder.mutation<void, void>({
       queryFn: async (_arg, { dispatch }) => {
@@ -55,4 +63,8 @@ export const authApiSlice = createApi({
   }),
 });
 
-export const { useLoginMutation, useLogoutMutation } = authApiSlice;
+export const {
+  useLoginMutation,
+  useSignupMutation,
+  useLogoutMutation,
+} = authApiSlice;

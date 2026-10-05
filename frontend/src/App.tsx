@@ -8,6 +8,7 @@ import ToursPage from "./routes/Tours/tours.page";
 import TourDetails from "./routes/TourDetails/singleTourPage.page";
 import GearPage from "./routes/Gear/gear.page";
 import Login from "./routes/Login/login.page";
+import Register from "./routes/Register/register.page";
 import AuthGuard from "./components/AuthGuard/auth-guard.component";
 
 export const App = () => {
@@ -27,6 +28,8 @@ export const App = () => {
             <Route path="tour/:id" element={<TourDetails />} />
             <Route path="gear" element={<GearPage />} />
             <Route path="auth" element={<Login />} />
+            <Route path="register" element={<Register />} />
+           
           </Route>
         </Routes>
         <Footer />
