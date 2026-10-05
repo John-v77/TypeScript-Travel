@@ -9,6 +9,7 @@ import TourDetails from "./routes/TourDetails/singleTourPage.page";
 import GearPage from "./routes/Gear/gear.page";
 import Login from "./routes/Login/login.page";
 import Register from "./routes/Register/register.page";
+import ForgotPassword from "./routes/ForgotPassword/forgot-password.page";
 import MyAccount from "./routes/Account/my-account.page";
 import Settings from "./routes/Account/settings.tab";
 import AuthGuard from "./components/AuthGuard/auth-guard.component";
@@ -31,7 +32,7 @@ export const App = () => {
             <Route path="gear" element={<GearPage />} />
             <Route path="auth" element={<Login />} />
             <Route path="register" element={<Register />} />
-
+            <Route path="forgot-password" element={<ForgotPassword />} />
             <Route path="myaccount" element={<MyAccount />}>
               <Route index element={<Navigate to="settings" replace />} />
               <Route path="settings" element={<Settings />} />
