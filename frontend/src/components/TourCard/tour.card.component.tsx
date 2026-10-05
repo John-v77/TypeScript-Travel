@@ -71,12 +71,14 @@ const TourCard = ({ tour }: TourCardProps) => {
               }
               className={`-m-1.5 shrink-0 rounded-full p-1.5 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 ${
                 saved
-                  ? "text-w_primary-600 dark:text-w_primary-400"
-                  : "text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                  ? "text-gray-500 dark:text-gray-400"
+                  : "text-gray-300 hover:text-gray-500 dark:text-gray-600 dark:hover:text-gray-400"
               }`}
             >
-              <svg className="size-6 fill-current">
-                <use href="/img/icons.svg#icon-heart" />
+              <svg className="size-4.5 fill-current">
+                <use
+                  href={`/img/icons.svg#icon-heart${saved ? "-filled" : ""}`}
+                />
               </svg>
             </button>
           )}
