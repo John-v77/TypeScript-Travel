@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useGetAllGearQuery } from "../../features/gear/gearApiSlice";
-import { useAppDispatch } from "../../app/hooks";
-import { addToCart } from "../../features/cartSlice/cartSlice";
+import { useCart } from "../../features/cartSlice/useCart";
 
 /** `all` first, then one per category, in the order the shop reads best. */
 const categories = [
@@ -13,7 +12,7 @@ const categories = [
 ];
 
 const GearPage = () => {
-  const dispatch = useAppDispatch();
+  const cart = useCart();
   const [selectedCategory, setSelectedCategory] = useState("all");
   const {
     data: gearItems = [],
@@ -136,17 +135,7 @@ const GearPage = () => {
                     <button
                       type="button"
                       onClick={() => {
-                        dispatch(
-                          addToCart({
-                            id: item._id,
-                            name: item.name,
-                            price: item.price,
-                            image: item.image,
-                            description: item.description,
-                            category: item.category,
-                            quantity: 1,
-                          }),
-                        );
+                        cart.add(item);
                       }}
                       className="rounded-lg bg-w_primary-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-w_primary-700"
                     >

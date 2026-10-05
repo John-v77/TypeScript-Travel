@@ -1,35 +1,22 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import { useAppSelector } from "../../app/hooks";
 import {
-  clearCart,
-  removeFromCart,
   selectCartItems,
   selectCartItemCount,
   selectCartTotal,
-  updateQuantity,
 } from "../../features/cartSlice/cartSlice";
+import { useCart } from "../../features/cartSlice/useCart";
 import { selectIsAuthenticated } from "../../features/authSlice/authStorageSlice";
 
-/**
- * The cart.
- *
- * Page head on the tinted band, then the lines on the left and the summary on
- * the right. The summary sticks as the list scrolls, so the total and the
- * checkout button stay reachable however long the cart gets.
- */
+
 const Cart = () => {
-  const dispatch = useAppDispatch();
+  const cart = useCart();
   const cartItems = useAppSelector(selectCartItems);
   const cartTotal = useAppSelector(selectCartTotal);
   const cartItemCount = useAppSelector(selectCartItemCount);
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const navigate = useNavigate();
 
-  /**
-   * Checkout needs an account. Someone signed out is sent to the login page
-   * with where they were headed, so logging in drops them straight into
-   * checkout rather than back on the home page.
-   */
   const handleCheckout = () => {
     if (isAuthenticated) {
       void navigate("/cart/checkout");
@@ -105,18 +92,13 @@ const Cart = () => {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {/* At one, minus removes the line - the reducer treats a
-                      quantity of 0 as a removal. */}
+                  {/* At one, minus removes the line - the reducer and the API
+                      both treat a quantity of 0 as a removal. */}
                   <button
                     type="button"
                     className="inline-flex size-8 items-center justify-center rounded-lg border border-gray-300 text-gray-700 transition-colors hover:border-w_primary-600 hover:text-w_primary-600 dark:border-gray-600 dark:text-gray-300 dark:hover:border-w_primary-400 dark:hover:text-w_primary-400"
                     onClick={() => {
-                      dispatch(
-                        updateQuantity({
-                          id: item.id,
-                          quantity: item.quantity - 1,
-                        }),
-                      );
+                      cart.setQuantity(item.id, item.quantity - 1);
                     }}
                     aria-label={`Decrease quantity of ${item.name}`}
                   >
@@ -134,12 +116,7 @@ const Cart = () => {
                     type="button"
                     className="inline-flex size-8 items-center justify-center rounded-lg border border-gray-300 text-gray-700 transition-colors hover:border-w_primary-600 hover:text-w_primary-600 dark:border-gray-600 dark:text-gray-300 dark:hover:border-w_primary-400 dark:hover:text-w_primary-400"
                     onClick={() => {
-                      dispatch(
-                        updateQuantity({
-                          id: item.id,
-                          quantity: item.quantity + 1,
-                        }),
-                      );
+                      cart.setQuantity(item.id, item.quantity + 1);
                     }}
                     aria-label={`Increase quantity of ${item.name}`}
                   >
@@ -171,7 +148,7 @@ const Cart = () => {
                   type="button"
                   className="inline-flex items-center justify-center rounded-lg p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950 dark:hover:text-red-400"
                   onClick={() => {
-                    dispatch(removeFromCart(item.id));
+                    cart.remove(item.id);
                   }}
                   aria-label={`Remove ${item.name} from cart`}
                 >
@@ -232,7 +209,7 @@ const Cart = () => {
               <button
                 type="button"
                 onClick={() => {
-                  dispatch(clearCart());
+                  cart.empty();
                 }}
                 className="text-gray-500 underline underline-offset-2 transition-colors hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
               >

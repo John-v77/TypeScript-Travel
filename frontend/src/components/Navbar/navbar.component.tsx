@@ -3,7 +3,10 @@ import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { logout, selectUser } from "../../features/authSlice/authStorageSlice";
 import { selectTheme, toggleTheme } from "../../features/theme/themeSlice";
-import { selectCartItemCount } from "../../features/cartSlice/cartSlice";
+import {
+  clearUserCart,
+  selectCartItemCount,
+} from "../../features/cartSlice/cartSlice";
 import {
   ctaClass,
   iconButtonClass,
@@ -94,6 +97,7 @@ const Navbar = () => {
           }
           onClick={() => {
             dispatch(logout());
+            dispatch(clearUserCart());
             closeMenu();
           }}
         >
