@@ -9,6 +9,7 @@ import { favoritesApiSlice } from "../features/favorites/favoritesApiSlice";
 import { gearApiSlice } from "../features/gear/gearApiSlice";
 import { gearCheckoutApiSlice } from "../features/gear/gearCheckoutApiSlice";
 import { bookingCheckoutApiSlice } from "../features/bookings/bookingCheckoutApiSlice";
+import { reviewsApiSlice } from "../features/reviews/reviewsApiSlice";
 import {
   cartSlice,
   loadPersistedCart,
@@ -25,6 +26,7 @@ const rootReducer = combineSlices(
   gearApiSlice,
   gearCheckoutApiSlice,
   bookingCheckoutApiSlice,
+  reviewsApiSlice,
   cartSlice,
   cartApiSlice,
 );
@@ -42,6 +44,7 @@ export const makeStore = (preloadedState?: Partial<RootState>) => {
         gearApiSlice.middleware,
         gearCheckoutApiSlice.middleware,
         bookingCheckoutApiSlice.middleware,
+        reviewsApiSlice.middleware,
         cartApiSlice.middleware,
       );
     },
