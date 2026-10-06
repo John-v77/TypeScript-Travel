@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import Stripe from "stripe";
 import { TourModel } from "../models/tourModel";
 import { BookingModel } from "../models/bookingModel";
+import AppError from "../utils/appError";
 import catchAsync from "../utils/catchAsync";
 import factory from "../utils/handlerFactory";
 
@@ -14,6 +15,36 @@ const getStripe = () => {
 
 let stripe: Stripe;
 
+
+const frontendUrl = () =>
+  (process.env.FRONTEND_URL ?? "http://localhost:5173").replace(/\/+$/, "");
+
+/**
+ * Atomically takes one seat on a departure. The filter includes
+ * `participants < maxGroupSize`, so two requests racing for the last seat
+ * cannot both succeed: the second matches nothing and gets null.
+ */
+const takeSeat = (
+  tourId: string,
+  selectedDate: string | Date,
+  tourDate: { participants: number },
+  maxGroupSize: number,
+) =>
+  TourModel.findOneAndUpdate(
+    {
+      _id: tourId,
+      "startDates.date": new Date(selectedDate),
+      "startDates.participants": { $lt: maxGroupSize },
+    },
+    {
+      $inc: { "startDates.$.participants": 1 },
+      $set: {
+        "startDates.$.soldOut": tourDate.participants + 1 >= maxGroupSize,
+      },
+    },
+    { new: true },
+  );
+
 interface AuthenticatedRequest extends Request {
   user?: any;
 }
@@ -22,11 +53,13 @@ export const getCheckoutSession = catchAsync(
   async (
     req: AuthenticatedRequest,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> => {
     if (!stripe) stripe = getStripe();
 
     const { selectedDate } = req.body;
+    // Defaults to one, so a request without it books a single place.
+    const guests = Number(req.body.guests ?? 1);
 
     if (!selectedDate) {
       res.status(400).json({
@@ -36,16 +69,22 @@ export const getCheckoutSession = catchAsync(
       return;
     }
 
+    if (!Number.isInteger(guests) || guests < 1) {
+      return next(
+        new AppError("Guests must be a whole number of at least 1.", 400),
+      );
+    }
+
     const tour = await TourModel.findById(req.params.tourId);
 
     if (!tour) {
-      throw new Error("Tour not found");
+      return next(new AppError("No tour found with that ID", 404));
     }
 
     const maxGroupSize = Number(tour.maxGroupSize);
 
     const tourDate = tour.startDates?.find(
-      (d) => new Date(d.date).getTime() === new Date(selectedDate).getTime()
+      (d) => new Date(d.date).getTime() === new Date(selectedDate).getTime(),
     );
 
     if (!tourDate) {
@@ -64,10 +103,24 @@ export const getCheckoutSession = catchAsync(
       return;
     }
 
+    const seatsLeft = maxGroupSize - tourDate.participants;
+    if (guests > seatsLeft) {
+      return next(
+        new AppError(
+          `Only ${String(seatsLeft)} places are left on this date.`,
+          400,
+        ),
+      );
+    }
+
+    // 9% of the tour price per person
+    const serviceFeePerGuest = Math.round(tour.price * 0.09);
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
-      success_url: `${req.protocol}://${req.get("host")}/my-tours?alert=booking`,
-      cancel_url: `${req.protocol}://${req.get("host")}/tour/${tour.slug}`,
+      success_url: `${frontendUrl()}/myaccount/my-bookings?alert=booking`,
+      // By id, not slug: the tour page looks the tour up with findById.
+      cancel_url: `${frontendUrl()}/tour/${String(tour._id)}`,
       customer_email: req.user.email as string,
       client_reference_id: req.params.tourId as string,
       line_items: [
@@ -78,17 +131,25 @@ export const getCheckoutSession = catchAsync(
             product_data: {
               name: `${tour.name} Tour`,
               description: tour.summary,
-              images: [
-                `${req.protocol}://${req.get("host")}/img/tours/${tour.imageCover}`,
-              ],
+              images: [`${frontendUrl()}/img/tours/${tour.imageCover}`],
             },
           },
-          quantity: 1,
+          quantity: guests,
+        },
+        {
+          price_data: {
+            currency: "usd",
+            unit_amount: serviceFeePerGuest * 100,
+            product_data: { name: "Service fee" },
+          },
+          quantity: guests,
         },
       ],
       mode: "payment",
       metadata: {
         selectedDate: new Date(selectedDate).toISOString(),
+        userId: String(req.user._id),
+        guests: String(guests),
       },
     });
 
@@ -96,14 +157,14 @@ export const getCheckoutSession = catchAsync(
       status: "success",
       session,
     });
-  }
+  },
 );
 
 export const getMyBookings = catchAsync(
   async (
     req: AuthenticatedRequest,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> => {
     const bookings = await BookingModel.find({ user: req.user?.id });
 
@@ -112,11 +173,15 @@ export const getMyBookings = catchAsync(
       results: bookings.length,
       data: bookings,
     });
-  }
+  },
 );
 
 export const createBooking = catchAsync(
-  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  async (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
     const { tour, user, price, selectedDate } = req.body;
 
     if (!selectedDate) {
@@ -130,17 +195,13 @@ export const createBooking = catchAsync(
     const tourDoc = await TourModel.findById(tour);
 
     if (!tourDoc) {
-      res.status(404).json({
-        status: "fail",
-        message: "Tour not found",
-      });
-      return;
+      return next(new AppError("No tour found with that ID", 404));
     }
 
     const maxGroupSize = Number(tourDoc.maxGroupSize);
 
     const tourDate = tourDoc.startDates?.find(
-      (d) => new Date(d.date).getTime() === new Date(selectedDate).getTime()
+      (d) => new Date(d.date).getTime() === new Date(selectedDate).getTime(),
     );
 
     if (!tourDate) {
@@ -159,19 +220,13 @@ export const createBooking = catchAsync(
       return;
     }
 
-    const updatedTour = await TourModel.findOneAndUpdate(
-      {
-        _id: tour,
-        "startDates.date": new Date(selectedDate),
-        "startDates.participants": { $lt: maxGroupSize },
-      },
-      {
-        $inc: { "startDates.$.participants": 1 },
-        $set: {
-          "startDates.$.soldOut": tourDate.participants + 1 >= maxGroupSize,
-        },
-      },
-      { new: true }
+    // The seat is taken before the booking is written, so a full date can
+    // never end up with a booking.
+    const updatedTour = await takeSeat(
+      tour,
+      selectedDate,
+      tourDate,
+      maxGroupSize,
     );
 
     if (!updatedTour) {
@@ -193,7 +248,7 @@ export const createBooking = catchAsync(
       status: "success",
       data: booking,
     });
-  }
+  },
 );
 export const getBooking = factory.getOne(BookingModel);
 export const getAllBookings = factory.getAll(BookingModel);

@@ -6,7 +6,7 @@ const router = Router();
 
 router.use(authController.protect);
 
-router.get("/checkout-session/:tourId", bookingController.getCheckoutSession);
+router.post("/checkout-session/:tourId", bookingController.getCheckoutSession);
 
 router.use(authController.restrictTo("admin", "lead-guide"));
 
