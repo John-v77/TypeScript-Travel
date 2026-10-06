@@ -7,6 +7,7 @@ import Footer from "./components/Footer/footer.component";
 import ToursPage from "./routes/Tours/tours.page";
 import TourDetails from "./routes/TourDetails/singleTourPage.page";
 import BookTour from "./routes/BookTour/book-tour.page";
+import TourCheckout from "./routes/TourCheckout/tour-checkout.page";
 import GearPage from "./routes/Gear/gear.page";
 import Cart from "./routes/Cart/cart.page";
 import CartCheckout from "./routes/CartCheckout/cart-checkout.page";
@@ -40,6 +41,7 @@ export const App = () => {
             <Route path="tours" element={<ToursPage />} />
             <Route path="tour/:id" element={<TourDetails />} />
             <Route path="tour/:id/book" element={<BookTour />} />
+            <Route path="checkout/:id" element={<TourCheckout />} />
             <Route path="gear" element={<GearPage />} />
             <Route path="cart" element={<Cart />} />
             <Route path="cart/checkout" element={<CartCheckout />} />
