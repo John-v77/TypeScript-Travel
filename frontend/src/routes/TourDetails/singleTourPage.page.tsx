@@ -1,16 +1,17 @@
-import type { ReactNode } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useState, type SubmitEventHandler } from "react";
+import { Link, useLocation, useParams } from "react-router-dom";
+import { useAppSelector } from "../../app/hooks";
+import { selectIsAuthenticated } from "../../features/authSlice/authStorageSlice";
+import {
+  useCreateReviewMutation,
+  useGetTourReviewsQuery,
+} from "../../features/reviews/reviewsApiSlice";
+import ReviewCard from "../../components/ReviewCard/reviewCard.component";
 import { useGetTourByIdQuery } from "../../features/tours/toursApiSlice";
 import { formatPrice, formatRating } from "../../features/tours/tour-helpers";
 import { useFavorites } from "../../features/favorites/useFavorites";
 import { outlineButton } from "../Home/home.styles";
-
-
-const Placeholder = ({ children }: { children: ReactNode }) => (
-  <div className="flex h-full min-h-40 items-center justify-center border-2 border-dashed border-gray-300 p-6 text-center text-gray-500 dark:border-gray-700 dark:text-gray-400">
-    {children}
-  </div>
-);
+import TourMap from "../../components/TourMap/tour-map.component";
 
 const TourDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -21,6 +22,39 @@ const TourDetails = () => {
   } = useGetTourByIdQuery(id ?? "", { skip: !id });
   const { signedIn, isFavorite, toggle } = useFavorites();
   const saved = tour ? isFavorite(tour.id) : false;
+
+  const location = useLocation();
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const {
+    data: reviews,
+    isLoading: reviewsLoading,
+    isError: reviewsError,
+  } = useGetTourReviewsQuery(id ?? "", { skip: !isAuthenticated || !id });
+  const [createReview, { isLoading: isSubmitting, error: submitError }] =
+    useCreateReviewMutation();
+  const [rating, setRating] = useState(5);
+  const [body, setBody] = useState("");
+
+  const submitReview = async () => {
+    try {
+      await createReview({
+        tourId: id ?? "",
+        review: body.trim(),
+        rating,
+      }).unwrap();
+      setBody("");
+      setRating(5);
+    } catch (error) {
+      // Shown below the form from `submitError`.
+      console.error("Could not create the review:", error);
+    }
+  };
+
+  const handleReviewSubmit: SubmitEventHandler<HTMLFormElement> = event => {
+    event.preventDefault();
+    if (!body.trim()) return;
+    void submitReview();
+  };
 
   if (isLoading) {
     return (
@@ -302,9 +336,8 @@ const TourDetails = () => {
               Where you are going
             </h2>
           </div>
-          {/* TODO: map feature (Mapbox) - keeps this height. */}
-          <div className="mt-12 h-[32rem]">
-            <Placeholder>Route map coming soon</Placeholder>
+          <div className="mt-12 h-[32rem] overflow-hidden">
+            <TourMap locations={tour.locations ?? []} />
           </div>
         </section>
 
@@ -318,15 +351,135 @@ const TourDetails = () => {
               What travellers say
             </h2>
           </div>
-          {/* TODO: reviews feature - list, plus "Write a review" for people who
-            booked this tour. */}
-          <div className="mt-12">
-            <Placeholder>Reviews coming soon</Placeholder>
-          </div>
-        </section>
+          {isAuthenticated ? (
+            <div className="px-8 sm:px-16">
+              {reviewsLoading && (
+                <p className="mt-8 text-center text-gray-600 dark:text-gray-400">
+                  Loading reviews...
+                </p>
+              )}
 
-        {/* Call to action - a light grey split, photo right. The bottom margin
-          keeps it off the footer. */}
+              {reviewsError && (
+                <p
+                  role="alert"
+                  className="mt-8 text-center text-red-600 dark:text-red-400"
+                >
+                  We couldn&apos;t load reviews for this tour.
+                </p>
+              )}
+
+              {reviews?.length === 0 && (
+                <p className="mt-8 text-center text-gray-600 dark:text-gray-400">
+                  No reviews yet. Be the first to leave one.
+                </p>
+              )}
+
+              {reviews && reviews.length > 0 && (
+                <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  {reviews.map(review => (
+                    <ReviewCard key={review._id} review={review} />
+                  ))}
+                </div>
+              )}
+
+              <form
+                onSubmit={handleReviewSubmit}
+                className="mx-auto mt-12 max-w-xl rounded-2xl bg-[#F7F7F7] p-8 dark:bg-gray-800"
+              >
+                <h3 className="font-serif text-xl font-bold text-gray-900 dark:text-white">
+                  Write a review
+                </h3>
+
+                <div className="mt-6">
+                  <label
+                    htmlFor="review-rating"
+                    className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    Rating
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <select
+                      id="review-rating"
+                      value={rating}
+                      onChange={event => {
+                        setRating(Number(event.target.value));
+                      }}
+                      className="w-auto rounded-lg border border-gray-300 bg-white py-2.5 pr-10 pl-4 text-sm text-gray-900 transition-colors focus:border-w_primary-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    >
+                      {[5, 4, 3, 2, 1].map(value => (
+                        <option key={value} value={value}>
+                          {value} star{value === 1 ? "" : "s"}
+                        </option>
+                      ))}
+                    </select>
+
+                    <span className="flex gap-1" aria-hidden="true">
+                      {[1, 2, 3, 4, 5].map(star => (
+                        <svg
+                          key={star}
+                          className={`size-5 fill-current ${
+                            rating >= star
+                              ? "text-w_primary-600 dark:text-w_primary-400"
+                              : "text-gray-300 dark:text-gray-600"
+                          }`}
+                        >
+                          <use href="/img/icons.svg#icon-star-filled" />
+                        </svg>
+                      ))}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-6">
+                  <label
+                    htmlFor="review-body"
+                    className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    Your review
+                  </label>
+                  <textarea
+                    id="review-body"
+                    value={body}
+                    onChange={event => {
+                      setBody(event.target.value);
+                    }}
+                    rows={4}
+                    required
+                    className="block w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 transition-colors focus:border-w_primary-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+
+                {submitError && (
+                  <p
+                    role="alert"
+                    className="mt-4 text-sm text-red-600 dark:text-red-400"
+                  >
+                    We couldn&apos;t submit your review. Please try again.
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={isSubmitting || !body.trim()}
+                  className="mt-6 inline-flex items-center justify-center rounded-lg bg-w_primary-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-w_primary-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isSubmitting ? "Submitting..." : "Submit review"}
+                </button>
+              </form>
+            </div>
+          ) : (
+            <p className="mt-8 text-center text-gray-600 dark:text-gray-400">
+              <Link
+                to="/auth"
+                state={{ from: location }}
+                className="font-semibold text-w_primary-600 underline underline-offset-2 hover:text-w_primary-700 dark:text-w_primary-400"
+              >
+                Log in
+              </Link>
+              &nbsp;to read and write reviews for this tour.
+            </p>
+          )}
+        </section>
         <section className="mb-16 grid lg:mb-20 lg:grid-cols-2">
           <img
             src={`/img/tours/${tour.images[2] ?? tour.imageCover}`}
