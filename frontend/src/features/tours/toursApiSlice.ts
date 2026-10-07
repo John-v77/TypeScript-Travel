@@ -1,6 +1,6 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
-type Location = {
+export type Location = {
   _id: string;
   description: string;
   type: string;
