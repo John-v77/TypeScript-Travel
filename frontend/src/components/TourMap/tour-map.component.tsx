@@ -14,6 +14,7 @@ import {
   formatDuration,
   type DrivingRoute,
 } from "../../utils/directions";
+import MapLoading from "../MapLoading/map-loading.component";
 
 const mapboxToken = import.meta.env.VITE_MAPBOX_TOKEN as string | undefined;
 
@@ -23,6 +24,7 @@ type TourMapProps = {
 
 const TourMap = ({ locations }: TourMapProps) => {
   const [selected, setSelected] = useState<Location | null>(null);
+  // Cleared once the map reports idle - see MapLoading.
   const [mapReady, setMapReady] = useState(false);
 
 
@@ -103,6 +105,8 @@ const TourMap = ({ locations }: TourMapProps) => {
 
   return (
     <div className="relative size-full">
+      {!mapReady && <MapLoading />}
+
       {/* Only for a real road route - there is no honest distance to quote
           for a straight line across an ocean. */}
       {road && mapReady && (
