@@ -12,6 +12,7 @@ import GearPage from "./routes/Gear/gear.page";
 import Cart from "./routes/Cart/cart.page";
 import CartCheckout from "./routes/CartCheckout/cart-checkout.page";
 import { useCartSync } from "./features/cartSlice/useCart";
+import About from "./routes/About/about.page";
 import Login from "./routes/Login/login.page";
 import Register from "./routes/Register/register.page";
 import ForgotPassword from "./routes/ForgotPassword/forgot-password.page";
@@ -45,6 +46,7 @@ export const App = () => {
             <Route path="gear" element={<GearPage />} />
             <Route path="cart" element={<Cart />} />
             <Route path="cart/checkout" element={<CartCheckout />} />
+            <Route path="about" element={<About />} />
             <Route path="auth" element={<Login />} />
             <Route path="register" element={<Register />} />
             <Route path="forgot-password" element={<ForgotPassword />} />

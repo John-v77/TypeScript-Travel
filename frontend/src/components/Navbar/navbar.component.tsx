@@ -20,9 +20,10 @@ const navLinks = [
   { to: "/", label: "Home", end: true },
   { to: "/tours", label: "Tours" },
   { to: "/gear", label: "Gear" },
-  { to: "/rentals", label: "Stays" },
-  { to: "/map", label: "Map" },
-  { to: "/feedback", label: "Feedback" },
+  // { to: "/rentals", label: "Stays" },
+  // { to: "/map", label: "Map" },
+  // { to: "/feedback", label: "Feedback" },
+    { to: "/about", label: "About Us" },
 ];
 
 const overlayRoutes = ["/"];
