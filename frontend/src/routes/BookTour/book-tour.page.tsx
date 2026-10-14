@@ -1,16 +1,16 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useGetTourByIdQuery } from "../../features/tours/toursApiSlice";
+import { useGetTourBySlugQuery } from "../../features/tours/toursApiSlice";
 import { formatPrice, formatRating } from "../../features/tours/tour-helpers";
 
 const BookTour = () => {
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const {
     data: tour,
     error,
     isLoading,
-  } = useGetTourByIdQuery(id ?? "", { skip: !id });
+  } = useGetTourBySlugQuery(slug ?? "", { skip: !slug });
 
   const [departure, setDeparture] = useState("");
   const [guests, setGuests] = useState(1);
@@ -32,7 +32,6 @@ const BookTour = () => {
       </main>
     );
   }
-
 
   const departures = [...tour.startDates]
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
@@ -67,7 +66,7 @@ const BookTour = () => {
   const totalPrice = partyPrice + serviceFee;
 
   const handleReserve = () => {
-    void navigate(`/checkout/${tour.id}`, {
+    void navigate(`/checkout/${tour.slug}`, {
       state: { checkIn: departure, checkOut: returnDate, guests, tour },
     });
   };
