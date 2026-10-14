@@ -11,7 +11,7 @@ interface AuthenticatedRequest extends Request {
   user?: User;
 }
 
-const signToken = (id: string): string => {
+export const signToken = (id: string): string => {
   if (!process.env.JWT_SECRET) {
     throw new Error("JWT_SECRET enviroment variable is required");
   }

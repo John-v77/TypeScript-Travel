@@ -1,8 +1,5 @@
 import jwt from "jsonwebtoken";
-import request from "supertest";
-import { User, UserModel } from "../models/userModel";
-import { signToken } from "../controllers/authController";
-import { Request, Response, NextFunction } from "express";
+import authController, { signToken } from "../controllers/authController";
 
 const testSecret = "test-jwt-secred-key";
 const testExpiry = "7d";
@@ -54,7 +51,8 @@ describe("JWT Fuctionality", () => {
 
   describe("protect middleware", () => {
     it("should be implemented and exported from authController", () => {
-      const { protect } = require("../controllers/authController");
+      // The controller exports its handlers on the default object.
+      const { protect } = authController;
       expect(protect).toBeDefined();
       expect(typeof protect).toBe("function");
     });

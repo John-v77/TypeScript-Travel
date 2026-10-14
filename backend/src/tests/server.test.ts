@@ -14,14 +14,22 @@ describe("Server", () => {
     await request(app).get("/unknown-route").expect(404);
   });
 
-  it("should have cors enabled", async () => {
+  it("allows the frontend's origin", async () => {
     const response = await request(app)
       .get("/health")
-      .set("Origin", "http://localhost:3000")
+      .set("Origin", "http://localhost:5173")
       .expect(200);
     expect(response.headers["access-control-allow-origin"]).toBe(
-      "http://localhost:3000",
+      "http://localhost:5173",
     );
+  });
+
+  it("does not allow any other origin", async () => {
+    const response = await request(app)
+      .get("/health")
+      .set("Origin", "http://evil.example.com")
+      .expect(200);
+    expect(response.headers["access-control-allow-origin"]).toBeUndefined();
   });
 
   it("should parse JSON requests", async () => {
