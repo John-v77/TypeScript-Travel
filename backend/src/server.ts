@@ -85,9 +85,19 @@ export const createServer = () => {
   // Serve static files
   app.use(express.static(path.join(__dirname, "..", "public")));
 
+  // CORS_ORIGINS is a comma-separated list in .env; without it, only the
+  // local Vite dev server is allowed.
+  const corsOrigins = (
+    process.env.CORS_ORIGINS ?? "http://localhost:5173,http://127.0.0.1:5173"
+  )
+    .split(",")
+    .map(origin => origin.trim())
+    .filter(Boolean);
+
   app.use(cors({origin: [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173"
+    ...corsOrigins,
+    // The deployed (or docker compose) frontend, e.g. http://localhost:8080.
+    ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
   ]}));
 
   app.use("/api/v1/tours", tourRouter);
