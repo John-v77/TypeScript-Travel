@@ -70,11 +70,13 @@ describe("Tour Routes", () => {
       });
 
       it("should return 404 for unknown PUT routes", async () => {
-        const response = await request(app).put("/api/v1/users").expect(404);
+        const response = await request(app)
+          .put("/api/v1/nothing-here")
+          .expect(404);
 
         expect(response.body).toEqual({
           status: "fail",
-          message: "Can't find /api/v1/users on this server!",
+          message: "Can't find /api/v1/nothing-here on this server!",
         });
       });
 
@@ -137,11 +139,11 @@ describe("Tour Routes", () => {
       });
 
       it("should handle async errors in tour operations", async () => {
-        const tourId = "123";
+        const tourId = "5c88fa8cf4afda39709c2955";
 
-        mockTourModel.findById.mockRejectedValue(
-          new Error("Async operation failed"),
-        );
+        mockTourModel.findById.mockReturnValue({
+          populate: jest.fn().mockRejectedValue(new Error("Async operation failed")),
+        } as any);
 
         const response = await request(app)
           .get(`/api/v1/tours/${tourId}`)
@@ -193,20 +195,68 @@ describe("Tour Routes", () => {
         expect(response.body).toEqual({ ok: true });
       });
 
-      it("should handle errors in middleware chain", async () => {
-        // Mock findById to throw a CastError for invalid ObjectId format
-        const castError = new Error("Cast to ObjectId failed");
-        castError.name = "CastError";
-        (castError as any).kind = "ObjectId";
+      it("turns an invalid id (CastError) into a 400", async () => {
+        const castError = Object.assign(new Error("Cast to ObjectId failed"), {
+          name: "CastError",
+          kind: "ObjectId",
+          path: "_id",
+          value: "invalid-id-format",
+        });
 
-        mockTourModel.findById.mockRejectedValue(castError);
+        mockTourModel.findById.mockReturnValue({
+          populate: jest.fn().mockRejectedValue(castError),
+        } as any);
 
         const response = await request(app)
-          .get("/api/v1/tours/invalid-id-format")
-          .expect(500);
+          .get("/api/v1/tours/5c88fa8cf4afda39709c2955")
+          .expect(400);
 
-        expect(response.body.status).toBe("error");
-        expect(response.body.message).toBe("Cast to ObjectId failed");
+        expect(response.body).toEqual({
+          status: "fail",
+          message: "Invalid _id: invalid-id-format.",
+        });
+      });
+
+      // e.g. signing up with an email that is already registered.
+      it("turns a duplicate key (code 11000) into a 400", async () => {
+        const duplicate = Object.assign(new Error("E11000 duplicate key"), {
+          code: 11000,
+          keyValue: { name: "The Sea Explorer" },
+        });
+
+        mockTourModel.findById.mockReturnValue({
+          populate: jest.fn().mockRejectedValue(duplicate),
+        } as any);
+
+        const response = await request(app)
+          .get("/api/v1/tours/5c88fa8cf4afda39709c2955")
+          .expect(400);
+
+        expect(response.body.message).toBe(
+          "Duplicate field value: The Sea Explorer. Please use another value!",
+        );
+      });
+
+      it("turns a validation error into a 400 listing every problem", async () => {
+        const invalid = Object.assign(new Error("Validation failed"), {
+          name: "ValidationError",
+          errors: {
+            price: { message: "A tour must have a price" },
+            name: { message: "A tour must have a name" },
+          },
+        });
+
+        mockTourModel.findById.mockReturnValue({
+          populate: jest.fn().mockRejectedValue(invalid),
+        } as any);
+
+        const response = await request(app)
+          .get("/api/v1/tours/5c88fa8cf4afda39709c2955")
+          .expect(400);
+
+        expect(response.body.message).toBe(
+          "Invalid input data. A tour must have a price. A tour must have a name",
+        );
       });
     });
   });

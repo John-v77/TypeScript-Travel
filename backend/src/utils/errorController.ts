@@ -7,9 +7,8 @@ const handleCastErrorDB = (err: any): AppError => {
 };
 
 const handleDuplicateFieldsBD = (err: any): AppError => {
-  const value = err.errmsg.match(/(["'])(\\?.)*?\1/)[0];
-  console.log(value);
-  const message = `Duplicate field value: ${value}. Please use another value!`;
+  const value = Object.values(err.keyValue ?? {})[0] ?? "value";
+  const message = `Duplicate field value: ${String(value)}. Please use another value!`;
   return new AppError(message, 400);
 };
 
@@ -50,7 +49,7 @@ const sendErrorProd = (err: AppError, res: Response): void => {
 
     // send generic error
     res.status(500).json({
-      stauts: "error",
+      status: "error",
       message: "Something went very wrong!",
     });
   }
@@ -73,34 +72,26 @@ const globalErrorHandler = (
 
   if (process.env.NODE_ENV === "development") {
     sendErrorDev(err, res);
-  } else if (process.env.NODE_ENV === "production") {
-    let errorCopy = { ...err };
+    return;
+  }
 
-    if (errorCopy.name === "CastError") {
-      errorCopy = handleCastErrorDB(errorCopy);
-    }
+  // Known database and token errors become clear 4xx responses. Read from
+  // `err` itself: `name` and `message` are not own enumerable properties, so a
+  // `{ ...err }` copy would lose them and every one of these would be a 500.
+  const anyErr = err as any;
+  let error: AppError = err;
+  if (anyErr.name === "CastError") error = handleCastErrorDB(err);
+  else if (anyErr.code === 11000) error = handleDuplicateFieldsBD(err);
+  else if (anyErr.name === "ValidationError") error = handleValidationErrorDB(err);
+  else if (anyErr.name === "JsonWebTokenError") error = handleJWTError();
+  else if (anyErr.name === "TokenExpiredError") error = handleJWTExpiredError();
 
-    if (errorCopy.name === "CastError") {
-      errorCopy = handleDuplicateFieldsBD(errorCopy);
-    }
-
-    if (errorCopy.name === "ValidationError") {
-      errorCopy = handleValidationErrorDB(errorCopy);
-    }
-
-    if (errorCopy.name === "JsonWebTokenError") {
-      errorCopy = handleJWTError();
-    }
-
-    if (errorCopy.name === "TokenExpiredError") {
-      errorCopy = handleJWTExpiredError();
-    }
-
-    sendErrorProd(errorCopy, res);
+  if (process.env.NODE_ENV === "production") {
+    sendErrorProd(error, res);
   } else {
-    res.status(err.statusCode).json({
-      status: err.status,
-      message: err.message,
+    res.status(error.statusCode).json({
+      status: error.status,
+      message: error.message,
     });
   }
 };

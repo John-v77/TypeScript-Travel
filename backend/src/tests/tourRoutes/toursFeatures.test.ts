@@ -34,7 +34,7 @@ describe("Tour Routes", () => {
 
   describe("Virtual Fields", () => {
     it("should include virtual field durationWeeks in JSON response for single tour", async () => {
-      const tourId = "123";
+      const tourId = "5c88fa8cf4afda39709c2955";
       const mockTour = {
         _id: tourId,
         name: "Test Tour",
@@ -110,7 +110,7 @@ describe("Tour Routes", () => {
     });
 
     it("should calculate durationWeeks correctly for different durations", async () => {
-      const tourId = "123";
+      const tourId = "5c88fa8cf4afda39709c2955";
       const mockTour = {
         _id: tourId,
         name: "Test Tour",
@@ -163,7 +163,7 @@ describe("Tour Routes", () => {
     });
 
     it("should include virtual field in updated tour response", async () => {
-      const tourId = "123";
+      const tourId = "5c88fa8cf4afda39709c2955";
       const updateData = {
         name: "Updated Tour",
         duration: 28,
@@ -305,7 +305,7 @@ describe("Tour Routes", () => {
     });
 
     it("should update slug when tour name is updated", async () => {
-      const tourId = "123";
+      const tourId = "5c88fa8cf4afda39709c2955";
       const updateData = {
         name: "New Adventure Name",
         duration: 28,
@@ -407,7 +407,7 @@ describe("Tour Routes", () => {
     });
 
     it("should hide secretTour field from single tour response", async () => {
-      const tourId = "123";
+      const tourId = "5c88fa8cf4afda39709c2955";
       const mockTour = {
         _id: tourId,
         name: "Regular Tour",
@@ -458,7 +458,7 @@ describe("Tour Routes", () => {
     });
 
     it("should hide secretTour field from updated tour response", async () => {
-      const tourId = "123";
+      const tourId = "5c88fa8cf4afda39709c2955";
       const updateData = {
         name: "Updated Tour",
         duration: 21,
@@ -667,7 +667,7 @@ describe("Tour Routes", () => {
     });
 
     it("should validate discount when updating tour", async () => {
-      const tourId = "123";
+      const tourId = "5c88fa8cf4afda39709c2955";
       const updateData = {
         name: "Updated Tour",
         priceDiscount: 15,
@@ -692,7 +692,7 @@ describe("Tour Routes", () => {
     });
 
     it("should reject invalid discount when updating tour", async () => {
-      const tourId = "123";
+      const tourId = "5c88fa8cf4afda39709c2955";
       const updateData = {
         name: "Updated Tour",
         priceDiscount: 17,
@@ -749,7 +749,7 @@ describe("Tour Routes", () => {
           $group: {
             _id: { $toUpper: "$difficulty" },
             num: { $sum: 1 },
-            numRatings: { $sum: "$ratingQuantity" },
+            numRatings: { $sum: "$ratingsQuantity" },
             avgRating: { $avg: "$ratingsAverage" },
             avgPrice: { $avg: "$price" },
             minPrice: { $min: "$price" },
@@ -836,7 +836,7 @@ describe("Tour Routes", () => {
           $group: {
             _id: { $toUpper: "$difficulty" },
             num: { $sum: 1 },
-            numRatings: { $sum: "$ratingQuantity" },
+            numRatings: { $sum: "$ratingsQuantity" },
             avgRating: { $avg: "$ratingsAverage" },
             avgPrice: { $avg: "$price" },
             minPrice: { $min: "$price" },
@@ -957,7 +957,7 @@ describe("Tour Routes", () => {
       });
 
       it("should reject invalid rating when updating tour", async () => {
-        const tourId = "123";
+        const tourId = "5c88fa8cf4afda39709c2955";
         const updateData = {
           ratingsAverage: 6.0,
         };
@@ -1126,7 +1126,7 @@ describe("Tour Routes", () => {
       });
 
       it("should reject invalid tour name when updating", async () => {
-        const tourId = "123";
+        const tourId = "5c88fa8cf4afda39709c2955";
         const updateData = {
           name: "Bad123",
         };
@@ -1307,7 +1307,7 @@ describe("Tour Routes", () => {
       });
 
       it("should handle async errors in tour operations", async () => {
-        const tourId = "123";
+        const tourId = "5c88fa8cf4afda39709c2955";
 
         mockTourModel.findById.mockReturnValue({
           populate: jest.fn().mockRejectedValue(
@@ -1365,22 +1365,27 @@ describe("Tour Routes", () => {
         expect(response.body).toEqual({ ok: true });
       });
 
-      it("should handle errors in middleware chain", async () => {
-        // Mock findById to throw a CastError for invalid ObjectId format
-        const castError = new Error("Cast to ObjectId failed");
-        castError.name = "CastError";
-        (castError as any).kind = "ObjectId";
+      // An id that is not an ObjectId is the client's mistake: 400, not 500.
+      it("turns an invalid id (CastError) into a 400", async () => {
+        const castError = Object.assign(new Error("Cast to ObjectId failed"), {
+          name: "CastError",
+          kind: "ObjectId",
+          path: "_id",
+          value: "invalid-id-format",
+        });
 
         mockTourModel.findById.mockReturnValue({
           populate: jest.fn().mockRejectedValue(castError),
         } as any);
 
         const response = await request(app)
-          .get("/api/v1/tours/invalid-id-format")
-          .expect(500);
+          .get("/api/v1/tours/5c88fa8cf4afda39709c2955")
+          .expect(400);
 
-        expect(response.body.status).toBe("error");
-        expect(response.body.message).toBe("Cast to ObjectId failed");
+        expect(response.body).toEqual({
+          status: "fail",
+          message: "Invalid _id: invalid-id-format.",
+        });
       });
     });
   });

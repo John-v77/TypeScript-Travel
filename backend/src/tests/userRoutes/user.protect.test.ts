@@ -31,10 +31,12 @@ describe("authController.protect (real JWT verification)", () => {
     const response = await request(app)
       .delete("/api/v1/users/deleteMe")
       .set("Authorization", `Bearer ${expiredToken}`)
-      .expect(500);
+      .expect(401);
 
     expect(mockUserModel.findByIdAndUpdate).not.toHaveBeenCalled();
-    expect(response.body.message).toContain("jwt expired");
+    expect(response.body.message).toBe(
+      "Your token has expired! Please log in again.",
+    );
   });
 
   it("rejects a malformed JWT", async () => {
@@ -42,10 +44,10 @@ describe("authController.protect (real JWT verification)", () => {
     const response = await request(app)
       .delete("/api/v1/users/deleteMe")
       .set("Authorization", "Bearer not.a.valid.token")
-      .expect(500);
+      .expect(401);
 
     expect(mockUserModel.findByIdAndUpdate).not.toHaveBeenCalled();
-    expect(response.body.message).toContain("jwt malformed");
+    expect(response.body.message).toBe("Invalid token. Please log in again!");
   });
 
   it("rejects when no token is provided", async () => {
