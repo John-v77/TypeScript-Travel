@@ -29,7 +29,23 @@ interface RequestedItem {
 }
 
 export const getAllGear = factory.getAll(GearModel);
-export const getGear = factory.getOne(GearModel);
+export const getGear = catchAsync(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const idOrSlug = String(req.params.id);
+    const gear = /^[0-9a-f]{24}$/i.test(idOrSlug)
+      ? await GearModel.findById(idOrSlug)
+      : await GearModel.findOne({ slug: idOrSlug });
+
+    if (!gear) {
+      return next(new AppError("No gear found with that ID or slug", 404));
+    }
+
+    res.status(200).json({
+      status: "success",
+      data: gear,
+    });
+  },
+);
 
 // Admin-only
 export const createGear = factory.createOne(GearModel);

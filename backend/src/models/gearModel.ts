@@ -1,4 +1,5 @@
 import { Schema, model, Document } from "mongoose";
+import slugify from "slugify";
 
 // Mirrors the GearItem interface the frontend's Gear page and cartSlice
 // already use, so the catalog can be swapped from its hardcoded array to
@@ -18,6 +19,7 @@ export interface Gear extends Document {
   image: string;
   description: string;
   category: GearCategory;
+  slug?: string;
   createdAt?: Date;
 }
 
@@ -52,6 +54,11 @@ const GearSchema = new Schema<Gear>(
         message: `Category must be one of: ${GEAR_CATEGORIES.join(", ")}`,
       },
     },
+    // Set from the name on save: "Alpine Blue Jacket" -> "alpine-blue-jacket".
+    slug: {
+      type: String,
+      unique: true,
+    },
     createdAt: {
       type: Date,
       default: Date.now,
@@ -61,5 +68,11 @@ const GearSchema = new Schema<Gear>(
 );
 
 GearSchema.index({ category: 1, price: 1 });
+
+// Runs before .save() and .create(), like the tour slug.
+GearSchema.pre("save", function (next) {
+  this.slug = slugify(this.name, { lower: true });
+  next();
+});
 
 export const GearModel = model<Gear>("Gear", GearSchema);
