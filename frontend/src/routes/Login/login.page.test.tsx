@@ -2,15 +2,18 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { screen, fireEvent, waitFor } from "@testing-library/react";
 import { renderWithProviders } from "../../utils/test-utils";
 import * as authApiSlice from "../../features/authSlice/authApiSlice";
-import { selectUser, selectToken } from "../../features/authSlice/authStorageSlice";
+import {
+  selectUser,
+  selectToken,
+} from "../../features/authSlice/authStorageSlice";
 import Login from "./login.page";
+
+import type * as ReactRouterDom from "react-router-dom";
 
 const mockNavigate = vi.fn();
 vi.mock("react-router-dom", async () => {
   const actual =
-    await vi.importActual<typeof import("react-router-dom")>(
-      "react-router-dom",
-    );
+    await vi.importActual<typeof ReactRouterDom>("react-router-dom");
   return { ...actual, useNavigate: () => mockNavigate };
 });
 
@@ -32,9 +35,10 @@ const mockMutationState = (overrides: Partial<MutationState> = {}) => {
     data: undefined,
     ...overrides,
   };
-  useLoginMutationSpy.mockReturnValue([mockLoginTrigger, state] as unknown as ReturnType<
-    typeof authApiSlice.useLoginMutation
-  >);
+  useLoginMutationSpy.mockReturnValue([
+    mockLoginTrigger,
+    state,
+  ] as unknown as ReturnType<typeof authApiSlice.useLoginMutation>);
 };
 
 const mockUser = {
@@ -64,9 +68,7 @@ describe("Login Component", () => {
   it("renders the login form", () => {
     renderWithProviders(<Login />);
 
-    expect(
-      screen.getByRole("heading", { name: /login/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /login/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Login" })).toBeInTheDocument();
@@ -146,7 +148,7 @@ describe("Login Component", () => {
 
   it("does not dispatch loginSuccess or navigate when the login request fails", async () => {
     mockLoginTrigger.mockReturnValue({
-      unwrap: () => Promise.reject({ status: 401 }),
+      unwrap: () => Promise.reject(new Error("401 Unauthorized")),
     });
     const { store } = renderWithProviders(<Login />);
 
@@ -180,11 +182,11 @@ describe("Login Component", () => {
     renderWithProviders(<Login />);
 
     expect(
-      screen.getByText(/login failed\. please try again later\./i),
+      screen.getByText(/login failed\. check your email and password/i),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /try again/i }),
-    ).toBeInTheDocument();
+    // The form stays, so the user can correct the password and resubmit.
+    expect(screen.getByRole("button", { name: "Login" })).toBeInTheDocument();
+    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
   });
 
   it("shows a success message with the user's name after login", () => {
@@ -198,7 +200,7 @@ describe("Login Component", () => {
     });
     renderWithProviders(<Login />);
 
-    expect(screen.getByText("Login Successful!")).toBeInTheDocument();
+    expect(screen.getByText("Login successful")).toBeInTheDocument();
     expect(screen.getByText(/welcome back, test user!/i)).toBeInTheDocument();
   });
 
