@@ -13,7 +13,7 @@ const TourCard = ({ tour }: TourCardProps) => {
 
   return (
     <Link
-      to={`/tour/${tour.id}`}
+      to={`/tour/${tour.slug}`}
       className="group block overflow-hidden rounded-2xl bg-white shadow-md transition-shadow hover:shadow-xl dark:bg-gray-800"
     >
       <div className="relative aspect-4/3 overflow-hidden">

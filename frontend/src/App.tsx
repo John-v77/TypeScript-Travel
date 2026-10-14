@@ -40,9 +40,9 @@ export const App = () => {
           <Route path="/" element={<Navbar />}>
             <Route index element={<Home />} />
             <Route path="tours" element={<ToursPage />} />
-            <Route path="tour/:id" element={<TourDetails />} />
-            <Route path="tour/:id/book" element={<BookTour />} />
-            <Route path="checkout/:id" element={<TourCheckout />} />
+            <Route path="tour/:slug" element={<TourDetails />} />
+            <Route path="tour/:slug/book" element={<BookTour />} />
+            <Route path="checkout/:slug" element={<TourCheckout />} />
             <Route path="gear" element={<GearPage />} />
             <Route path="cart" element={<Cart />} />
             <Route path="cart/checkout" element={<CartCheckout />} />
