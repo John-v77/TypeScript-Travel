@@ -1,8 +1,12 @@
 {
   "main": "index.ts",
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/index.js",
     "dev": "nodemon index.ts",
     "dev-local": "nodemon index.ts -- --local",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
     "test": "jest",
     "test:watch": "jest --watch",
     "seed:import": "npx ts-node src/dev-data/seeder.ts --local --import",
