@@ -1,23 +1,37 @@
 import request from "supertest";
+import { createMockQuery } from "./tourRoutes/testHelpers";
 import { createServer } from "../server";
 import { ReviewModel } from "../models/reviewModel";
+import { BookingModel } from "../models/bookingModel";
 import authController from "../controllers/authController";
 
 jest.mock("../models/reviewModel");
+// POST /reviews checks the user booked the tour first.
+jest.mock("../models/bookingModel");
 jest.mock("../controllers/authController", () => {
   const actual = jest.requireActual("../controllers/authController").default;
   return {
     __esModule: true,
     default: {
       ...actual,
-      protect: jest.fn(),
-      // restrictTo("role") is called once at route-registration time (when
-      // reviewRoutes.ts is first required), before any beforeEach/it runs, so
-      // it needs a real pass-through implementation here — a bare jest.fn()
-      // returns undefined and crashes Route.post() with "callback function
-      // ... [object Undefined]". Tests below still override it per-scenario
-      // via mockImplementation.
-      restrictTo: jest.fn(() => (req: any, res: any, next: any) => next()),
+      // A signed-in user by default; tests override it per scenario.
+      protect: jest.fn((req: any, _res: any, next: any) => {
+        req.user = { _id: "user123", id: "user123", role: "user" };
+        next();
+      }),
+      // restrictTo("role") runs once when reviewRoutes.ts is loaded, so a
+      // per-test mockImplementation never reaches the registered middleware.
+      // This stand-in does the real role check against req.user instead.
+      restrictTo: jest.fn(
+        (...roles: string[]) =>
+          (req: any, res: any, next: any) => {
+            if (roles.includes(req.user?.role)) return next();
+            res.status(403).json({
+              status: "fail",
+              message: "You do not have permission to perform this action",
+            });
+          },
+      ),
     },
   };
 });
@@ -34,6 +48,8 @@ describe("Review Controller", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // The user booked the tour, so they are allowed to review it.
+    (BookingModel.findOne as jest.Mock).mockResolvedValue({ _id: "booking1" });
     jest.spyOn(console, "log").mockImplementation();
   });
 
@@ -53,9 +69,7 @@ describe("Review Controller", () => {
         },
       ];
 
-      const mockQuery = {
-        find: jest.fn().mockResolvedValue(mockReviews),
-      };
+      const mockQuery = createMockQuery(mockReviews);
 
       mockReviewModel.find.mockReturnValue(mockQuery as any);
 
@@ -63,12 +77,12 @@ describe("Review Controller", () => {
 
       expect(response.body.status).toBe("success");
       expect(response.body.results).toBe(1);
-      expect(response.body.data.allReviews).toEqual(mockReviews);
+      expect(response.body.data).toEqual(mockReviews);
     });
 
     it("should handle database errors", async () => {
-      mockReviewModel.find.mockRejectedValue(
-        new Error("Database connection error"),
+      mockReviewModel.find.mockReturnValue(
+        createMockQuery(new Error("Database connection error")) as any,
       );
 
       const response = await request(app).get("/api/v1/reviews").expect(500);
@@ -79,7 +93,7 @@ describe("Review Controller", () => {
 
   describe("POST /api/v1/reviews - createReview", () => {
     beforeEach(() => {
-      // Mock protect middleware to pass through with user info
+  
       mockAuthController.protect.mockImplementation(
         (req: any, res: any, next: any) => {
           req.user = { _id: "user123", role: "user" };
@@ -87,7 +101,7 @@ describe("Review Controller", () => {
         },
       );
 
-      // Mock restrictTo middleware to allow 'user' role
+
       mockAuthController.restrictTo.mockImplementation(
         (...allowedRoles: any[]) => {
           return (req: any, res: any, next: any) => {
@@ -126,12 +140,14 @@ describe("Review Controller", () => {
         .expect(201);
 
       expect(response.body.status).toBe("success");
-      expect(response.body.data.newReview).toEqual(mockCreatedReview);
-      expect(console.log).toHaveBeenCalledWith("create review");
+
+      expect(response.body.data).toEqual(
+        JSON.parse(JSON.stringify(mockCreatedReview)),
+      );
     });
 
     it("should require authentication", async () => {
-      // Mock protect to reject authentication
+
       mockAuthController.protect.mockImplementation(
         (req: any, res: any, next: any) => {
           return res.status(401).json({
@@ -152,7 +168,7 @@ describe("Review Controller", () => {
     });
 
     it("should restrict access to users only", async () => {
-      // Mock user with admin role (should be rejected)
+  
       mockAuthController.protect.mockImplementation(
         (req: any, res: any, next: any) => {
           req.user = { _id: "admin123", role: "admin" };

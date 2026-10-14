@@ -2,8 +2,11 @@ import authController from "../controllers/authController";
 import request from "supertest";
 import { createServer } from "../server";
 import { ReviewModel } from "../models/reviewModel";
+import { BookingModel } from "../models/bookingModel";
 
 jest.mock("../models/reviewModel");
+// POST /reviews checks the user booked the tour first.
+jest.mock("../models/bookingModel");
 jest.mock("../controllers/authController", () => {
   const actual = jest.requireActual("../controllers/authController").default;
   return {
@@ -44,6 +47,8 @@ describe("Review Routes", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // The user booked the tour, so they are allowed to review it.
+    (BookingModel.findOne as jest.Mock).mockResolvedValue({ _id: "booking1" });
     jest.spyOn(console, "log").mockImplementation();
   });
 
@@ -116,7 +121,10 @@ describe("Review Routes", () => {
         .expect(201);
 
       expect(response.body.status).toBe("success");
-      expect(response.body.data).toEqual(mockCreatedReview);
+      // Dates arrive as strings in the JSON response.
+      expect(response.body.data).toEqual(
+        JSON.parse(JSON.stringify(mockCreatedReview)),
+      );
       expect(mockAuthController.protect).toHaveBeenCalled();
     });
 
@@ -188,6 +196,77 @@ describe("Review Routes", () => {
       const response = await request(app).options("/api/v1/reviews");
 
       expect([200, 204]).toContain(response.status);
+    });
+  });
+  describe("/api/v1/reviews/:id", () => {
+    const signInAs = (role: string) => {
+      mockAuthController.protect.mockImplementation(
+        (req: any, _res: any, next: any) => {
+          req.user = { _id: "user123", id: "user123", role };
+          next();
+        },
+      );
+    };
+
+    beforeEach(() => {
+      signInAs("user");
+    });
+
+    it("reads one review", async () => {
+      mockReviewModel.findById.mockResolvedValue({
+        _id: "review1",
+        review: "Great!",
+      } as any);
+
+      const response = await request(app)
+        .get("/api/v1/reviews/review1")
+        .expect(200);
+
+      expect(mockReviewModel.findById).toHaveBeenCalledWith("review1");
+      expect(response.body.data.review).toBe("Great!");
+    });
+
+    it("returns 404 for a review that does not exist", async () => {
+      mockReviewModel.findById.mockResolvedValue(null);
+
+      await request(app).get("/api/v1/reviews/missing").expect(404);
+    });
+
+    it("updates a review", async () => {
+      mockReviewModel.findByIdAndUpdate.mockResolvedValue({
+        _id: "review1",
+        rating: 4,
+      } as any);
+
+      const response = await request(app)
+        .patch("/api/v1/reviews/review1")
+        .send({ rating: 4 })
+        .expect(200);
+
+      expect(response.body.data.rating).toBe(4);
+    });
+
+    it("deletes a review", async () => {
+      mockReviewModel.findByIdAndDelete.mockResolvedValue({
+        _id: "review1",
+      } as any);
+
+      await request(app).delete("/api/v1/reviews/review1").expect(204);
+
+      expect(mockReviewModel.findByIdAndDelete).toHaveBeenCalledWith("review1");
+    });
+
+    it("forbids a guide from changing reviews", async () => {
+      signInAs("guide");
+
+      await request(app)
+        .patch("/api/v1/reviews/review1")
+        .send({ rating: 1 })
+        .expect(403);
+      await request(app).delete("/api/v1/reviews/review1").expect(403);
+
+      expect(mockReviewModel.findByIdAndUpdate).not.toHaveBeenCalled();
+      expect(mockReviewModel.findByIdAndDelete).not.toHaveBeenCalled();
     });
   });
 });

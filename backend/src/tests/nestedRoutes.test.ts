@@ -1,9 +1,13 @@
 import request from "supertest";
+import { createMockQuery } from "./tourRoutes/testHelpers";
 import { createServer } from "../server";
 import { ReviewModel } from "../models/reviewModel";
+import { BookingModel } from "../models/bookingModel";
 import authController from "../controllers/authController";
 
 jest.mock("../models/reviewModel");
+
+jest.mock("../models/bookingModel");
 jest.mock("../controllers/authController", () => {
   const actual = jest.requireActual("../controllers/authController").default;
   return {
@@ -11,12 +15,7 @@ jest.mock("../controllers/authController", () => {
     default: {
       ...actual,
       protect: jest.fn(),
-      // restrictTo("role") is called once at route-registration time (when
-      // reviewRoutes.ts is first required), before any beforeEach runs, so
-      // it needs a real pass-through implementation here — a bare jest.fn()
-      // returns undefined and crashes Route.post() with "callback function
-      // ... [object Undefined]". Tests below still override it per-scenario
-      // via mockImplementation.
+
       restrictTo: jest.fn(() => (req: any, res: any, next: any) => next()),
     },
   };
@@ -34,6 +33,7 @@ describe("Nested Routes - Tour Reviews", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    (BookingModel.findOne as jest.Mock).mockResolvedValue({ _id: "booking1" });
     jest.spyOn(console, "log").mockImplementation();
 
     // Mock protect middleware to pass authentication
@@ -74,9 +74,7 @@ describe("Nested Routes - Tour Reviews", () => {
         },
       ];
 
-      const mockQuery = {
-        find: jest.fn().mockResolvedValue(mockTourReviews),
-      };
+      const mockQuery = createMockQuery(mockTourReviews);
 
       mockReviewModel.find.mockReturnValue(mockQuery as any);
 
@@ -86,7 +84,7 @@ describe("Nested Routes - Tour Reviews", () => {
 
       expect(response.body.status).toBe("success");
       expect(response.body.results).toBe(2);
-      expect(response.body.data.allReviews).toEqual(mockTourReviews);
+      expect(response.body.data).toEqual(mockTourReviews);
 
       // Verify that the filter was applied with the correct tourId
       expect(mockReviewModel.find).toHaveBeenCalledWith({ tour: tourId });
@@ -95,9 +93,7 @@ describe("Nested Routes - Tour Reviews", () => {
     it("should return empty array when tour has no reviews", async () => {
       const tourId = "tour456";
 
-      const mockQuery = {
-        find: jest.fn().mockResolvedValue([]),
-      };
+      const mockQuery = createMockQuery([]);
 
       mockReviewModel.find.mockReturnValue(mockQuery as any);
 
@@ -107,7 +103,7 @@ describe("Nested Routes - Tour Reviews", () => {
 
       expect(response.body.status).toBe("success");
       expect(response.body.results).toBe(0);
-      expect(response.body.data.allReviews).toEqual([]);
+      expect(response.body.data).toEqual([]);
 
       // Verify filter was applied
       expect(mockReviewModel.find).toHaveBeenCalledWith({ tour: tourId });
@@ -143,7 +139,10 @@ describe("Nested Routes - Tour Reviews", () => {
         .expect(201);
 
       expect(response.body.status).toBe("success");
-      expect(response.body.data.newReview).toEqual(mockCreatedReview);
+      // Dates arrive as strings in the JSON response.
+      expect(response.body.data).toEqual(
+        JSON.parse(JSON.stringify(mockCreatedReview)),
+      );
 
       // Verify that the tour ID was automatically set from the URL parameter
       expect(mockReviewModel.create).toHaveBeenCalledWith(expectedReviewData);
@@ -177,9 +176,7 @@ describe("Nested Routes - Tour Reviews", () => {
 
   describe("Route comparison - Direct vs Nested", () => {
     it("should work for direct route /api/v1/reviews", async () => {
-      const mockQuery = {
-        find: jest.fn().mockResolvedValue([]),
-      };
+      const mockQuery = createMockQuery([]);
 
       mockReviewModel.find.mockReturnValue(mockQuery as any);
 
@@ -193,9 +190,7 @@ describe("Nested Routes - Tour Reviews", () => {
 
     it("should work for nested route /api/v1/tours/:tourId/reviews", async () => {
       const tourId = "tour789";
-      const mockQuery = {
-        find: jest.fn().mockResolvedValue([]),
-      };
+      const mockQuery = createMockQuery([]);
 
       mockReviewModel.find.mockReturnValue(mockQuery as any);
 
