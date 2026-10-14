@@ -9,16 +9,6 @@ import {
 import { selectIsAuthenticated } from "../../features/authSlice/authStorageSlice";
 import { useCreateGearCheckoutMutation } from "../../features/gear/gearCheckoutApiSlice";
 
-const errorMessage = (error: unknown): string | null => {
-  if (typeof error === "object" && error !== null && "data" in error) {
-    const { data } = error;
-    if (typeof data === "object" && data !== null && "message" in data) {
-      return String(data.message);
-    }
-  }
-  return null;
-};
-
 const CartCheckout = () => {
   const location = useLocation();
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
@@ -129,8 +119,7 @@ const CartCheckout = () => {
                 role="alert"
                 className="mt-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-300"
               >
-                {errorMessage(checkoutError) ??
-                  "We couldn't start the payment. Please try again."}
+                We couldn&apos;t start the payment. Please try again.
               </p>
             )}
 
