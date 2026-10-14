@@ -118,12 +118,12 @@ describe("Booking Routes", () => {
 
       await checkout().expect(200);
 
-      // cancel_url is by id, not slug: the tour page does a findById.
+      // Cancelling at Stripe goes back to the tour page, whose URL is the slug.
       expect(mockCheckoutSessionsCreate).toHaveBeenCalledWith(
         expect.objectContaining({
           success_url:
             "http://localhost:5173/myaccount/my-bookings?alert=booking",
-          cancel_url: `http://localhost:5173/tour/${tourId}`,
+          cancel_url: "http://localhost:5173/tour/the-forest-hiker",
         }),
       );
     });

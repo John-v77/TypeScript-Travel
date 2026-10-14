@@ -250,15 +250,35 @@ const createTour = handlerFactory.createOne(TourModel);
 const deleteTourPackage = handlerFactory.deleteOne(TourModel);
 const updateTourPackage = handlerFactory.updateOne(TourModel);
 const getAllTours = handlerFactory.getAll(TourModel);
-const getTourById = handlerFactory.getOne(TourModel, {
-  path: "guides",
-  select: "-__v -passwordChangedAt",
-});
+// One tour by id or by slug: GET /tours/5c88fa8c... or /tours/the-sea-explorer.
+// A 24-character hex value is a MongoDB id; anything else is a slug.
+const getTour = catchAsync(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const idOrSlug = String(req.params.id);
+    const query = /^[0-9a-f]{24}$/i.test(idOrSlug)
+      ? TourModel.findById(idOrSlug)
+      : TourModel.findOne({ slug: idOrSlug });
+
+    const tour = await query.populate({
+      path: "guides",
+      select: "-__v -passwordChangedAt",
+    });
+
+    if (!tour) {
+      return next(new AppError("No tour found with that ID or slug", 404));
+    }
+
+    res.status(200).json({
+      status: "success",
+      data: tour,
+    });
+  },
+);
 
 export default {
   aliasTopTours,
   getAllTours,
-  getTourById,
+  getTour,
   createTour,
   updateTourPackage,
   deleteTourPackage,

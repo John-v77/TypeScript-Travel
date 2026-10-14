@@ -119,8 +119,8 @@ export const getCheckoutSession = catchAsync(
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       success_url: `${frontendUrl()}/myaccount/my-bookings?alert=booking`,
-      // By id, not slug: the tour page looks the tour up with findById.
-      cancel_url: `${frontendUrl()}/tour/${String(tour._id)}`,
+      // Back to the tour page, whose URL is the tour's slug.
+      cancel_url: `${frontendUrl()}/tour/${String(tour.slug)}`,
       customer_email: req.user.email as string,
       client_reference_id: req.params.tourId as string,
       line_items: [
