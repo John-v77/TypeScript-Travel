@@ -15,10 +15,10 @@ afterAll(() => {
 });
 
 describe("Footer Component", () => {
-  it("renders the Natours logo", () => {
+  it("renders the Voyara logo", () => {
     render(<Footer />);
 
-    const logo = screen.getByText("Natours");
+    const logo = screen.getByText("Voyara");
     expect(logo).toBeInTheDocument();
     expect(logo).toHaveClass("footer-logo");
   });
@@ -137,7 +137,7 @@ describe("Footer Component", () => {
     render(<Footer />);
 
     const copyrightText = screen.getByText(
-      /© \d{4} Natours\. All rights reserved\./,
+      /© \d{4} Voyara\. All rights reserved\./,
     );
     expect(copyrightText).toBeInTheDocument();
   });
@@ -262,7 +262,7 @@ describe("Footer Component", () => {
     render(<Footer />);
 
     expect(
-      screen.getByText(/© 2025 Natours\. All rights reserved\./),
+      screen.getByText(/© 2025 Voyara\. All rights reserved\./),
     ).toBeInTheDocument();
   });
 });
