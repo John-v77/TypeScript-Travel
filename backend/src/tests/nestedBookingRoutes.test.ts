@@ -102,7 +102,7 @@ describe("Nested Booking Routes", () => {
     });
   });
 
-  describe("GET /api/v1/users/:userId/bookings (Admin nested route)", () => {
+  describe("GET /api/v1/users/user-bookings/:userId/bookings (Admin nested route)", () => {
     it("should allow admin to get bookings for a specific user", async () => {
       const targetUserId = "user456";
       const mockBookings = [
@@ -143,7 +143,7 @@ describe("Nested Booking Routes", () => {
       mockBookingModel.find.mockReturnValue(mockQuery as any);
 
       const response = await request(app)
-        .get(`/api/v1/users/${targetUserId}/bookings`)
+        .get(`/api/v1/users/user-bookings/${targetUserId}/bookings`)
         .expect(200);
 
       expect(mockBookingModel.find).toHaveBeenCalledWith({ user: targetUserId });
@@ -177,7 +177,7 @@ describe("Nested Booking Routes", () => {
       mockBookingModel.find.mockReturnValue(mockQuery as any);
 
       const response = await request(app)
-        .get(`/api/v1/users/${targetUserId}/bookings`)
+        .get(`/api/v1/users/user-bookings/${targetUserId}/bookings`)
         .expect(200);
 
       expect(mockBookingModel.find).toHaveBeenCalledWith({ user: targetUserId });
