@@ -59,13 +59,12 @@ const getUserById = handlerFactory.getOne(UserModel);
 // Admin only user creation
 const createUser = handlerFactory.createOne(UserModel);
 
-const updateUser = catchAsync(
+const updateMe = catchAsync(
   async (
     req: AuthenticatedRequest,
     res: Response,
     next: NextFunction,
   ): Promise<void> => {
-    // Creates an error if the POSTs password data
     if (req.body.password || req.body.passwordConfirm) {
       return next(
         new AppError(
@@ -79,7 +78,7 @@ const updateUser = catchAsync(
     const filteredBody = filterObj(req.body, "name", "email");
     if (req.file) filteredBody.photo = req.file.filename;
 
-    const updateUser = await UserModel.findByIdAndUpdate(
+    const updatedUser = await UserModel.findByIdAndUpdate(
       req.user!.id,
       filteredBody,
       {
@@ -91,7 +90,7 @@ const updateUser = catchAsync(
     res.status(200).json({
       status: "success",
       data: {
-        user: updateUser,
+        user: updatedUser,
       },
     });
   },
@@ -108,7 +107,8 @@ const deleteMe = catchAsync(
   },
 );
 
-const deleteUser = deleteMe;
+// Admin only.
+const deleteUser = handlerFactory.deleteOne(UserModel);
 
 // Middleware to set user ID for "me" routes
 const getMe = (
@@ -123,7 +123,7 @@ const getMe = (
 export default {
   getAllUsers,
   getUserById,
-  updateUser,
+  updateMe,
   createUser,
   deleteUser,
   deleteMe,

@@ -39,7 +39,7 @@ router.patch(
   "/updateMe",
   userController.uploadUserPhoto,
   userController.resizeUserPhoto,
-  userController.updateUser
+  userController.updateMe
 );
 router.delete("/deleteMe", userController.deleteMe);
 
@@ -54,7 +54,6 @@ router
 router
   .route("/:id")
   .get(userController.getUserById)
-  .patch(userController.updateUser)
   .delete(userController.deleteUser);
 
 // Nested route: get all bookings for a specific user (admin only)
