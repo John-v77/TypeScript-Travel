@@ -49,7 +49,7 @@ export type Tour = {
   guides: TourGuide[];
   ratingsAverage: number;
   ratingsQuantity?: number;
-  slug?: string;
+  slug: string;
 };
 
 interface TourResponse {
@@ -74,12 +74,13 @@ export const toursApiSlice = createApi({
         Object.values(response.data),
       providesTags: [{ type: "Tours", id: "LIST" }],
     }),
-    getTourById: builder.query<Tour, string>({
-      query: id => `tours/${id}`,
+  
+    getTourBySlug: builder.query<Tour, string>({
+      query: slug => `tours/${slug}`,
       transformResponse: (response: TourResponse) => response.data,
-      providesTags: (_result, _error, id) => [{ type: "Tours", id }],
+      providesTags: (_result, _error, slug) => [{ type: "Tours", id: slug }],
     }),
   }),
 });
 
-export const { useGetAllToursQuery, useGetTourByIdQuery } = toursApiSlice;
+export const { useGetAllToursQuery, useGetTourBySlugQuery } = toursApiSlice;
