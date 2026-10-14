@@ -13,22 +13,8 @@ type BookingDetails = {
   tour: Tour;
 };
 
-/**
- * The reason the API gave, when it gave one - the departure not being one of
- * the tour's own, the date being sold out, too few places left.
- */
-const errorMessage = (error: unknown): string | null => {
-  if (typeof error === "object" && error !== null && "data" in error) {
-    const { data } = error;
-    if (typeof data === "object" && data !== null && "message" in data) {
-      return String(data.message);
-    }
-  }
-  return null;
-};
-
 const TourCheckout = () => {
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const location = useLocation();
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
@@ -64,7 +50,7 @@ const TourCheckout = () => {
               // Back to the booking page after login - the dates live in
               // route state, which a login round trip does not keep.
               void navigate("/auth", {
-                state: { from: { pathname: `/tour/${id ?? ""}/book` } },
+                state: { from: { pathname: `/tour/${slug ?? ""}/book` } },
               });
             }}
           >
@@ -89,7 +75,7 @@ const TourCheckout = () => {
             type="button"
             className="mt-8 inline-flex items-center justify-center rounded-lg bg-w_primary-600 px-8 py-3 font-semibold text-white transition-colors hover:bg-w_primary-700"
             onClick={() => {
-              void navigate(`/tour/${id ?? ""}/book`);
+              void navigate(`/tour/${slug ?? ""}/book`);
             }}
           >
             Start booking
@@ -122,8 +108,7 @@ const TourCheckout = () => {
             Checkout could not start
           </h1>
           <p className="mt-3 text-gray-600 dark:text-gray-400">
-            {errorMessage(checkoutError) ??
-              "An error occurred while processing your request. Please try again."}
+            We couldn&apos;t start the payment. Please try again.
           </p>
           <button
             type="button"
