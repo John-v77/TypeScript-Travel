@@ -1,46 +1,45 @@
-import type { RenderOptions } from "@testing-library/react"
-import { render } from "@testing-library/react"
-import userEvent from "@testing-library/user-event"
-import type { PropsWithChildren, ReactElement } from "react"
-import { Provider } from "react-redux"
-import { BrowserRouter } from "react-router-dom"
-import type { AppStore, RootState } from "../app/store"
-import { makeStore } from "../app/store"
+import type { RenderOptions } from "@testing-library/react";
+import { render } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import type { PropsWithChildren, ReactElement } from "react";
+import { Provider } from "react-redux";
+import { BrowserRouter, MemoryRouter, Route, Routes } from "react-router-dom";
+import type { AppStore, RootState } from "../app/store";
+import { makeStore } from "../app/store";
 
-/**
- * This type extends the default options for
- * React Testing Library's render function. It allows for
- * additional configuration such as specifying an initial Redux state and
- * a custom store instance.
- */
 type ExtendedRenderOptions = Omit<RenderOptions, "queries"> & {
-  /**
-   * Defines a specific portion or the entire initial state for the Redux store.
-   * This is particularly useful for initializing the state in a
-   * controlled manner during testing, allowing components to be rendered
-   * with predetermined state conditions.
-   */
-  preloadedState?: Partial<RootState>
+  /** Initial Redux state, e.g. a signed-in user or a cart. */
+  preloadedState?: Partial<RootState>;
+
+  /** A specific store instead of a fresh `makeStore(preloadedState)`. */
+  store?: AppStore;
 
   /**
-   * Allows the use of a specific Redux store instance instead of a
-   * default or global store. This flexibility is beneficial when
-   * testing components with unique store requirements or when isolating
-   * tests from a global store state. The custom store should be configured
-   * to match the structure and middleware of the store used by the application.
+   * The URL to render at, e.g. "/tour/abc123".
    *
-   * @default makeStore(preloadedState)
+   * Pages that read useParams need a router that actually matched a route -
+   * BrowserRouter alone gives them undefined params. Supplying this swaps in a
+   * MemoryRouter, so no navigation touches the jsdom URL and tests cannot leak
+   * location state into one another.
    */
-  store?: AppStore
-}
+  route?: string;
+
+  /**
+   * The route pattern `route` should match, e.g. "/tour/:id". Defaults to
+   * matching everything, which is enough for pages that read no params.
+   */
+  path?: string;
+
+  /**
+   * Router location state, as `navigate(to, { state })` would supply - the
+   * tour checkout reads its whole booking from it.
+   */
+  state?: unknown;
+};
 
 /**
- * Renders the given React element with Redux Provider and custom store.
- * This function is useful for testing components that are connected to the Redux store.
- *
- * @param ui - The React component or element to render.
- * @param extendedRenderOptions - Optional configuration options for rendering. This includes `preloadedState` for initial Redux state and `store` for a specific Redux store instance. Any additional properties are passed to React Testing Library's render function.
- * @returns An object containing the Redux store used in the render, User event API for simulating user interactions in tests, and all of React Testing Library's query functions for testing the component.
+ * Renders `ui` inside the Redux Provider and a router, with a fresh store.
+ * Returns the store, a userEvent instance and all of RTL's queries.
  */
 export const renderWithProviders = (
   ui: ReactElement,
@@ -48,21 +47,34 @@ export const renderWithProviders = (
 ) => {
   const {
     preloadedState = {},
-    // Automatically create a store instance if no store was passed in
     store = makeStore(preloadedState),
+    route,
+    path = "*",
+    state,
     ...renderOptions
-  } = extendedRenderOptions
+  } = extendedRenderOptions;
 
   const Wrapper = ({ children }: PropsWithChildren) => (
     <Provider store={store}>
-      <BrowserRouter>{children}</BrowserRouter>
+      {route === undefined ? (
+        <BrowserRouter>{children}</BrowserRouter>
+      ) : (
+        <MemoryRouter
+          initialEntries={[
+            state === undefined ? route : { pathname: route, state },
+          ]}
+        >
+          <Routes>
+            <Route path={path} element={children} />
+          </Routes>
+        </MemoryRouter>
+      )}
     </Provider>
-  )
+  );
 
-  // Return an object with the store and all of RTL's query functions
   return {
     store,
     user: userEvent.setup(),
     ...render(ui, { wrapper: Wrapper, ...renderOptions }),
-  }
-}
+  };
+};

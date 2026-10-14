@@ -16,6 +16,8 @@ export default defineConfig({
     root: import.meta.dirname,
     name: packageJson.name,
     environment: "jsdom",
+    // Dates render the same on every machine and in CI.
+    env: { TZ: "UTC" },
 
     typecheck: {
       enabled: true,
