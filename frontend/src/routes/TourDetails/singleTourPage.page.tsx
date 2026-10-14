@@ -8,19 +8,19 @@ import {
 } from "../../features/reviews/reviewsApiSlice";
 import { useGetMyBookingsQuery } from "../../features/bookings/bookingsApiSlice";
 import ReviewCard from "../../components/ReviewCard/reviewCard.component";
-import { useGetTourByIdQuery } from "../../features/tours/toursApiSlice";
+import { useGetTourBySlugQuery } from "../../features/tours/toursApiSlice";
 import { formatPrice, formatRating } from "../../features/tours/tour-helpers";
 import { useFavorites } from "../../features/favorites/useFavorites";
 import { outlineButton } from "../Home/home.styles";
 import TourMap from "../../components/TourMap/tour-map.component";
 
 const TourDetails = () => {
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const {
     data: tour,
     error,
     isLoading,
-  } = useGetTourByIdQuery(id ?? "", { skip: !id });
+  } = useGetTourBySlugQuery(slug ?? "", { skip: !slug });
   const { signedIn, isFavorite, toggle } = useFavorites();
   const saved = tour ? isFavorite(tour.id) : false;
 
@@ -30,13 +30,15 @@ const TourDetails = () => {
     data: reviews,
     isLoading: reviewsLoading,
     isError: reviewsError,
-  } = useGetTourReviewsQuery(id ?? "", { skip: !isAuthenticated || !id });
+  } = useGetTourReviewsQuery(tour?.id ?? "", {
+    skip: !isAuthenticated || !tour,
+  });
   // The backend only takes a review from someone who booked the tour, so the
   // form is only offered to them.
   const { data: myBookings = [] } = useGetMyBookingsQuery(undefined, {
     skip: !isAuthenticated,
   });
-  const hasBooked = myBookings.some(booking => booking.tour?.id === id);
+  const hasBooked = myBookings.some(booking => booking.tour?.id === tour?.id);
   const [createReview, { isLoading: isSubmitting, error: submitError }] =
     useCreateReviewMutation();
   const [rating, setRating] = useState(5);
@@ -45,7 +47,7 @@ const TourDetails = () => {
   const submitReview = async () => {
     try {
       await createReview({
-        tourId: id ?? "",
+        tourId: tour?.id ?? "",
         review: body.trim(),
         rating,
       }).unwrap();
@@ -148,7 +150,7 @@ const TourDetails = () => {
               </div>
 
               <Link
-                to={`/tour/${tour.id}/book`}
+                to={`/tour/${tour.slug}/book`}
                 className="inline-flex items-center justify-center gap-2 bg-w_primary-600 px-7 py-3 text-sm font-semibold tracking-widest text-white uppercase outline-2 outline-offset-2 outline-w_primary-600 transition-colors hover:bg-w_primary-700 hover:outline-w_primary-700"
               >
                 Book this tour
@@ -513,7 +515,7 @@ const TourDetails = () => {
             </p>
 
             <Link
-              to={`/tour/${tour.id}/book`}
+              to={`/tour/${tour.slug}/book`}
               className="mt-10 inline-flex w-fit items-center justify-center gap-2 border border-w_primary-700 px-7 py-3 text-sm font-semibold tracking-widest text-w_primary-700 uppercase transition-colors hover:bg-w_primary-700 hover:text-white dark:border-w_primary-400 dark:text-w_primary-400 dark:hover:bg-w_primary-400 dark:hover:text-gray-950"
             >
               Book tour now!
