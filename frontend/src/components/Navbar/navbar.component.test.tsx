@@ -1,213 +1,128 @@
-import { describe, it, expect } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
-import { Provider } from "react-redux";
-import { configureStore } from "@reduxjs/toolkit";
+import { screen, within } from "@testing-library/react";
+import { Route, Routes } from "react-router-dom";
 import Navbar from "./navbar.component";
-import { authApiSlice } from "../../features/authSlice/authApiSlice";
-import authStorageReducer, {
-  loginSuccess,
-  selectUser,
-} from "../../features/authSlice/authStorageSlice";
+import type { RootState } from "../../app/store";
+import { renderWithProviders } from "../../utils/test-utils";
+import {
+  cartState,
+  makeCartItem,
+  signedInState,
+} from "../../utils/test-fixtures";
+import { selectUser } from "../../features/authSlice/authStorageSlice";
+import { selectCartItems } from "../../features/cartSlice/cartSlice";
 
-const mockUser = {
-  _id: "1",
-  name: "Jane Doe",
-  email: "jane@example.com",
-  role: "user",
-  active: true,
-};
-
-const createTestStore = () =>
-  configureStore({
-    reducer: {
-      [authApiSlice.reducerPath]: authApiSlice.reducer,
-      authStorage: authStorageReducer,
-    },
-    middleware: getDefaultMiddleware =>
-      getDefaultMiddleware().concat(authApiSlice.middleware),
-  });
-
-// Test wrapper with router + Redux store; pass a pre-populated store to
-// simulate a logged-in user.
-const renderNavbar = (store = createTestStore(), initialEntries = ["/"]) => {
-  return render(
-    <Provider store={store}>
-      <MemoryRouter initialEntries={initialEntries}>
-        <Navbar />
-      </MemoryRouter>
-    </Provider>,
+/** Navbar is a layout route, so it renders around an outlet. */
+const renderNavbar = ({
+  route = "/tours",
+  preloadedState = {},
+}: {
+  route?: string;
+  preloadedState?: Partial<RootState>;
+} = {}) =>
+  renderWithProviders(
+    <Routes>
+      <Route path="/" element={<Navbar />}>
+        <Route path="*" element={<p>Page content</p>} />
+      </Route>
+    </Routes>,
+    { route, preloadedState },
   );
-};
 
-describe("Navbar Component", () => {
-  it("renders the Natours logo", () => {
+describe("Navbar", () => {
+  it("shows the logo, the main links and the page below it", () => {
     renderNavbar();
 
-    const logo = screen.getByText("Natours");
-    expect(logo).toBeInTheDocument();
-    expect(logo).toHaveClass("nav-logo");
+    expect(screen.getByRole("link", { name: "Voyara" })).toHaveAttribute(
+      "href",
+      "/",
+    );
+    const nav = within(screen.getByRole("navigation"));
+    for (const name of ["Home", "Tours", "Gear"]) {
+      expect(nav.getByRole("link", { name })).toBeInTheDocument();
+    }
+    expect(screen.getByText("Page content")).toBeInTheDocument();
   });
 
-  it("renders all navigation links", () => {
+  it("offers Sign In to a visitor", () => {
     renderNavbar();
 
-    expect(screen.getByText("Tours")).toBeInTheDocument();
-    expect(screen.getByText("About")).toBeInTheDocument();
-    expect(screen.getByText("Contact")).toBeInTheDocument();
-    expect(screen.getByText("Sign In")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Sign In" })).toHaveAttribute(
+      "href",
+      "/auth",
+    );
+    expect(
+      screen.queryByRole("button", { name: "Logout" }),
+    ).not.toBeInTheDocument();
   });
 
-  it("has correct href attributes for navigation links", () => {
-    renderNavbar();
+  it("shows the account link and Logout when signed in", () => {
+    renderNavbar({ preloadedState: signedInState() });
 
-    const toursLink = screen.getByRole("link", { name: "Tours" });
-    const aboutLink = screen.getByRole("link", { name: "About" });
-    const contactLink = screen.getByRole("link", { name: "Contact" });
-    const signInLink = screen.getByRole("link", { name: "Sign In" });
-    const logoLink = screen.getByRole("link", { name: "Natours" });
-
-    expect(toursLink).toHaveAttribute("href", "/tours");
-    expect(aboutLink).toHaveAttribute("href", "/about");
-    expect(contactLink).toHaveAttribute("href", "/contact");
-    expect(signInLink).toHaveAttribute("href", "/auth");
-    expect(logoLink).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: "My Account" })).toHaveAttribute(
+      "href",
+      "/myaccount",
+    );
+    expect(screen.getByRole("button", { name: "Logout" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "Sign In" }),
+    ).not.toBeInTheDocument();
   });
 
-  it("applies correct CSS classes to elements", () => {
-    renderNavbar();
-
-    const nav = document.querySelector("nav");
-    const container = document.querySelector(".nav-container");
-    const links = document.querySelector(".nav-links");
-    const logo = screen.getByText("Natours");
-
-    expect(nav).toHaveClass("navigation");
-    expect(container).toHaveClass("nav-container");
-    expect(links).toHaveClass("nav-links");
-    expect(logo).toHaveClass("nav-logo");
-  });
-
-  it("applies CTA class to Sign In link", () => {
-    renderNavbar();
-
-    const signInLink = screen.getByRole("link", { name: "Sign In" });
-    expect(signInLink).toHaveClass("nav-link-cta");
-  });
-
-  it("applies nav-link class to navigation links", () => {
-    renderNavbar();
-
-    const toursLink = screen.getByRole("link", { name: "Tours" });
-    const aboutLink = screen.getByRole("link", { name: "About" });
-    const contactLink = screen.getByRole("link", { name: "Contact" });
-
-    expect(toursLink).toHaveClass("nav-link");
-    expect(aboutLink).toHaveClass("nav-link");
-    expect(contactLink).toHaveClass("nav-link");
-  });
-
-  it("renders navigation container structure correctly", () => {
-    renderNavbar();
-
-    const container = document.querySelector(".nav-container");
-    const logo = container?.querySelector(".nav-logo");
-    const links = container?.querySelector(".nav-links");
-
-    expect(container).toBeInTheDocument();
-    expect(logo).toBeInTheDocument();
-    expect(links).toBeInTheDocument();
-  });
-
-  it("supports keyboard navigation", async () => {
-    const user = userEvent.setup();
-    renderNavbar();
-
-    const logoLink = screen.getByRole("link", { name: "Natours" });
-    const toursLink = screen.getByRole("link", { name: "Tours" });
-
-    await user.tab();
-    expect(logoLink).toHaveFocus();
-
-    await user.tab();
-    expect(toursLink).toHaveFocus();
-  });
-
-  it("renders the Outlet component", () => {
-    renderNavbar();
-
-    const nav = document.querySelector("nav");
-    expect(nav).toBeInTheDocument();
-  });
-
-  it("maintains semantic HTML structure", () => {
-    renderNavbar();
-
-    const nav = document.querySelector("nav");
-    expect(nav).toBeInTheDocument();
-
-    const links = screen.getAllByRole("link");
-    expect(links).toHaveLength(5); // Logo + 4 nav links
-
-    links.forEach(link => {
-      expect(link.tagName).toBe("A");
+  it("logs out and clears the local cart", async () => {
+    const { user, store } = renderNavbar({
+      preloadedState: { ...signedInState(), ...cartState() },
     });
-  });
 
-  it("has accessible link text", () => {
-    renderNavbar();
+    await user.click(screen.getByRole("button", { name: "Logout" }));
 
-    expect(screen.getByRole("link", { name: "Natours" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Tours" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "About" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Contact" })).toBeInTheDocument();
+    expect(selectUser(store.getState())).toBeNull();
+    expect(selectCartItems(store.getState())).toHaveLength(0);
     expect(screen.getByRole("link", { name: "Sign In" })).toBeInTheDocument();
   });
 
-  it("renders without crashing", () => {
-    expect(() => {
-      renderNavbar();
-    }).not.toThrow();
+  it("counts every item in the cart on the badge", () => {
+    renderNavbar({
+      preloadedState: cartState([
+        makeCartItem({ id: "a", quantity: 2 }),
+        makeCartItem({ id: "b", quantity: 1 }),
+      ]),
+    });
+
+    const cart = screen.getByRole("link", { name: "Cart, 3 items" });
+    expect(cart).toHaveAttribute("href", "/cart");
+    expect(within(cart).getByText("3")).toBeInTheDocument();
   });
 
-  describe("when logged in", () => {
-    const loggedInStore = () => {
-      const store = createTestStore();
-      store.dispatch(loginSuccess({ user: mockUser, token: "jwt-token" }));
-      return store;
-    };
+  it("shows no badge for an empty cart", () => {
+    renderNavbar({ preloadedState: cartState([]) });
 
-    it("shows a Logout button instead of the Sign In link", () => {
-      renderNavbar(loggedInStore());
+    expect(
+      within(screen.getByRole("link", { name: "Cart, 0 items" })).queryByText(
+        "0",
+      ),
+    ).not.toBeInTheDocument();
+  });
 
-      expect(
-        screen.getByRole("button", { name: "Logout" }),
-      ).toBeInTheDocument();
-      expect(screen.queryByText("Sign In")).not.toBeInTheDocument();
-    });
+  it("toggles the theme", async () => {
+    const { user } = renderNavbar();
 
-    it("clears the authenticated user when Logout is clicked", async () => {
-      const user = userEvent.setup();
-      const store = loggedInStore();
-      renderNavbar(store);
+    await user.click(
+      screen.getByRole("button", { name: "Switch to dark theme" }),
+    );
 
-      await user.click(screen.getByRole("button", { name: "Logout" }));
+    expect(
+      screen.getByRole("button", { name: "Switch to light theme" }),
+    ).toHaveAttribute("aria-pressed", "true");
+  });
 
-      await waitFor(() => {
-        expect(selectUser(store.getState())).toBeNull();
-      });
-    });
+  it("opens and closes the mobile menu", async () => {
+    const { user } = renderNavbar();
+    const toggle = screen.getByRole("button", { name: "Toggle menu" });
 
-    it("shows the Sign In link again after logging out", async () => {
-      const user = userEvent.setup();
-      renderNavbar(loggedInStore());
-
-      await user.click(screen.getByRole("button", { name: "Logout" }));
-
-      expect(
-        await screen.findByRole("link", { name: "Sign In" }),
-      ).toBeInTheDocument();
-    });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
   });
 });
