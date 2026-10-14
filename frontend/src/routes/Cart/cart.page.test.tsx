@@ -2,10 +2,7 @@ import { describe, expect, it } from "vitest";
 import { screen } from "@testing-library/react";
 import { useLocation } from "react-router-dom";
 import { renderWithProviders } from "../../utils/test-utils";
-import {
-  makeCartItem,
-  signedInState,
-} from "../../utils/test-fixtures";
+import { makeCartItem, signedInState } from "../../utils/test-fixtures";
 import { selectCartItems } from "../../features/cartSlice/cartSlice";
 import Cart from "./cart.page";
 
@@ -19,7 +16,11 @@ const cartState = (items: ReturnType<typeof makeCartItem>[]) => ({
   cart: { items, lastUpdated: Date.now(), userId: null },
 });
 
-const jacket = makeCartItem({ id: "1", name: "Alpine Blue Jacket", price: 200 });
+const jacket = makeCartItem({
+  id: "1",
+  name: "Alpine Blue Jacket",
+  price: 200,
+});
 const boots = makeCartItem({ id: "2", name: "Trail Boots", price: 100 });
 
 const renderCart = (
@@ -32,7 +33,10 @@ const renderCart = (
       <LocationProbe />
     </>,
     {
-      preloadedState: { ...cartState(items), ...(signedIn ? signedInState() : {}) },
+      preloadedState: {
+        ...cartState(items),
+        ...(signedIn ? signedInState() : {}),
+      },
       route: "/cart",
     },
   );
@@ -70,12 +74,15 @@ describe("Cart", () => {
       expect(selectCartItems(store.getState())[0].quantity).toBe(2);
     });
 
-    it("cannot go below one - removing is a separate action", () => {
-      renderCart([makeCartItem({ quantity: 1 })]);
+    it("removes the line when decreased from one", async () => {
+      const { user, store } = renderCart([makeCartItem({ quantity: 1 })]);
 
-      expect(
+      await user.click(
         screen.getByRole("button", { name: /decrease quantity of/i }),
-      ).toBeDisabled();
+      );
+
+      expect(selectCartItems(store.getState())).toHaveLength(0);
+      expect(screen.getByText(/your cart is empty/i)).toBeInTheDocument();
     });
 
     it("decreases when there is more than one", async () => {
