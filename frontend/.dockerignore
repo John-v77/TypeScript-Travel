@@ -1,0 +1,22 @@
+# The critical one. Tailwind v4 pulls @tailwindcss/oxide, a platform-native
+# binary, so a node_modules built on Windows or macOS is not merely stale in a
+# Linux image - it is the wrong architecture. `npm ci` inside the image is
+# what makes it match.
+node_modules
+dist
+
+.env
+.env.*
+!.env.example
+
+# Reference-only copies of the pre-Tailwind pages. Nothing in src imports
+# them and they would only bloat the build context.
+legacy
+
+.git
+.gitignore
+*.log
+npm-debug.log*
+coverage
+.vscode
+.idea
