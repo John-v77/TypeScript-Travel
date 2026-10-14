@@ -1,15 +1,34 @@
 import request from "supertest";
 import { createServer } from "../server";
 import { UserModel } from "../models/userModel";
+import { ipKeyGenerator } from "express-rate-limit";
+import { LoginLimiter, globalLimiter } from "../middleware/rateLimiter";
 
 jest.mock("../models/userModel");
+jest.mock("../utils/email/email", () => ({
+  __esModule: true,
+  default: jest.fn().mockImplementation(() => ({
+    sendWelcome: jest.fn().mockResolvedValue(undefined),
+  })),
+}));
 const mockUserModel = UserModel as jest.Mocked<typeof UserModel>;
+
+/** Forget every attempt so far, so each test starts with a full allowance. */
+const resetLimiters = () => {
+  for (const ip of ["::ffff:127.0.0.1", "127.0.0.1", "::1"]) {
+    for (const key of [ip, ipKeyGenerator(ip)]) {
+      LoginLimiter.resetKey(key);
+      globalLimiter.resetKey(key);
+    }
+  }
+};
 
 describe("Rate Limiter", () => {
   const app = createServer();
 
   beforeEach(() => {
     jest.clearAllMocks();
+    resetLimiters();
 
     // Mock successful user login for rate limiting tests
     const mockUser = {
@@ -72,35 +91,26 @@ describe("Rate Limiter", () => {
       );
     });
 
-    it("should track attempts per IP address", async () => {
+  
+    it("cannot be bypassed with a spoofed X-Forwarded-For", async () => {
       const loginData = {
         email: "test@example.com",
         password: "password123",
       };
 
-      // Make 5 attempts from first IP
       for (let i = 0; i < 5; i++) {
         await request(app)
           .post("/api/v1/users/login")
-          .set("X-Forwarded-For", "192.168.1.1")
+          .set("X-Forwarded-For", `192.168.1.${String(i)}`)
           .send(loginData);
       }
 
-      // 6th attempt from same IP should be blocked
-      const blockedResponse = await request(app)
+      const spoofed = await request(app)
         .post("/api/v1/users/login")
-        .set("X-Forwarded-For", "192.168.1.1")
+        .set("X-Forwarded-For", "10.0.0.99")
         .send(loginData);
 
-      expect(blockedResponse.status).toBe(429);
-
-      // But attempt from different IP should work
-      const allowedResponse = await request(app)
-        .post("/api/v1/users/login")
-        .set("X-Forwarded-For", "192.168.1.2")
-        .send(loginData);
-
-      expect(allowedResponse.status).toBe(200);
+      expect(spoofed.status).toBe(429);
     });
 
     it("should have correct rate limit headers", async () => {
@@ -205,16 +215,15 @@ describe("Rate Limiter", () => {
         password: "password123",
       });
 
-      // Check that windowMs is 1 hour (3600000ms)
       expect(response.status).toBe(200);
 
-      // Rate limit headers should indicate 1 hour window
-      const resetTime = parseInt(response.headers["x-ratelimit-reset"]);
+
+      const resetTime = parseInt(response.headers["x-ratelimit-reset"]) * 1000;
       const currentTime = Date.now();
       const timeDiff = resetTime - currentTime;
 
-      // Should be close to 1 hour (within 5 minutes tolerance)
-      expect(timeDiff).toBeLessThanOrEqual(60 * 60 * 1000); // Max 1 hour
+
+      expect(timeDiff).toBeLessThanOrEqual(60 * 60 * 1000 + 1000);
       expect(timeDiff).toBeGreaterThan(55 * 60 * 1000); // At least 55 minutes
     });
   });

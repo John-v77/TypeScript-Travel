@@ -1,15 +1,36 @@
 import request from "supertest";
 import { createServer } from "../server";
 import { UserModel } from "../models/userModel";
+import { ipKeyGenerator } from "express-rate-limit";
+import { LoginLimiter, globalLimiter } from "../middleware/rateLimiter";
 
 jest.mock("../models/userModel");
 const mockUserModel = UserModel as jest.Mocked<typeof UserModel>;
 
-describe("Global Rate Limiter", () => {
+/** Forget every attempt so far, so each test starts with a full allowance. */
+const resetLimiters = () => {
+  for (const ip of ["::ffff:127.0.0.1", "127.0.0.1", "::1"]) {
+    for (const key of [ip, ipKeyGenerator(ip)]) {
+      LoginLimiter.resetKey(key);
+      globalLimiter.resetKey(key);
+    }
+  }
+};
+
+const buildServer = () => {
+  const previous = process.env.NODE_ENV;
+  process.env.NODE_ENV = "development";
   const app = createServer();
+  process.env.NODE_ENV = previous;
+  return app;
+};
+
+describe("Global Rate Limiter", () => {
+  const app = buildServer();
 
   beforeEach(() => {
     jest.clearAllMocks();
+    resetLimiters();
   });
 
   describe("Global API Rate Limiting", () => {
@@ -32,8 +53,7 @@ describe("Global Rate Limiter", () => {
     });
 
     it("should apply global rate limit to all /api routes", async () => {
-      // Test different API endpoints (avoid slow routes)
-      const endpoints = ["/api/v1/users", "/api/v1/tours"];
+      const endpoints = ["/api/v1/users", "/api/v1/bookings"];
 
       for (const endpoint of endpoints) {
         const response = await request(app).get(endpoint);
@@ -55,7 +75,7 @@ describe("Global Rate Limiter", () => {
     it("should track global requests across different endpoints", async () => {
       // Make requests to different API endpoints (avoid slow routes)
       await request(app).get("/api/v1/users");
-      await request(app).get("/api/v1/tours");
+      await request(app).get("/api/v1/bookings");
       const response = await request(app).get("/api/v1/users");
 
       // Should show remaining count decreased
@@ -113,7 +133,6 @@ describe("Global Rate Limiter", () => {
     });
 
     it("should work alongside login rate limiter", async () => {
-      // Mock user for login test
       const mockUser = {
         _id: { toString: () => "user123" },
         email: "test@example.com",
@@ -138,24 +157,20 @@ describe("Global Rate Limiter", () => {
     });
 
     it("should include correct error message when global limit exceeded", async () => {
-      // This test would need to actually exhaust the limit to test the message
-      // For now, we verify the configuration would work
+
       const response = await request(app).get("/api/v1/users");
 
       // Verify headers are present (indicating rate limiter is active)
       expect(response.headers["x-ratelimit-limit"]).toBe("100");
 
-      // The actual rate limit message would be:
-      // "Too many login attempts, please try again after an hour"
-      // But we can't easily test this without making 100+ requests
     });
 
     it("should apply to both GET and POST requests on API routes", async () => {
-      // Test GET request
+
       const getResponse = await request(app).get("/api/v1/users");
       expect(getResponse.headers["x-ratelimit-limit"]).toBe("100");
 
-      // Test POST request (signup)
+
       const signupData = {
         name: "Test User",
         email: "test@example.com",
