@@ -1,0 +1,23 @@
+# node_modules is the important one. It holds native binaries built for the
+# host - sharp compiles against the platform - so copying a Windows or macOS
+# tree into a Linux image produces a build that cannot run. `npm ci` inside
+# the image is what makes the dependency tree match the runtime.
+node_modules
+dist
+
+# Never let real secrets into an image layer.
+.env
+.env.*
+!.env.example
+config.env
+
+.git
+.gitignore
+*.log
+npm-debug.log*
+coverage
+.vscode
+.idea
+
+# Tests are not needed to serve traffic.
+src/tests
