@@ -1,47 +1,61 @@
-import { screen, within } from "@testing-library/react"
-import { App } from "./App"
-import { renderWithProviders } from "./utils/test-utils"
+import { screen, within } from "@testing-library/react";
+import { App } from "./App";
+import { renderWithProviders } from "./utils/test-utils";
+import { makeTour } from "./utils/test-fixtures";
+import { listResponse, mockApi } from "./utils/test-api";
 
-test("App should have correct initial render", () => {
-  renderWithProviders(<App />)
+/** The app at "/", with the home page's tours request answered. */
+const renderApp = () => {
+  mockApi({ tours: listResponse([makeTour()]) });
+  return renderWithProviders(<App />);
+};
 
-  // Check that the Natours app is rendered correctly
-  expect(screen.getByRole("link", { name: "Natours" })).toBeInTheDocument()
-  expect(screen.getByText(/Outdoors/)).toBeInTheDocument()
-  expect(screen.getByText("is where life happens")).toBeInTheDocument()
-})
+describe("App", () => {
+  it("renders the home page under the navbar", () => {
+    renderApp();
 
-test("Navigation links are present", () => {
-  renderWithProviders(<App />)
+    expect(screen.getByRole("link", { name: "Voyara" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", {
+        level: 1,
+        name: "Outdoors is where life happens",
+      }),
+    ).toBeInTheDocument();
+  });
 
-  // Footer also has a "Contact" link, so scope to the nav bar
-  const nav = within(screen.getByRole("navigation"))
-  expect(nav.getByRole("link", { name: "Tours" })).toBeInTheDocument()
-  expect(nav.getByRole("link", { name: "About" })).toBeInTheDocument()
-  expect(nav.getByRole("link", { name: "Contact" })).toBeInTheDocument()
-  expect(nav.getByRole("link", { name: "Sign In" })).toBeInTheDocument()
-})
+  it("shows the main navigation and Sign In for a visitor", () => {
+    renderApp();
 
-test("Footer is rendered", () => {
-  renderWithProviders(<App />)
+    const nav = within(screen.getByRole("navigation"));
+    expect(nav.getByRole("link", { name: "Home" })).toBeInTheDocument();
+    expect(nav.getByRole("link", { name: "Tours" })).toBeInTheDocument();
+    expect(nav.getByRole("link", { name: "Gear" })).toBeInTheDocument();
+    expect(
+      nav.getAllByRole("link", { name: "Sign In" }).length,
+    ).toBeGreaterThan(0);
+  });
 
-  // Check footer content
-  expect(
-    screen.getByText("Unforgettable tours for adventurous people"),
-  ).toBeInTheDocument()
-  expect(screen.getByText("Company")).toBeInTheDocument()
-  expect(screen.getByText("Support")).toBeInTheDocument()
-  expect(screen.getByText("Follow Us")).toBeInTheDocument()
-})
+  it("renders the footer", () => {
+    renderApp();
 
-test("Home page content is displayed", () => {
-  renderWithProviders(<App />)
+    const footer = within(screen.getByRole("contentinfo"));
+    expect(footer.getByText("Voyara")).toBeInTheDocument();
+    expect(footer.getByRole("link", { name: "About Us" })).toHaveAttribute(
+      "href",
+      "/about",
+    );
+  });
 
-  // Check main call-to-action
-  expect(
-    screen.getByRole("link", { name: "Discover our tours" }),
-  ).toBeInTheDocument()
-  expect(
-    screen.getByText("Exciting tours for adventurous people"),
-  ).toBeInTheDocument()
-})
+  it("switches the whole app to dark mode from the theme button", async () => {
+    const { user, container } = renderApp();
+    const root = container.firstElementChild;
+
+    expect(root).toHaveAttribute("data-theme", "light");
+
+    await user.click(
+      screen.getByRole("button", { name: "Switch to dark theme" }),
+    );
+
+    expect(root).toHaveAttribute("data-theme", "dark");
+  });
+});
