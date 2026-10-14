@@ -1,8 +1,33 @@
 import request from "supertest";
 import { createServer } from "../server";
+import { UserModel } from "../models/userModel";
+import { TourModel } from "../models/tourModel";
+import { createMockQuery } from "./tourRoutes/testHelpers";
+
+jest.mock("../models/userModel");
+jest.mock("../models/tourModel");
+jest.mock("../utils/email/email");
+
+const mockUserModel = UserModel as jest.Mocked<typeof UserModel>;
+const mockTourModel = TourModel as jest.Mocked<typeof TourModel>;
 
 describe("Security Middleware", () => {
   const app = createServer();
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockUserModel.create.mockRejectedValue(
+      Object.assign(new Error("Validation failed"), {
+        name: "ValidationError",
+        errors: { passwordConfirm: { message: "Please confirm your password" } },
+      }),
+    );
+    // No user matches a sanitised login.
+    mockUserModel.findOne.mockReturnValue({
+      select: jest.fn().mockResolvedValue(null),
+    } as any);
+    mockTourModel.find.mockReturnValue(createMockQuery([]) as any);
+  });
 
   describe("Helmet Security Headers", () => {
     it("should set security headers for all routes", async () => {
@@ -72,10 +97,7 @@ describe("Security Middleware", () => {
       const response = await request(app)
         .post("/api/v1/users/login")
         .send(maliciousData);
-
-      // In test environment, minimal sanitization is applied
-      // The malicious query should be processed without server errors
-      expect([400, 401, 422, 429, 500]).toContain(response.status); // Allow various error types
+      expect(response.status).toBe(401);
     });
 
     it("should sanitize NoSQL injection attempts in query parameters", async () => {
@@ -83,7 +105,6 @@ describe("Security Middleware", () => {
         .get("/health")
         .query({ malicious: '{"$gt":""}' }); // NoSQL injection in query
 
-      // Should not cause server errors
       expect(response.status).toBe(200);
     });
 
@@ -99,8 +120,8 @@ describe("Security Middleware", () => {
         .post("/api/v1/users/signup")
         .send(dataWithDollarSigns);
 
-      // Request should be processed (may get validation errors since required fields are missing after sanitization)
-      expect([400, 422, 500]).toContain(response.status); // Allow validation errors
+
+      expect(response.status).toBe(400);
     });
   });
 
@@ -118,8 +139,8 @@ describe("Security Middleware", () => {
         .post("/api/v1/users/signup")
         .send(xssData);
 
-      // Should handle XSS sanitization (may get validation errors)
-      expect([400, 422, 500]).toContain(response.status);
+
+      expect(response.status).toBe(400);
     }, 10000);
 
     it("should clean malicious HTML in query parameters", async () => {
@@ -127,7 +148,6 @@ describe("Security Middleware", () => {
         .get("/health")
         .query({ search: '<script>alert("xss")</script>' });
 
-      // Should handle XSS attempts gracefully
       expect(response.status).toBe(200);
     });
 
@@ -143,8 +163,8 @@ describe("Security Middleware", () => {
         .post("/api/v1/users/signup")
         .send(safeData);
 
-      // Safe content should be processed (may get validation errors due to missing passwordConfirm)
-      expect([400, 422, 500]).toContain(response.status); // Allow validation errors
+
+      expect(response.status).toBe(400);
     });
   });
 
@@ -155,7 +175,7 @@ describe("Security Middleware", () => {
         .query("sort=price&sort=duration"); // Duplicate sort parameters
 
       // Should not cause server errors
-      expect(response.status).not.toBe(500);
+      expect(response.status).toBe(200);
     });
 
     it("should allow whitelisted duplicate parameters", async () => {
@@ -164,7 +184,7 @@ describe("Security Middleware", () => {
         .query("duration=5&duration=7&price=100&price=200"); // Whitelisted duplicates
 
       // Should handle whitelisted parameters properly
-      expect(response.status).not.toBe(500);
+      expect(response.status).toBe(200);
     });
 
     it("should prevent parameter pollution attacks", async () => {
@@ -177,7 +197,7 @@ describe("Security Middleware", () => {
       const response = await request(app).get(`/api/v1/tours?${queryString}`);
 
       // Should handle pollution attempts gracefully
-      expect(response.status).not.toBe(500);
+      expect(response.status).toBe(200);
     });
 
     it("should preserve whitelisted tour query parameters", async () => {
@@ -190,7 +210,7 @@ describe("Security Middleware", () => {
         });
 
       // Should allow whitelisted arrays
-      expect(response.status).not.toBe(500);
+      expect(response.status).toBe(200);
     });
   });
 
