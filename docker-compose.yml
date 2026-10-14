@@ -1,0 +1,63 @@
+# ==========================================================================
+# The whole app, locally, the way it will run in production.
+#
+#   cp backend/.env.example backend/.env   # then fill it in
+#   docker compose up --build
+#
+#   frontend  http://localhost:8080
+#   api       http://localhost:3000/health
+#
+# Worth running before deploying to anything: it exercises the same images
+# and surfaces the two problems that only appear once the frontend and the
+# API are separate origins - CORS, and the fact that the API URL is baked
+# into the frontend bundle at build time.
+# ==========================================================================
+
+services:
+  api:
+    build:
+      context: ./backend
+    # Secrets come from a file that is never committed and never enters an
+    # image layer. Unlike the frontend's, these are read at runtime, so this
+    # container can be re-pointed without rebuilding.
+    env_file:
+      - ./backend/.env
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      # Where the browser is sent back to after Stripe, and the origin CORS
+      # will accept. In production this is the deployed frontend URL.
+      FRONTEND_URL: http://localhost:8080
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    healthcheck:
+      # The app already exposes /health, and node is present in this image, so
+      # no extra tooling is needed to call it.
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  web:
+    build:
+      context: ./frontend
+      args:
+        # Baked into the bundle. The browser resolves this, not the compose
+        # network, so it must be a URL reachable from the host - `api:3000`
+        # would only work from inside the network and means nothing to a tab.
+        VITE_API_URL: http://localhost:3000/api/v1
+        # Public pk.* token. Passed at build time because Vite inlines it.
+        VITE_MAPBOX_TOKEN: ${VITE_MAPBOX_TOKEN:-}
+    environment:
+      PORT: 8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      - api
+    restart: unless-stopped
