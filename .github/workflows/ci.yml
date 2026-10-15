@@ -1,0 +1,273 @@
+# ==========================================================================
+# CI - checks on every non-draft pull request and every push to main;
+# deploy only when someone presses the button.
+#
+#   lint-backend  ─┐
+#   lint-frontend ─┤
+#   security-scan ─┼─► build ─► deploy-backend / deploy-frontend
+#   test-backend  ─┤              (workflow_dispatch only)
+#   test-frontend ─┤
+#   docker-build  ─┘
+#
+# The six checks are independent and run in parallel, so a lint failure
+# shows up in a minute instead of after the whole test suite. `build` fans
+# them back in: it only runs when every check is green, and its dist/
+# uploads are the downloadable "dev build" for that commit.
+#
+# Draft PRs run nothing. Open small PRs as drafts, mark one "Ready for
+# review" when you want it checked - that is the only thing that spends
+# Actions minutes.
+#
+# Deploys are manual: Actions tab -> CI -> "Run workflow" -> pick a target.
+# The run executes every check on main first and deploys only if they all
+# pass, so the button is a gate, not a bypass. Merging to main never
+# deploys on its own - twenty small merges would otherwise mean twenty
+# Fly builds.
+#
+# No real secrets here. test-backend gets placeholder values that only need
+# to be *present* for the code under test to load; the three
+# *ModelIntegration test files talk to the throwaway Mongo service.
+# ==========================================================================
+
+name: CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: What to deploy (after all checks pass)
+        type: choice
+        required: true
+        default: both
+        options: [both, backend, frontend, nothing]
+
+# A new push to the same PR cancels the run still going for the old commit.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---- parallel checks ---------------------------------------------------
+
+  lint-backend:
+    name: Lint (backend)
+    runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      # --max-warnings is deliberately not set: no-explicit-any is a warning
+      # by design (see eslint.config.mts) and there are ~500 of them.
+      - run: npm run lint
+
+  lint-frontend:
+    name: Lint (frontend)
+    runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run type-check
+
+  security-scan:
+    name: Security scan (npm audit)
+    runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
+    # The repo is private, so CodeQL would need GitHub Advanced Security.
+    # npm audit needs nothing. Only production dependencies are checked:
+    # a vulnerable dev tool cannot reach a deployed image, and the frontend's
+    # dev tree carries several that are not ours to fix.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm audit --omit=dev --audit-level=high
+        working-directory: backend
+      - run: npm audit --omit=dev --audit-level=high
+        working-directory: frontend
+
+  test-backend:
+    name: Test (backend)
+    runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        # Without this, jest can start before mongod accepts connections and
+        # the integration tests fail on the first run only.
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      NODE_ENV: test
+      DATABASE_LOCAL: mongodb://localhost:27017/voyara-test
+      # Placeholders. Nothing in the suite reaches Atlas, Stripe or SendGrid;
+      # these exist so modules that read them at import time load.
+      DATABASE_3: mongodb://localhost:27017/voyara-test
+      DATABASE_PASSWORD: placeholder
+      JWT_SECRET: ci-only-jwt-secret-not-used-anywhere-real
+      JWT_EXPIRES_IN: 90d
+      JWT_COOKIE_EXPIRES_IN: 90
+      FRONTEND_URL: http://localhost:5173
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      # Worker count (2) comes from jest.config.js, same as a local run.
+      - run: npm test -- --ci
+
+  test-frontend:
+    name: Test (frontend)
+    runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm test
+
+  docker-build:
+    name: Docker build (${{ matrix.app }})
+    runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
+    # Builds both images exactly as Fly will, without pushing them anywhere.
+    # A Dockerfile that no longer matches the repo (a renamed tsconfig, a
+    # dropped nginx template) otherwise surfaces only at deploy time.
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.app }}
+          push: false
+          # The frontend ARGs only need to be present; this image is a build
+          # check, never deployed, so placeholder values are fine.
+          build-args: |
+            VITE_API_URL=http://placeholder.invalid/api/v1
+            VITE_MAPBOX_TOKEN=pk.placeholder
+          cache-from: type=gha,scope=${{ matrix.app }}
+          cache-to: type=gha,scope=${{ matrix.app }},mode=max
+
+  # ---- fan-in ------------------------------------------------------------
+
+  build:
+    name: Build
+    needs: [lint-backend, lint-frontend, security-scan, test-backend, test-frontend, docker-build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      - run: npm ci
+        working-directory: backend
+      - run: npm run build
+        working-directory: backend
+
+      - run: npm ci
+        working-directory: frontend
+      # Full script (tsc -b && vite build) rather than the Dockerfile's bare
+      # `vite build`, so a type error in shipped code is caught here.
+      # No VITE_* args: this bundle is a compile check, not the deployable -
+      # Fly builds the real image with the right API URL baked in.
+      - run: npm run build
+        working-directory: frontend
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: backend-dist
+          path: backend/dist/
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+          retention-days: 7
+
+  # ---- deploy (manual) ---------------------------------------------------
+  #
+  # One org-scoped Fly deploy token in the FLY_API_TOKEN secret covers both
+  # apps. --remote-only builds on Fly's builders, not the runner. The VITE_*
+  # values are GitHub *variables*, not secrets: they are baked into a public
+  # JS bundle anyway, and variables are visible in logs, which is fine.
+
+  deploy-backend:
+    name: Deploy backend (Fly)
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && contains(fromJSON('["both","backend"]'), inputs.deploy)
+    runs-on: ubuntu-latest
+    concurrency: deploy-backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - run: flyctl deploy --remote-only --config fly.toml
+        working-directory: backend
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+  deploy-frontend:
+    name: Deploy frontend (Fly)
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && contains(fromJSON('["both","frontend"]'), inputs.deploy)
+    runs-on: ubuntu-latest
+    concurrency: deploy-frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      # Both build args are required on EVERY deploy - see frontend/fly.toml.
+      - run: >
+          flyctl deploy --remote-only --config fly.toml
+          --build-arg VITE_API_URL=${{ vars.VITE_API_URL }}
+          --build-arg VITE_MAPBOX_TOKEN=${{ vars.VITE_MAPBOX_TOKEN }}
+        working-directory: frontend
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
