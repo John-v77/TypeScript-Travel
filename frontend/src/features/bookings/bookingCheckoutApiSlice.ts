@@ -1,4 +1,5 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { apiUrl } from "../../config/api";
 
 type BookingCheckoutResponse = {
   status: string;
@@ -8,7 +9,7 @@ type BookingCheckoutResponse = {
 export const bookingCheckoutApiSlice = createApi({
   reducerPath: "bookingCheckoutApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://127.0.0.1:3000/api/v1/bookings",
+    baseUrl: `${apiUrl}/bookings`,
     prepareHeaders: (headers, { getState }) => {
       const { token } = (
         getState() as { authStorage: { token: string | null } }

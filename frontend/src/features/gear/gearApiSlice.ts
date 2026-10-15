@@ -1,4 +1,5 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { apiUrl } from "../../config/api";
 
 export type Gear = {
   _id: string;
@@ -17,7 +18,7 @@ type GearResponse = {
 
 export const gearApiSlice = createApi({
   reducerPath: "gearApi",
-  baseQuery: fetchBaseQuery({ baseUrl: "http://127.0.0.1:3000/api/v1" }),
+  baseQuery: fetchBaseQuery({ baseUrl: apiUrl }),
   tagTypes: ["Gear"],
   endpoints: builder => ({
     getAllGear: builder.query<Gear[], undefined>({

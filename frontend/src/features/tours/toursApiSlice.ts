@@ -1,4 +1,5 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { apiUrl } from "../../config/api";
 
 export type Location = {
   _id: string;
@@ -65,7 +66,7 @@ interface ToursResponse {
 
 export const toursApiSlice = createApi({
   reducerPath: "toursApi",
-  baseQuery: fetchBaseQuery({ baseUrl: "http://127.0.0.1:3000/api/v1" }),
+  baseQuery: fetchBaseQuery({ baseUrl: apiUrl }),
   tagTypes: ["Tours"],
   endpoints: builder => ({
     getAllTours: builder.query<Tour[], void>({
@@ -74,7 +75,7 @@ export const toursApiSlice = createApi({
         Object.values(response.data),
       providesTags: [{ type: "Tours", id: "LIST" }],
     }),
-  
+
     getTourBySlug: builder.query<Tour, string>({
       query: slug => `tours/${slug}`,
       transformResponse: (response: TourResponse) => response.data,

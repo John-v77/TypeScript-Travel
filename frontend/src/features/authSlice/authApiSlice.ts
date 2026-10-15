@@ -1,5 +1,6 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { logout as clearAuthStorage } from "./authStorageSlice";
+import { apiUrl } from "../../config/api";
 
 export interface User {
   _id: string;
@@ -32,7 +33,7 @@ export interface AuthResponse {
 
 export const authApiSlice = createApi({
   reducerPath: "authApi",
-  baseQuery: fetchBaseQuery({ baseUrl: "http://127.0.0.1:3000/api/v1/" }),
+  baseQuery: fetchBaseQuery({ baseUrl: `${apiUrl}/` }),
   tagTypes: ["Auth"],
   endpoints: builder => ({
     login: builder.mutation<AuthResponse, LoginCredentials>({

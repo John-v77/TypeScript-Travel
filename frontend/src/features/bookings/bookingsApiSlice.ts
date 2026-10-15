@@ -1,4 +1,5 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { apiUrl } from "../../config/api";
 
 /** A booking as /users/my-bookings returns it, with the tour populated. */
 export type MyBooking = {
@@ -18,7 +19,7 @@ type MyBookingsResponse = {
 export const bookingsApiSlice = createApi({
   reducerPath: "bookingsApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://127.0.0.1:3000/api/v1/users",
+    baseUrl: `${apiUrl}/users`,
     prepareHeaders: (headers, { getState }) => {
       const { token } = (
         getState() as { authStorage: { token: string | null } }

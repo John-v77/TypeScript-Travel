@@ -1,4 +1,5 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { apiUrl } from "../../config/api";
 
 export type GearOrderItem = {
   gear: string;
@@ -39,7 +40,7 @@ type GearOrdersResponse = {
 export const gearCheckoutApiSlice = createApi({
   reducerPath: "gearCheckoutApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://127.0.0.1:3000/api/v1/gear",
+    baseUrl: `${apiUrl}/gear`,
     prepareHeaders: (headers, { getState }) => {
       const { token } = (
         getState() as { authStorage: { token: string | null } }

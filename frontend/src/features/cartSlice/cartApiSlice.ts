@@ -1,5 +1,6 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import type { Gear } from "../gear/gearApiSlice";
+import { apiUrl } from "../../config/api";
 
 export type CartLine = {
   _id: string;
@@ -17,7 +18,7 @@ type CartLinesResponse = {
 export const cartApiSlice = createApi({
   reducerPath: "cartApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://127.0.0.1:3000/api/v1/cart",
+    baseUrl: `${apiUrl}/cart`,
     prepareHeaders: (headers, { getState }) => {
       const { token } = (
         getState() as { authStorage: { token: string | null } }

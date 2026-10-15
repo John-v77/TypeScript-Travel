@@ -1,4 +1,5 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { apiUrl } from "../../config/api";
 
 export type TourReview = {
   _id: string;
@@ -24,11 +25,10 @@ export type CreateReviewArgs = {
   rating: number;
 };
 
-
 export const reviewsApiSlice = createApi({
   reducerPath: "reviewsApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://127.0.0.1:3000/api/v1",
+    baseUrl: apiUrl,
     prepareHeaders: (headers, { getState }) => {
       const { token } = (
         getState() as { authStorage: { token: string | null } }
