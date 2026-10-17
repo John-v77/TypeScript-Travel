@@ -35,6 +35,8 @@ describe("Database Connection", () => {
       jest.resetModules();
 
       expect(() => {
+        // Re-loads the module after jest.resetModules(); import can't do that.
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         require("../database");
       }).toThrow("Database configuration missing");
     } finally {

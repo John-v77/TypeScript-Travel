@@ -25,6 +25,8 @@ export default [
   {
     rules: {
       "@typescript-eslint/no-unused-vars": "off",
+      // Visible as warnings 
+      "@typescript-eslint/no-explicit-any": "warn",
       "prettier/prettier": [
         "error",
         {

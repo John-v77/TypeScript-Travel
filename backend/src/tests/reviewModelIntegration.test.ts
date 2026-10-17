@@ -27,13 +27,9 @@ describe("Review Model", () => {
         user: "user123",
       };
 
-      try {
-        await ReviewModel.create(invalidReview);
-        fail("Should have thrown validation error");
-      } catch (error: any) {
-        expect(error.errors.review).toBeDefined();
-        expect(error.errors.review.message).toBe("Review cannot be empty!");
-      }
+      await expect(ReviewModel.create(invalidReview)).rejects.toMatchObject({
+        errors: { review: { message: "Review cannot be empty!" } },
+      });
     });
 
     it("should require tour reference", async () => {
@@ -43,13 +39,9 @@ describe("Review Model", () => {
         user: "user123",
       };
 
-      try {
-        await ReviewModel.create(invalidReview);
-        fail("Should have thrown validation error");
-      } catch (error: any) {
-        expect(error.errors.tour).toBeDefined();
-        expect(error.errors.tour.message).toBe("Review must belong to a tour.");
-      }
+      await expect(ReviewModel.create(invalidReview)).rejects.toMatchObject({
+        errors: { tour: { message: "Review must belong to a tour." } },
+      });
     });
 
     it("should require user reference", async () => {
@@ -59,13 +51,9 @@ describe("Review Model", () => {
         tour: "tour123",
       };
 
-      try {
-        await ReviewModel.create(invalidReview);
-        fail("Should have thrown validation error");
-      } catch (error: any) {
-        expect(error.errors.user).toBeDefined();
-        expect(error.errors.user.message).toBe("Review must belong to a user");
-      }
+      await expect(ReviewModel.create(invalidReview)).rejects.toMatchObject({
+        errors: { user: { message: "Review must belong to a user" } },
+      });
     });
 
     it("should validate rating minimum value", async () => {
@@ -76,13 +64,9 @@ describe("Review Model", () => {
         user: "user123",
       };
 
-      try {
-        await ReviewModel.create(invalidReview);
-        fail("Should have thrown validation error");
-      } catch (error: any) {
-        expect(error.errors.rating).toBeDefined();
-        expect(error.errors.rating.message).toContain("1");
-      }
+      await expect(ReviewModel.create(invalidReview)).rejects.toMatchObject({
+        errors: { rating: { message: expect.stringContaining("1") } },
+      });
     });
 
     it("should validate rating maximum value", async () => {
@@ -93,13 +77,9 @@ describe("Review Model", () => {
         user: "user123",
       };
 
-      try {
-        await ReviewModel.create(invalidReview);
-        fail("Should have thrown validation error");
-      } catch (error: any) {
-        expect(error.errors.rating).toBeDefined();
-        expect(error.errors.rating.message).toContain("5");
-      }
+      await expect(ReviewModel.create(invalidReview)).rejects.toMatchObject({
+        errors: { rating: { message: expect.stringContaining("5") } },
+      });
     });
 
     it("should accept valid review with all required fields", async () => {
@@ -328,19 +308,17 @@ describe("Review Model", () => {
       expect(firstReview._id).toBe("review123");
 
       // Second review with same tour-user should fail
-      try {
-        await ReviewModel.create({
+      await expect(
+        ReviewModel.create({
           review: "Second review attempt",
           rating: 3,
           tour: "tour123",
           user: "user123",
-        });
-        fail("Should have thrown duplicate key error");
-      } catch (error: any) {
-        expect(error.code).toBe(11000);
-        expect(error.keyPattern.tour).toBe(1);
-        expect(error.keyPattern.user).toBe(1);
-      }
+        }),
+      ).rejects.toMatchObject({
+        code: 11000,
+        keyPattern: { tour: 1, user: 1 },
+      });
     });
 
     it("should allow multiple reviews from same user for different tours", async () => {

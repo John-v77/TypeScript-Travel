@@ -1,6 +1,7 @@
 import request from "supertest";
 import { createServer } from "../../server";
 import { TourModel } from "../../models/tourModel";
+import AppError from "../../utils/appError";
 
 jest.mock("../../models/tourModel");
 // Bypass auth so protected routes (e.g. GET /tours) are reachable in tests
@@ -1310,9 +1311,9 @@ describe("Tour Routes", () => {
         const tourId = "5c88fa8cf4afda39709c2955";
 
         mockTourModel.findById.mockReturnValue({
-          populate: jest.fn().mockRejectedValue(
-            new Error("Async operation failed"),
-          ),
+          populate: jest
+            .fn()
+            .mockRejectedValue(new Error("Async operation failed")),
         } as any);
 
         const response = await request(app)
@@ -1328,20 +1329,14 @@ describe("Tour Routes", () => {
 
     describe("AppError Class Functionality", () => {
       it("should correctly identify 4xx status codes as fail", () => {
-        const error = new (require("../../utils/appError").default)(
-          "Not found",
-          404,
-        );
+        const error = new AppError("Not found", 404);
         expect(error.status).toBe("fail");
         expect(error.statusCode).toBe(404);
         expect(error.isOperational).toBe(true);
       });
 
       it("should correctly identify 5xx status codes as error", () => {
-        const error = new (require("../../utils/appError").default)(
-          "Server error",
-          500,
-        );
+        const error = new AppError("Server error", 500);
         expect(error.status).toBe("error");
         expect(error.statusCode).toBe(500);
         expect(error.isOperational).toBe(true);
@@ -1349,10 +1344,7 @@ describe("Tour Routes", () => {
 
       it("should handle custom error messages", () => {
         const customMessage = "Custom validation error";
-        const error = new (require("../../utils/appError").default)(
-          customMessage,
-          422,
-        );
+        const error = new AppError(customMessage, 422);
         expect(error.message).toBe(customMessage);
         expect(error.status).toBe("fail");
       });

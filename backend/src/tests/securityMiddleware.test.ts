@@ -19,7 +19,9 @@ describe("Security Middleware", () => {
     mockUserModel.create.mockRejectedValue(
       Object.assign(new Error("Validation failed"), {
         name: "ValidationError",
-        errors: { passwordConfirm: { message: "Please confirm your password" } },
+        errors: {
+          passwordConfirm: { message: "Please confirm your password" },
+        },
       }),
     );
     // No user matches a sanitised login.
@@ -120,7 +122,6 @@ describe("Security Middleware", () => {
         .post("/api/v1/users/signup")
         .send(dataWithDollarSigns);
 
-
       expect(response.status).toBe(400);
     });
   });
@@ -138,7 +139,6 @@ describe("Security Middleware", () => {
       const response = await request(app)
         .post("/api/v1/users/signup")
         .send(xssData);
-
 
       expect(response.status).toBe(400);
     }, 10000);
@@ -162,7 +162,6 @@ describe("Security Middleware", () => {
       const response = await request(app)
         .post("/api/v1/users/signup")
         .send(safeData);
-
 
       expect(response.status).toBe(400);
     });
@@ -260,10 +259,8 @@ describe("Security Middleware", () => {
           .send({}); // Invalid data to trigger error
 
         // Should not expose stack traces or sensitive info
-        if (response.body.message) {
-          expect(response.body.message).not.toContain("Error:");
-          expect(response.body.stack).toBeUndefined();
-        }
+        expect(response.body.message ?? "").not.toContain("Error:");
+        expect(response.body.stack).toBeUndefined();
       } finally {
         process.env.NODE_ENV = originalEnv;
       }
