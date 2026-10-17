@@ -82,7 +82,8 @@ const globalErrorHandler = (
   let error: AppError = err;
   if (anyErr.name === "CastError") error = handleCastErrorDB(err);
   else if (anyErr.code === 11000) error = handleDuplicateFieldsBD(err);
-  else if (anyErr.name === "ValidationError") error = handleValidationErrorDB(err);
+  else if (anyErr.name === "ValidationError")
+    error = handleValidationErrorDB(err);
   else if (anyErr.name === "JsonWebTokenError") error = handleJWTError();
   else if (anyErr.name === "TokenExpiredError") error = handleJWTExpiredError();
 

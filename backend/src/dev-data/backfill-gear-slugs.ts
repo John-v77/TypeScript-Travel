@@ -3,7 +3,6 @@ import "dotenv/config";
 import { database } from "../database";
 import { GearModel } from "../models/gearModel";
 
-
 const backfill = async () => {
   await database.connect();
 

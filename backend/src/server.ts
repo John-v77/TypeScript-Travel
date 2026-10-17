@@ -37,7 +37,7 @@ export const createServer = () => {
         },
       },
       crossOriginEmbedderPolicy: false,
-    })
+    }),
   );
 
   // Development loggin
@@ -65,7 +65,7 @@ export const createServer = () => {
       ExpressMongoSanitize({
         replaceWith: "_",
         onSanitize: () => {}, // Silent sanitization for tests
-      })
+      }),
     );
   }
 
@@ -79,7 +79,7 @@ export const createServer = () => {
         "difficulty",
         "price",
       ],
-    })
+    }),
   );
 
   // Serve static files
@@ -91,14 +91,18 @@ export const createServer = () => {
     process.env.CORS_ORIGINS ?? "http://localhost:5173,http://127.0.0.1:5173"
   )
     .split(",")
-    .map(origin => origin.trim())
+    .map((origin) => origin.trim())
     .filter(Boolean);
 
-  app.use(cors({origin: [
-    ...corsOrigins,
-    // The deployed (or docker compose) frontend, e.g. http://localhost:8080.
-    ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
-  ]}));
+  app.use(
+    cors({
+      origin: [
+        ...corsOrigins,
+        // The deployed (or docker compose) frontend, e.g. http://localhost:8080.
+        ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
+      ],
+    }),
+  );
 
   app.use("/api/v1/tours", tourRouter);
   app.use("/api/v1/users", userRouter);

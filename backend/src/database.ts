@@ -20,7 +20,7 @@ class Database implements DatabaseConnection {
       console.log("####### Local Database #######");
       if (!localDB) {
         throw new Error(
-          "Local Database configuration missing. Check enviroment localdb variables"
+          "Local Database configuration missing. Check enviroment localdb variables",
         );
       }
       this.connectionString = localDB;
@@ -28,7 +28,7 @@ class Database implements DatabaseConnection {
     } else {
       if (!dbUrl || !dbPassword) {
         throw new Error(
-          "Database configuration missing. Check DATABASE and DATABASE_PASSWORD environment variables."
+          "Database configuration missing. Check DATABASE and DATABASE_PASSWORD environment variables.",
         );
       }
 

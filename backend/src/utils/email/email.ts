@@ -62,7 +62,7 @@ export default class Email {
   async sendPasswordReset() {
     await this.send(
       "password-reset.pug",
-      "Your password reset token (valid for only 10 minutes)"
+      "Your password reset token (valid for only 10 minutes)",
     );
   }
 }

@@ -8,7 +8,7 @@ const getAll = <T extends Document>(Model: Model<T>) =>
   catchAsync(
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
       // To allow for nested GET reviews on tour and bookings by user
-      let filter: any = {};
+      const filter: any = {};
       if (req.params.tourId) {
         filter.tour = req.params.tourId;
       }
@@ -29,7 +29,7 @@ const getAll = <T extends Document>(Model: Model<T>) =>
         results: docs.length,
         data: docs,
       });
-    }
+    },
   );
 
 const getOne = <T extends Document>(Model: Model<T>, popOptions?: any) =>
@@ -47,7 +47,7 @@ const getOne = <T extends Document>(Model: Model<T>, popOptions?: any) =>
         status: "success",
         data: doc,
       });
-    }
+    },
   );
 
 const updateOne = <T extends Document>(Model: Model<T>) =>
@@ -66,7 +66,7 @@ const updateOne = <T extends Document>(Model: Model<T>) =>
         status: "success",
         data: doc,
       });
-    }
+    },
   );
 
 const createOne = <T extends Document>(Model: Model<T>) =>
@@ -78,7 +78,7 @@ const createOne = <T extends Document>(Model: Model<T>) =>
         status: "success",
         data: newEntryDoc,
       });
-    }
+    },
   );
 
 const deleteOne = <T extends Document>(Model: Model<T>) =>
@@ -94,7 +94,7 @@ const deleteOne = <T extends Document>(Model: Model<T>) =>
         status: "success",
         data: null,
       });
-    }
+    },
   );
 
 export default {

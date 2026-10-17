@@ -14,7 +14,7 @@ async function startServer(): Promise<void> {
 
     // Start server
     const port = Number(process.env.PORT) || 3000;
-  
+
     const server: Server = app.listen(port, "0.0.0.0", () => {
       console.log(`App running on port ${port}...`);
     });
