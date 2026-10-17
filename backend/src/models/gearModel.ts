@@ -23,49 +23,47 @@ export interface Gear extends Document {
   createdAt?: Date;
 }
 
-const GearSchema = new Schema<Gear>(
-  {
-    name: {
-      type: String,
-      required: [true, "A gear item must have a name"],
-      unique: true,
-      trim: true,
-      maxlength: [60, "A gear name must be 60 characters or fewer"],
-    },
-    price: {
-      type: Number,
-      required: [true, "A gear item must have a price"],
-      min: [0, "Price must be a positive number"],
-    },
-    image: {
-      type: String,
-      required: [true, "A gear item must have an image"],
-    },
-    description: {
-      type: String,
-      required: [true, "A gear item must have a description"],
-      trim: true,
-    },
-    category: {
-      type: String,
-      required: [true, "A gear item must have a category"],
-      enum: {
-        values: GEAR_CATEGORIES,
-        message: `Category must be one of: ${GEAR_CATEGORIES.join(", ")}`,
-      },
-    },
-    // Set from the name on save: "Alpine Blue Jacket" -> "alpine-blue-jacket".
-    slug: {
-      type: String,
-      unique: true,
-    },
-    createdAt: {
-      type: Date,
-      default: Date.now,
-      select: false,
+const GearSchema = new Schema<Gear>({
+  name: {
+    type: String,
+    required: [true, "A gear item must have a name"],
+    unique: true,
+    trim: true,
+    maxlength: [60, "A gear name must be 60 characters or fewer"],
+  },
+  price: {
+    type: Number,
+    required: [true, "A gear item must have a price"],
+    min: [0, "Price must be a positive number"],
+  },
+  image: {
+    type: String,
+    required: [true, "A gear item must have an image"],
+  },
+  description: {
+    type: String,
+    required: [true, "A gear item must have a description"],
+    trim: true,
+  },
+  category: {
+    type: String,
+    required: [true, "A gear item must have a category"],
+    enum: {
+      values: GEAR_CATEGORIES,
+      message: `Category must be one of: ${GEAR_CATEGORIES.join(", ")}`,
     },
   },
-);
+  // Set from the name on save: "Alpine Blue Jacket" -> "alpine-blue-jacket".
+  slug: {
+    type: String,
+    unique: true,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+    select: false,
+  },
+});
 
 GearSchema.index({ category: 1, price: 1 });
 

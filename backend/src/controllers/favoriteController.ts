@@ -9,7 +9,6 @@ interface AuthenticatedRequest extends Request {
   user?: User;
 }
 
-
 const setMyFilter = (
   req: AuthenticatedRequest,
   res: Response,
@@ -19,7 +18,6 @@ const setMyFilter = (
   next();
 };
 
-
 const setMyFavorite = (
   req: AuthenticatedRequest,
   res: Response,
@@ -28,7 +26,6 @@ const setMyFavorite = (
   req.body = { tour: req.body.tour, user: req.user!.id };
   next();
 };
-
 
 const checkFavoriteOwner = catchAsync(
   async (

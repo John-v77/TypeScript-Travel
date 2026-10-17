@@ -14,7 +14,7 @@ const checkIfBooked = catchAsync(
   async (
     req: AuthenticatedRequest,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> => {
     const tourId = req.body.tour || req.params.tourId;
     const userId = req.user?.id;
@@ -26,12 +26,12 @@ const checkIfBooked = catchAsync(
 
     if (!booking) {
       return next(
-        new AppError("You can only review tours you have booked", 403)
+        new AppError("You can only review tours you have booked", 403),
       );
     }
 
     next();
-  }
+  },
 );
 
 const setTourUserIds = (

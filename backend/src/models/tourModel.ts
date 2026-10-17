@@ -150,16 +150,16 @@ const TourSchema = new Schema<Tour>(
     },
   },
   {
-    toJSON: { 
+    toJSON: {
       virtuals: true,
-      transform: function(doc, ret) {
+      transform: function (doc, ret) {
         const { _id, __v, name, ...rest } = ret;
         return {
           id: ret.id,
           name,
-          ...rest
+          ...rest,
         };
-      }
+      },
     },
     toObject: { virtuals: true },
   },
