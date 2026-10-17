@@ -32,7 +32,7 @@ describe("POST /api/v1/users/forgotPassword - forgotPassword", () => {
         ({
           sendWelcome: jest.fn().mockResolvedValue(undefined),
           sendPasswordReset: mockSendPasswordReset,
-        }) as any
+        }) as any,
     );
   });
 
@@ -60,7 +60,7 @@ describe("POST /api/v1/users/forgotPassword - forgotPassword", () => {
     expect(mockUser.save).toHaveBeenCalledWith({ validateBeforeSave: false });
     expect(mockEmail).toHaveBeenCalledWith(
       mockUser,
-      expect.stringContaining(resetToken)
+      expect.stringContaining(resetToken),
     );
     expect(mockSendPasswordReset).toHaveBeenCalled();
     expect(response.body.status).toBe("success");
@@ -119,7 +119,7 @@ describe("POST /api/v1/users/forgotPassword - forgotPassword", () => {
     expect(mockUser.save).toHaveBeenCalledWith({ validateBeforeSave: false });
     expect(response.body.status).toBe("error");
     expect(response.body.message).toBe(
-      "There was an error sending the email. Try again later!"
+      "There was an error sending the email. Try again later!",
     );
   });
 
@@ -145,8 +145,8 @@ describe("POST /api/v1/users/forgotPassword - forgotPassword", () => {
     expect(mockEmail).toHaveBeenCalledWith(
       mockUser,
       expect.stringMatching(
-        /http:\/\/127\.0\.0\.1:\d+\/api\/v1\/users\/resetPassword\/abcd1234resettoken/
-      )
+        /http:\/\/127\.0\.0\.1:\d+\/api\/v1\/users\/resetPassword\/abcd1234resettoken/,
+      ),
     );
   });
 
@@ -154,7 +154,7 @@ describe("POST /api/v1/users/forgotPassword - forgotPassword", () => {
     const email = "user@example.com";
 
     mockUserModel.findOne.mockRejectedValue(
-      new Error("Database connection failed")
+      new Error("Database connection failed"),
     );
 
     const response = await request(app)

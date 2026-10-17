@@ -32,7 +32,7 @@ describe("POST /api/v1/users/signup", () => {
         ({
           sendWelcome: mockSendWelcome.mockResolvedValue(undefined),
           sendPasswordReset: jest.fn().mockResolvedValue(undefined),
-        }) as any
+        }) as any,
     );
   });
 
@@ -100,7 +100,7 @@ describe("POST /api/v1/users/signup", () => {
 
     const cookieArray = Array.isArray(cookies) ? cookies : [cookies];
     const jwtCookie = cookieArray.find((cookie: string) =>
-      cookie.startsWith("jwt=")
+      cookie.startsWith("jwt="),
     );
     expect(jwtCookie).toBeDefined();
 
@@ -132,7 +132,7 @@ describe("POST /api/v1/users/signup", () => {
     const cookies = response.headers["set-cookie"];
     const cookieArray = Array.isArray(cookies) ? cookies : [cookies];
     const jwtCookie = cookieArray.find((cookie: string) =>
-      cookie.startsWith("jwt=")
+      cookie.startsWith("jwt="),
     );
     expect(jwtCookie).toContain("Secure");
 
@@ -146,7 +146,7 @@ describe("POST /api/v1/users/signup", () => {
     // and the same generic 500 handler. One representative case covers
     // that whole path; the specific error message is incidental.
     mockUserModel.create.mockRejectedValue(
-      new Error("Invalid input data. User name is required")
+      new Error("Invalid input data. User name is required"),
     );
 
     const response = await request(app)
@@ -156,7 +156,7 @@ describe("POST /api/v1/users/signup", () => {
 
     expect(response.body.status).toBe("error");
     expect(response.body.message).toBe(
-      "Invalid input data. User name is required"
+      "Invalid input data. User name is required",
     );
   });
 

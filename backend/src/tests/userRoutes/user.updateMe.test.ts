@@ -30,7 +30,7 @@ describe("PATCH /api/v1/users/updateMe - updateUser", () => {
       (req: any, res: any, next: any) => {
         req.user = { id: "user123" };
         next();
-      }
+      },
     );
   });
 
@@ -57,7 +57,7 @@ describe("PATCH /api/v1/users/updateMe - updateUser", () => {
     expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
       "user123",
       { name: "Updated Name", email: "updated@example.com" },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     );
 
     expect(response.body).toEqual({
@@ -82,7 +82,7 @@ describe("PATCH /api/v1/users/updateMe - updateUser", () => {
 
     expect(response.body.status).toBe("fail");
     expect(response.body.message).toBe(
-      "This route is not for password updates. Please use reset password feature."
+      "This route is not for password updates. Please use reset password feature.",
     );
   });
 
@@ -100,7 +100,7 @@ describe("PATCH /api/v1/users/updateMe - updateUser", () => {
 
     expect(response.body.status).toBe("fail");
     expect(response.body.message).toBe(
-      "This route is not for password updates. Please use reset password feature."
+      "This route is not for password updates. Please use reset password feature.",
     );
   });
 
@@ -130,7 +130,7 @@ describe("PATCH /api/v1/users/updateMe - updateUser", () => {
     expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
       "user123",
       { name: "Updated Name", email: "updated@example.com" },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     );
 
     expect(response.body).toEqual({
@@ -149,7 +149,7 @@ describe("PATCH /api/v1/users/updateMe - updateUser", () => {
           status: "fail",
           message: "You are not logged in! Please log in to get access.",
         });
-      }
+      },
     );
 
     const response = await request(app)
@@ -168,7 +168,7 @@ describe("PATCH /api/v1/users/updateMe - updateUser", () => {
     };
 
     mockUserModel.findByIdAndUpdate.mockRejectedValue(
-      new Error("Database connection failed")
+      new Error("Database connection failed"),
     );
 
     const response = await request(app)
@@ -203,7 +203,7 @@ describe("PATCH /api/v1/users/updateMe - updateUser", () => {
     expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
       "user123",
       { name: "Only Name Updated" },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     );
 
     expect(response.body.data.user.name).toBe("Only Name Updated");
@@ -231,7 +231,7 @@ describe("PATCH /api/v1/users/updateMe - updateUser", () => {
     expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
       "user123",
       { email: "newemail@example.com" },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     );
 
     expect(response.body.data.user.email).toBe("newemail@example.com");
@@ -250,7 +250,7 @@ describe("PATCH /api/v1/users/updateMe - updateUser", () => {
     expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
       "user123",
       {},
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     );
     expect(response.body.data.user).toEqual(mockUpdatedUser);
   });
@@ -271,7 +271,7 @@ describe("PATCH /api/v1/users/updateMe - updateUser", () => {
     expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
       "user123",
       {},
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     );
     expect(response.body.data.user).toEqual(mockUpdatedUser);
   });

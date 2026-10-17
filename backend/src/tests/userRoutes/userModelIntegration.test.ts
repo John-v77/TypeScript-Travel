@@ -35,13 +35,13 @@ describe("User Model (integration)", () => {
     await UserModel.create(validUser);
 
     await expect(
-      UserModel.create({ ...validUser, name: "Someone Else" })
+      UserModel.create({ ...validUser, name: "Someone Else" }),
     ).rejects.toMatchObject({ code: 11000 });
   });
 
   it("should reject a passwordConfirm that doesn't match password", async () => {
     await expect(
-      UserModel.create({ ...validUser, passwordConfirm: "somethingElse" })
+      UserModel.create({ ...validUser, passwordConfirm: "somethingElse" }),
     ).rejects.toMatchObject({
       errors: {
         passwordConfirm: expect.objectContaining({
@@ -53,7 +53,7 @@ describe("User Model (integration)", () => {
 
   it("should reject a malformed email address", async () => {
     await expect(
-      UserModel.create({ ...validUser, email: "not-an-email" })
+      UserModel.create({ ...validUser, email: "not-an-email" }),
     ).rejects.toMatchObject({
       errors: {
         email: expect.objectContaining({

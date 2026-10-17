@@ -42,9 +42,7 @@ describe("GET /api/v1/users - getAllUsers", () => {
         },
       ];
 
-      mockUserModel.find.mockReturnValue(
-        createMockFindQuery(mockUsers) as any
-      );
+      mockUserModel.find.mockReturnValue(createMockFindQuery(mockUsers) as any);
 
       const response = await request(app).get("/api/v1/users").expect(200);
 
@@ -218,7 +216,7 @@ describe("GET /api/v1/users - getAllUsers", () => {
   describe("Error handling", () => {
     it("should handle database errors gracefully", async () => {
       mockUserModel.find.mockReturnValue(
-        createMockFindQuery(new Error("Database connection failed")) as any
+        createMockFindQuery(new Error("Database connection failed")) as any,
       );
 
       const response = await request(app).get("/api/v1/users").expect(500);

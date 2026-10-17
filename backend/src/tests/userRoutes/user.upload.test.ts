@@ -40,13 +40,13 @@ describe("PATCH /api/v1/users/updateMe - photo upload", () => {
       (req: any, res: any, next: any) => {
         req.user = { id: "user123" };
         next();
-      }
+      },
     );
   });
 
   it("uploads, resizes to a 500x500 jpeg, and persists the filename on the user", async () => {
     mockUserModel.findByIdAndUpdate.mockImplementation(
-      (id, update: any) => Promise.resolve({ _id: id, ...update }) as any
+      (id, update: any) => Promise.resolve({ _id: id, ...update }) as any,
     );
 
     const response = await request(app)
@@ -66,7 +66,7 @@ describe("PATCH /api/v1/users/updateMe - photo upload", () => {
     expect(mockSharpInstance.toFormat).toHaveBeenCalledWith("jpeg");
     expect(mockSharpInstance.jpeg).toHaveBeenCalledWith({ quality: 90 });
     expect(mockSharpInstance.toFile).toHaveBeenCalledWith(
-      expect.stringMatching(/^public\/img\/users\/user-user123-\d+\.jpeg$/)
+      expect.stringMatching(/^public\/img\/users\/user-user123-\d+\.jpeg$/),
     );
 
     expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
@@ -75,11 +75,11 @@ describe("PATCH /api/v1/users/updateMe - photo upload", () => {
         name: "John Doe",
         photo: expect.stringMatching(filenamePattern),
       }),
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     );
 
     expect(response.body.data.user.photo).toEqual(
-      expect.stringMatching(filenamePattern)
+      expect.stringMatching(filenamePattern),
     );
   });
 
@@ -95,7 +95,7 @@ describe("PATCH /api/v1/users/updateMe - photo upload", () => {
 
     expect(response.body.status).toBe("fail");
     expect(response.body.message).toBe(
-      "Not an image! Please upload only images."
+      "Not an image! Please upload only images.",
     );
     expect(mockSharp).not.toHaveBeenCalled();
     expect(mockUserModel.findByIdAndUpdate).not.toHaveBeenCalled();
@@ -117,7 +117,7 @@ describe("PATCH /api/v1/users/updateMe - photo upload", () => {
     expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
       "user123",
       { name: "Updated Name" },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     );
   });
 
@@ -145,7 +145,7 @@ describe("PATCH /api/v1/users/updateMe - photo upload", () => {
           status: "fail",
           message: "You are not logged in! Please log in to get access.",
         });
-      }
+      },
     );
 
     const response = await request(app)

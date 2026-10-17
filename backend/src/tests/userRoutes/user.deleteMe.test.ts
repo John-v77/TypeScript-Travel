@@ -30,7 +30,7 @@ describe("DELETE /api/v1/users/deleteMe - deleteUser", () => {
       (req: any, res: any, next: any) => {
         req.user = { id: "user123" };
         next();
-      }
+      },
     );
   });
 
@@ -61,7 +61,7 @@ describe("DELETE /api/v1/users/deleteMe - deleteUser", () => {
           status: "fail",
           message: "You are not logged in! Please log in to get access.",
         });
-      }
+      },
     );
 
     const response = await request(app)
@@ -74,7 +74,7 @@ describe("DELETE /api/v1/users/deleteMe - deleteUser", () => {
 
   it("should handle database errors gracefully", async () => {
     mockUserModel.findByIdAndUpdate.mockRejectedValue(
-      new Error("Database connection failed")
+      new Error("Database connection failed"),
     );
 
     const response = await request(app)

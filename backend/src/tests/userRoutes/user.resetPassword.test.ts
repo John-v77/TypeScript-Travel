@@ -115,9 +115,7 @@ describe("PATCH /api/v1/users/resetPassword/:token - resetPassword", () => {
       passwordResetExpires: new Date(Date.now() + 10 * 60 * 1000),
       password: undefined,
       passwordConfirm: undefined,
-      save: jest
-        .fn()
-        .mockRejectedValue(new Error("Please provide a password")),
+      save: jest.fn().mockRejectedValue(new Error("Please provide a password")),
     } as any;
 
     mockUserModel.findOne.mockResolvedValue(mockUser);

@@ -119,7 +119,7 @@ describe("POST /api/v1/users/login", () => {
     expect(response.body.message).toBe("Incorrect email or password");
     expect(mockUser.correctPassword).toHaveBeenCalledWith(
       "wrongpassword",
-      undefined
+      undefined,
     );
   });
 });

@@ -29,7 +29,7 @@ describe("PATCH /api/v1/users/updateMyPassword - updatePassword", () => {
       (req: any, res: any, next: any) => {
         req.user = { _id: "user123" };
         next();
-      }
+      },
     );
   });
 
@@ -74,7 +74,7 @@ describe("PATCH /api/v1/users/updateMyPassword - updatePassword", () => {
     // Verify current password check
     expect(mockUser.correctPassword).toHaveBeenCalledWith(
       "currentPassword123",
-      "hashedCurrentPassword"
+      "hashedCurrentPassword",
     );
 
     // Verify new password was set (captured before createSendToken clears it)
@@ -118,7 +118,7 @@ describe("PATCH /api/v1/users/updateMyPassword - updatePassword", () => {
     expect(response.body.message).toBe("Your current password is wrong.");
     expect(mockUser.correctPassword).toHaveBeenCalledWith(
       "wrongCurrentPassword",
-      "hashedCurrentPassword"
+      "hashedCurrentPassword",
     );
   });
 
@@ -129,7 +129,7 @@ describe("PATCH /api/v1/users/updateMyPassword - updatePassword", () => {
           status: "fail",
           message: "You are not logged in! Please log in to get access.",
         });
-      }
+      },
     );
 
     const response = await request(app)
