@@ -10,8 +10,7 @@ jest.mock("../../models/tourModel");
 // default-import helper reads the real (unmocked) functions instead of
 // these jest.fn() ones.
 jest.mock("../../controllers/authController", () => {
-  const actual = jest.requireActual("../../controllers/authController")
-    .default;
+  const actual = jest.requireActual("../../controllers/authController").default;
   return {
     __esModule: true,
     default: {
@@ -58,8 +57,8 @@ describe("PATCH /api/v1/tours/:id - photo upload", () => {
   it("uploads and resizes the cover image and all gallery images, persisting filenames", async () => {
     const tourId = "123";
 
-    mockTourModel.findByIdAndUpdate.mockImplementation((id, update: any) =>
-      Promise.resolve({ _id: id, ...update }) as any,
+    mockTourModel.findByIdAndUpdate.mockImplementation(
+      (id, update: any) => Promise.resolve({ _id: id, ...update }) as any,
     );
 
     const response = await request(app)

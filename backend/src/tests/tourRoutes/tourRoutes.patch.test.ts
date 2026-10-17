@@ -9,8 +9,7 @@ jest.mock("../../models/tourModel");
 // default-import helper reads the real (unmocked) functions instead of
 // these jest.fn() ones.
 jest.mock("../../controllers/authController", () => {
-  const actual = jest.requireActual("../../controllers/authController")
-    .default;
+  const actual = jest.requireActual("../../controllers/authController").default;
   return {
     __esModule: true,
     default: {

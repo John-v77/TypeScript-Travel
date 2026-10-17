@@ -11,8 +11,7 @@ jest.mock("../../models/tourModel");
 // these jest.fn() ones. Only tours-stats and monthly-plan are protected
 // routes; top-5-by-rating is public but the mock module is shared per file.
 jest.mock("../../controllers/authController", () => {
-  const actual = jest.requireActual("../../controllers/authController")
-    .default;
+  const actual = jest.requireActual("../../controllers/authController").default;
   return {
     __esModule: true,
     default: {

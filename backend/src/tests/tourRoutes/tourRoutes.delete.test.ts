@@ -8,8 +8,7 @@ import tourController from "../../controllers/tourController";
 // esModuleInterop default-import helper reads the real (unmocked) functions
 // instead of these jest.fn() ones.
 jest.mock("../../controllers/authController", () => {
-  const actual = jest.requireActual("../../controllers/authController")
-    .default;
+  const actual = jest.requireActual("../../controllers/authController").default;
   return {
     __esModule: true,
     default: {
@@ -34,8 +33,7 @@ jest.mock("../../controllers/authController", () => {
   };
 });
 jest.mock("../../controllers/tourController", () => {
-  const actual = jest.requireActual("../../controllers/tourController")
-    .default;
+  const actual = jest.requireActual("../../controllers/tourController").default;
   return {
     __esModule: true,
     default: {
@@ -142,18 +140,14 @@ describe("DELETE /api/v1/tours/:id", () => {
   });
 
   it("should require authentication", async () => {
-    mockAuthController.protect.mockImplementation(
-      (req: any, res: any) => {
-        res.status(401).json({
-          status: "fail",
-          message: "You are not logged in! Please log in to get access.",
-        });
-      },
-    );
+    mockAuthController.protect.mockImplementation((req: any, res: any) => {
+      res.status(401).json({
+        status: "fail",
+        message: "You are not logged in! Please log in to get access.",
+      });
+    });
 
-    const response = await request(app)
-      .delete("/api/v1/tours/123")
-      .expect(401);
+    const response = await request(app).delete("/api/v1/tours/123").expect(401);
 
     expect(response.body.status).toBe("fail");
     expect(response.body.message).toContain("You are not logged in");
