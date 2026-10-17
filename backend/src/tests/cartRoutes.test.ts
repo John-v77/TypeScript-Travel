@@ -4,7 +4,6 @@ import { CartItemModel } from "../models/cartItemModel";
 import authController from "../controllers/authController";
 import { createMockQuery } from "./tourRoutes/testHelpers";
 
-
 jest.mock("../models/cartItemModel");
 jest.mock("../controllers/authController", () => {
   const actual = jest.requireActual("../controllers/authController").default;

@@ -46,7 +46,6 @@ const mockCartItemModel = CartItemModel as jest.Mocked<typeof CartItemModel>;
 const mockGearModel = GearModel as jest.Mocked<typeof GearModel>;
 const mockGearOrderModel = GearOrderModel as jest.Mocked<typeof GearOrderModel>;
 
-
 const operatorKeys = (value: unknown): string[] => {
   if (Array.isArray(value)) return value.flatMap(operatorKeys);
   if (typeof value !== "object" || value === null) return [];
@@ -124,7 +123,6 @@ describe("NoSQL injection", () => {
       expect(operatorKeys(argsOf(query.where))).toEqual([]);
     });
 
-
     it("still allows the API's own price[gte] filter", async () => {
       const query = createMockQuery([]);
       mockTourModel.find.mockReturnValue(query as any);
@@ -144,7 +142,9 @@ describe("NoSQL injection", () => {
 
       await request(app).get('/api/v1/tours/{"$gt":""}').expect(404);
 
-      expect(mockTourModel.findOne).toHaveBeenCalledWith({ slug: '{"$gt":""}' });
+      expect(mockTourModel.findOne).toHaveBeenCalledWith({
+        slug: '{"$gt":""}',
+      });
     });
   });
 
@@ -183,7 +183,9 @@ describe("NoSQL injection", () => {
       await request(app)
         .post("/api/v1/users/login")
         .set("Content-Type", "application/json")
-        .send('{"email":"a@b.com","password":"x","__proto__":{"isAdmin":true}}');
+        .send(
+          '{"email":"a@b.com","password":"x","__proto__":{"isAdmin":true}}',
+        );
 
       expect(({} as Record<string, unknown>).isAdmin).toBeUndefined();
     });

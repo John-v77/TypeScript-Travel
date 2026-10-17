@@ -91,7 +91,7 @@ describe("Review Booking Check Middleware", () => {
       });
       expect(response.body.status).toBe("fail");
       expect(response.body.message).toBe(
-        "You can only review tours you have booked"
+        "You can only review tours you have booked",
       );
     });
   });
@@ -150,7 +150,7 @@ describe("Review Booking Check Middleware", () => {
       });
       expect(response.body.status).toBe("fail");
       expect(response.body.message).toBe(
-        "You can only review tours you have booked"
+        "You can only review tours you have booked",
       );
     });
   });

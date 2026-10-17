@@ -91,7 +91,6 @@ describe("Rate Limiter", () => {
       );
     });
 
-  
     it("cannot be bypassed with a spoofed X-Forwarded-For", async () => {
       const loginData = {
         email: "test@example.com",
@@ -217,11 +216,9 @@ describe("Rate Limiter", () => {
 
       expect(response.status).toBe(200);
 
-
       const resetTime = parseInt(response.headers["x-ratelimit-reset"]) * 1000;
       const currentTime = Date.now();
       const timeDiff = resetTime - currentTime;
-
 
       expect(timeDiff).toBeLessThanOrEqual(60 * 60 * 1000 + 1000);
       expect(timeDiff).toBeGreaterThan(55 * 60 * 1000); // At least 55 minutes

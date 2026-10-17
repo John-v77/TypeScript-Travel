@@ -27,19 +27,23 @@ jest.mock("../controllers/authController", () => {
 
 describe("Nested Booking Routes", () => {
   const app = createServer();
-  const mockAuthController = authController as jest.Mocked<typeof authController>;
+  const mockAuthController = authController as jest.Mocked<
+    typeof authController
+  >;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Reset to default user role
-    mockAuthController.protect.mockImplementation((req: any, res: any, next: any) => {
-      req.user = {
-        id: "user123",
-        role: "user",
-      };
-      next();
-    });
+    mockAuthController.protect.mockImplementation(
+      (req: any, res: any, next: any) => {
+        req.user = {
+          id: "user123",
+          role: "user",
+        };
+        next();
+      },
+    );
   });
 
   describe("GET /api/v1/users/my-bookings", () => {
@@ -95,7 +99,7 @@ describe("Nested Booking Routes", () => {
             status: "fail",
             message: "You are not logged in!",
           });
-        }
+        },
       );
 
       await request(app).get("/api/v1/users/my-bookings").expect(401);
@@ -123,15 +127,19 @@ describe("Nested Booking Routes", () => {
       ];
 
       // Mock admin user
-      mockAuthController.protect.mockImplementation((req: any, res: any, next: any) => {
-        req.user = {
-          id: "admin123",
-          role: "admin",
-        };
-        next();
-      });
+      mockAuthController.protect.mockImplementation(
+        (req: any, res: any, next: any) => {
+          req.user = {
+            id: "admin123",
+            role: "admin",
+          };
+          next();
+        },
+      );
 
-      mockAuthController.restrictTo.mockImplementation(() => (req: any, res: any, next: any) => next());
+      mockAuthController.restrictTo.mockImplementation(
+        () => (req: any, res: any, next: any) => next(),
+      );
 
       const mockQuery = {
         sort: jest.fn().mockReturnThis(),
@@ -146,7 +154,9 @@ describe("Nested Booking Routes", () => {
         .get(`/api/v1/users/user-bookings/${targetUserId}/bookings`)
         .expect(200);
 
-      expect(mockBookingModel.find).toHaveBeenCalledWith({ user: targetUserId });
+      expect(mockBookingModel.find).toHaveBeenCalledWith({
+        user: targetUserId,
+      });
       expect(response.body.status).toBe("success");
       expect(response.body.results).toBe(2);
       expect(response.body.data).toHaveLength(2);
@@ -157,15 +167,19 @@ describe("Nested Booking Routes", () => {
     it("should return empty array if user has no bookings", async () => {
       const targetUserId = "user789";
 
-      mockAuthController.protect.mockImplementation((req: any, res: any, next: any) => {
-        req.user = {
-          id: "admin123",
-          role: "admin",
-        };
-        next();
-      });
+      mockAuthController.protect.mockImplementation(
+        (req: any, res: any, next: any) => {
+          req.user = {
+            id: "admin123",
+            role: "admin",
+          };
+          next();
+        },
+      );
 
-      mockAuthController.restrictTo.mockImplementation(() => (req: any, res: any, next: any) => next());
+      mockAuthController.restrictTo.mockImplementation(
+        () => (req: any, res: any, next: any) => next(),
+      );
 
       const mockQuery = {
         sort: jest.fn().mockReturnThis(),
@@ -180,7 +194,9 @@ describe("Nested Booking Routes", () => {
         .get(`/api/v1/users/user-bookings/${targetUserId}/bookings`)
         .expect(200);
 
-      expect(mockBookingModel.find).toHaveBeenCalledWith({ user: targetUserId });
+      expect(mockBookingModel.find).toHaveBeenCalledWith({
+        user: targetUserId,
+      });
       expect(response.body.status).toBe("success");
       expect(response.body.results).toBe(0);
       expect(response.body.data).toHaveLength(0);

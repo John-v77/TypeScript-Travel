@@ -93,14 +93,12 @@ describe("Review Controller", () => {
 
   describe("POST /api/v1/reviews - createReview", () => {
     beforeEach(() => {
-  
       mockAuthController.protect.mockImplementation(
         (req: any, res: any, next: any) => {
           req.user = { _id: "user123", role: "user" };
           next();
         },
       );
-
 
       mockAuthController.restrictTo.mockImplementation(
         (...allowedRoles: any[]) => {
@@ -147,7 +145,6 @@ describe("Review Controller", () => {
     });
 
     it("should require authentication", async () => {
-
       mockAuthController.protect.mockImplementation(
         (req: any, res: any, next: any) => {
           return res.status(401).json({
@@ -168,7 +165,6 @@ describe("Review Controller", () => {
     });
 
     it("should restrict access to users only", async () => {
-  
       mockAuthController.protect.mockImplementation(
         (req: any, res: any, next: any) => {
           req.user = { _id: "admin123", role: "admin" };

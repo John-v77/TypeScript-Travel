@@ -157,19 +157,15 @@ describe("Global Rate Limiter", () => {
     });
 
     it("should include correct error message when global limit exceeded", async () => {
-
       const response = await request(app).get("/api/v1/users");
 
       // Verify headers are present (indicating rate limiter is active)
       expect(response.headers["x-ratelimit-limit"]).toBe("100");
-
     });
 
     it("should apply to both GET and POST requests on API routes", async () => {
-
       const getResponse = await request(app).get("/api/v1/users");
       expect(getResponse.headers["x-ratelimit-limit"]).toBe("100");
-
 
       const signupData = {
         name: "Test User",
