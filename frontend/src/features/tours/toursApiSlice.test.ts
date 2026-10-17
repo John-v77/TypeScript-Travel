@@ -14,7 +14,7 @@ describe("toursApiSlice", () => {
     const store = makeStore();
 
     const result = await store.dispatch(
-      toursApiSlice.endpoints.getAllTours.initiate(),
+      toursApiSlice.endpoints.getAllTours.initiate(undefined),
     );
 
     expect(requestedUrl(fetchMock)).toBe("http://127.0.0.1:3000/api/v1/tours");
@@ -28,7 +28,7 @@ describe("toursApiSlice", () => {
     const store = makeStore();
 
     const result = await store.dispatch(
-      toursApiSlice.endpoints.getAllTours.initiate(),
+      toursApiSlice.endpoints.getAllTours.initiate(undefined),
     );
 
     expect(result.data).toEqual([a, b]);
@@ -56,7 +56,7 @@ describe("toursApiSlice", () => {
     const store = makeStore();
 
     const result = await store.dispatch(
-      toursApiSlice.endpoints.getAllTours.initiate(),
+      toursApiSlice.endpoints.getAllTours.initiate(undefined),
     );
 
     expect(result.isError).toBe(true);

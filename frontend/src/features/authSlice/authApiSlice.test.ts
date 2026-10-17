@@ -96,7 +96,7 @@ describe("authApiSlice logout", () => {
     store.dispatch(loginSuccess({ user: mockUser, token: "jwt-token" }));
     expect(selectIsAuthenticated(store.getState())).toBe(true);
 
-    await store.dispatch(authApiSlice.endpoints.logout.initiate());
+    await store.dispatch(authApiSlice.endpoints.logout.initiate(undefined));
 
     expect(selectIsAuthenticated(store.getState())).toBe(false);
   });
@@ -105,7 +105,7 @@ describe("authApiSlice logout", () => {
     const store = createCombinedStore();
     store.dispatch(loginSuccess({ user: mockUser, token: "jwt-token" }));
 
-    await store.dispatch(authApiSlice.endpoints.logout.initiate());
+    await store.dispatch(authApiSlice.endpoints.logout.initiate(undefined));
 
     expect(localStorage.getItem("token")).toBeNull();
     expect(localStorage.getItem("user")).toBeNull();

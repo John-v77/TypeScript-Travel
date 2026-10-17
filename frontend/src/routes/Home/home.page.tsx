@@ -5,7 +5,7 @@ import HomeTourCard from "../../components/HomeTourCard/home-tour-card.component
 import { outlineButton } from "./home.styles";
 
 const Home = () => {
-  const { data: tours } = useGetAllToursQuery();
+  const { data: tours } = useGetAllToursQuery(undefined);
 
   const featured = (tours ?? []).slice(0, 4);
   const popular = (tours ?? []).slice(0, 3);

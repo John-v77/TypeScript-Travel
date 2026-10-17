@@ -53,23 +53,23 @@ export type Tour = {
   slug: string;
 };
 
-interface TourResponse {
+type TourResponse = {
   status: string;
   data: Tour;
-}
+};
 
-interface ToursResponse {
+type ToursResponse = {
   status: string;
   results: number;
   data: Record<string, Tour>;
-}
+};
 
 export const toursApiSlice = createApi({
   reducerPath: "toursApi",
   baseQuery: fetchBaseQuery({ baseUrl: apiUrl }),
   tagTypes: ["Tours"],
   endpoints: builder => ({
-    getAllTours: builder.query<Tour[], void>({
+    getAllTours: builder.query<Tour[], undefined>({
       query: () => `tours`,
       transformResponse: (response: ToursResponse) =>
         Object.values(response.data),

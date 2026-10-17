@@ -9,10 +9,10 @@ export type Favorite = {
   user: string;
 };
 
-interface FavoritesResponse {
+type FavoritesResponse = {
   status: string;
   data: Favorite[];
-}
+};
 
 export const favoritesApiSlice = createApi({
   reducerPath: "favoritesApi",
@@ -28,17 +28,17 @@ export const favoritesApiSlice = createApi({
   }),
   tagTypes: ["Favorites"],
   endpoints: builder => ({
-    getMyFavorites: builder.query<Favorite[], void>({
+    getMyFavorites: builder.query<Favorite[], undefined>({
       query: () => "",
       transformResponse: (response: FavoritesResponse) => response.data,
       providesTags: ["Favorites"],
     }),
-    addFavorite: builder.mutation<void, string>({
+    addFavorite: builder.mutation<undefined, string>({
       query: tourId => ({ url: "", method: "POST", body: { tour: tourId } }),
       invalidatesTags: ["Favorites"],
     }),
     // Takes the favourite's own id, not the tour's.
-    removeFavorite: builder.mutation<void, string>({
+    removeFavorite: builder.mutation<undefined, string>({
       query: favoriteId => ({ url: favoriteId, method: "DELETE" }),
       invalidatesTags: ["Favorites"],
     }),

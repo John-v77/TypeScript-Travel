@@ -1,13 +1,14 @@
-import { useEffect, ReactNode } from "react";
-import { useDispatch } from "react-redux";
+import type { ReactNode } from "react";
+import { useEffect } from "react";
+import { useAppDispatch } from "../../app/hooks";
 import { checkTokenExpiry } from "../../features/authSlice/authStorageSlice";
 
-interface AuthGuardProps {
+type AuthGuardProps = {
   children: ReactNode;
-}
+};
 
 const AuthGuard = ({ children }: AuthGuardProps) => {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     dispatch(checkTokenExpiry());
@@ -19,7 +20,9 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
       5 * 60 * 1000,
     );
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+    };
   }, [dispatch]);
 
   return <>{children}</>;

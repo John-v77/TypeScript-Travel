@@ -2,34 +2,34 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { logout as clearAuthStorage } from "./authStorageSlice";
 import { apiUrl } from "../../config/api";
 
-export interface User {
+export type User = {
   _id: string;
   name: string;
   email: string;
   photo?: string;
   role: string;
   active: boolean;
-}
+};
 
-export interface LoginCredentials {
+export type LoginCredentials = {
   email: string;
   password: string;
-}
+};
 
-export interface SignupData {
+export type SignupData = {
   name: string;
   email: string;
   password: string;
   passwordConfirm: string;
-}
+};
 
-export interface AuthResponse {
+export type AuthResponse = {
   status: string;
   token: string;
   data: {
     user: User;
   };
-}
+};
 
 export const authApiSlice = createApi({
   reducerPath: "authApi",
@@ -63,8 +63,8 @@ export const authApiSlice = createApi({
       }),
     }),
     // Logout
-    logout: builder.mutation<void, void>({
-      queryFn: async (_arg, { dispatch }) => {
+    logout: builder.mutation<undefined, undefined>({
+      queryFn: (_arg, { dispatch }) => {
         dispatch(clearAuthStorage());
         return { data: undefined };
       },

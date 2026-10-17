@@ -8,7 +8,7 @@ import AccountPanel from "./account-panel.component";
  * listing's three - the panel is narrower than a full page band.
  */
 const MyFavorites = () => {
-  const { data: favorites = [], isLoading } = useGetMyFavoritesQuery();
+  const { data: favorites = [], isLoading } = useGetMyFavoritesQuery(undefined);
   // A saved tour that was later deleted comes back as `tour: null`.
   const tours = favorites.flatMap(favorite =>
     favorite.tour ? [favorite.tour] : [],

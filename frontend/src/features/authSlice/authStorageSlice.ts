@@ -1,12 +1,13 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import type { PayloadAction } from "@reduxjs/toolkit";
+import { createSlice } from "@reduxjs/toolkit";
 import type { User } from "./authApiSlice";
 
-interface AuthState {
+type AuthState = {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
   expiresAt: number | null;
-}
+};
 
 const initialState: AuthState = {
   user: null,
@@ -64,7 +65,7 @@ const loadFromLocalStorage = (): AuthState => {
       }
 
       return {
-        user: JSON.parse(userData),
+        user: JSON.parse(userData) as User,
         token,
         isAuthenticated: true,
         expiresAt: expiry,

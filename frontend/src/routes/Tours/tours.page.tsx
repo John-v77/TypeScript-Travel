@@ -16,7 +16,7 @@ import { sortItems } from "../../utils/sort-items";
 import { selectBase } from "./tours.styles";
 
 const ToursPage = () => {
-  const { data, error, isLoading } = useGetAllToursQuery();
+  const { data, error, isLoading } = useGetAllToursQuery(undefined);
 
   const [filters, setFilters] = useState<TourFilters>(noTourFilters);
   const [sortBy, setSortBy] = useState("featured");
@@ -36,10 +36,10 @@ const ToursPage = () => {
   const applyFilters = (filterForm: HTMLFormElement) => {
     const form = new FormData(filterForm);
     setFilters({
-      location: String(form.get("location") ?? ""),
-      difficulty: String(form.get("difficulty") ?? ""),
-      duration: String(form.get("duration") ?? ""),
-      price: String(form.get("price") ?? ""),
+      location: (form.get("location") as string | null) ?? "",
+      difficulty: (form.get("difficulty") as string | null) ?? "",
+      duration: (form.get("duration") as string | null) ?? "",
+      price: (form.get("price") as string | null) ?? "",
     });
   };
 
