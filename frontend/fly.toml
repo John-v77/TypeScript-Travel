@@ -1,0 +1,22 @@
+primary_region = "lhr"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  # Substituted into the nginx config by the image's entrypoint on start.
+  PORT = "8080"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+
+  # Static files: a cold start costs a few hundred milliseconds, so machines
+  # are allowed to stop entirely when idle.
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
